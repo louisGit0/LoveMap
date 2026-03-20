@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
+  Alert,
 } from 'react-native';
 import { router } from 'expo-router';
 import { Snackbar, TextInput as PaperInput } from 'react-native-paper';
@@ -78,14 +79,8 @@ export default function Register() {
     });
 
     if (error) {
-      if (error.message.includes('already registered') || error.message.includes('already exists')) {
-        setSnackbar('Un compte existe déjà avec cet email.');
-      } else if (error.message.includes('unique') || error.message.includes('username')) {
-        setSnackbar('Ce nom d\'utilisateur est déjà pris.');
-      } else {
-        setSnackbar(error.message);
-      }
       setLoading(false);
+      Alert.alert('Erreur inscription', error.message);
       return;
     }
 
@@ -95,7 +90,11 @@ export default function Register() {
       router.replace('/(app)/map');
     } else {
       setLoading(false);
-      setSnackbar('Compte créé ! Vérifiez votre email pour confirmer votre compte.');
+      Alert.alert(
+        'Vérifiez votre email',
+        'Compte créé ! Confirmez votre email puis connectez-vous.',
+        [{ text: 'OK', onPress: () => router.replace('/(auth)/login') }]
+      );
     }
   }
 
