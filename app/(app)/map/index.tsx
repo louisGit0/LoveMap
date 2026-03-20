@@ -66,6 +66,7 @@ export default function MapScreen() {
     <View style={styles.container}>
       <AppMapView
         onLongPress={handleLongPress}
+        onCenterChange={setCenterCoords}
       >
         {viewMode === 'pins' &&
           points.map((p) => (

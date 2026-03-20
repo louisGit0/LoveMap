@@ -27,8 +27,8 @@ export default function NewPoint() {
   const { createPoint } = usePoints();
   const params = useLocalSearchParams<{ latitude: string; longitude: string }>();
 
-  const latitude = parseFloat(params.latitude ?? '48.8566');
-  const longitude = parseFloat(params.longitude ?? '2.3522');
+  const [latitude, setLatitude] = useState(parseFloat(params.latitude ?? '48.8566'));
+  const [longitude, setLongitude] = useState(parseFloat(params.longitude ?? '2.3522'));
 
   const [snackbar, setSnackbar] = useState<string | null>(null);
 
@@ -95,7 +95,8 @@ export default function NewPoint() {
         {/* Header */}
         <Text style={styles.title}>Nouveau point</Text>
 
-        {/* Mini carte non-interactive */}
+        {/* Carte interactive — déplacer le marqueur pour choisir l'emplacement */}
+        <Text style={styles.mapHint}>Déplacez le marqueur pour ajuster l'emplacement</Text>
         <View style={styles.miniMap}>
           <MapView
             style={StyleSheet.absoluteFillObject}
@@ -106,12 +107,17 @@ export default function NewPoint() {
               latitudeDelta: 0.005,
               longitudeDelta: 0.005,
             }}
-            scrollEnabled={false}
-            zoomEnabled={false}
             customMapStyle={darkMapStyle}
-            pointerEvents="none"
           >
-            <Marker coordinate={{ latitude, longitude }} pinColor="#e91e8c" />
+            <Marker
+              coordinate={{ latitude, longitude }}
+              pinColor="#e91e8c"
+              draggable
+              onDragEnd={(e) => {
+                setLatitude(e.nativeEvent.coordinate.latitude);
+                setLongitude(e.nativeEvent.coordinate.longitude);
+              }}
+            />
           </MapView>
         </View>
 
@@ -152,8 +158,15 @@ const styles = StyleSheet.create({
     paddingBottom: 16,
     paddingHorizontal: 24,
   },
+  mapHint: {
+    color: '#888888',
+    fontSize: 12,
+    textAlign: 'center',
+    marginBottom: 8,
+    marginHorizontal: 16,
+  },
   miniMap: {
-    height: 180,
+    height: 220,
     marginHorizontal: 16,
     borderRadius: 12,
     overflow: 'hidden',

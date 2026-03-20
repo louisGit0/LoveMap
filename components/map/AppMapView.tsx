@@ -10,11 +10,12 @@ const DISTANCE_THRESHOLD = 0.1; // degrés — ~10 km
 interface Props {
   children?: React.ReactNode;
   onLongPress?: (coords: { latitude: number; longitude: number }) => void;
+  onCenterChange?: (coords: { latitude: number; longitude: number }) => void;
   scrollEnabled?: boolean;
   initialRegion?: Region;
 }
 
-export function AppMapView({ children, onLongPress, scrollEnabled = true, initialRegion }: Props) {
+export function AppMapView({ children, onLongPress, onCenterChange, scrollEnabled = true, initialRegion }: Props) {
   const mapRef = useRef<MapView>(null);
   const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
   const [region, setRegion] = useState<Region>(initialRegion ?? PARIS);
@@ -43,6 +44,7 @@ export function AppMapView({ children, onLongPress, scrollEnabled = true, initia
 
   function handleRegionChange(r: Region) {
     setRegion(r);
+    onCenterChange?.({ latitude: r.latitude, longitude: r.longitude });
     if (userLocation) {
       const latDiff = Math.abs(r.latitude - userLocation.latitude);
       const lngDiff = Math.abs(r.longitude - userLocation.longitude);
