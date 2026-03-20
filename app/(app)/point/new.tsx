@@ -42,6 +42,7 @@ export default function NewPoint() {
       note: data.note,
       comment: data.comment,
       durationMinutes: data.durationMinutes,
+      happenedAt: data.happenedAt,
     });
 
     if (!point) {

@@ -17,6 +17,7 @@ export interface PointFormData {
   durationMinutes?: number;
   comment?: string;
   partnerId?: string;
+  happenedAt?: string;
 }
 
 interface Props {
@@ -34,6 +35,15 @@ function noteColor(note: number): string {
   return '#4caf50';
 }
 
+function todayParts() {
+  const now = new Date();
+  return {
+    day: String(now.getDate()).padStart(2, '0'),
+    month: String(now.getMonth() + 1).padStart(2, '0'),
+    year: String(now.getFullYear()),
+  };
+}
+
 export function PointForm({ latitude, longitude, initialData, onSubmit, onCancel }: Props) {
   const [note, setNote] = useState<number>(initialData?.note ?? 5);
   const [duration, setDuration] = useState<string>(
@@ -45,6 +55,11 @@ export function PointForm({ latitude, longitude, initialData, onSubmit, onCancel
   const [selectedPartner, setSelectedPartner] = useState<Profile | null>(null);
   const [searchLoading, setSearchLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+
+  const init = todayParts();
+  const [day, setDay] = useState(init.day);
+  const [month, setMonth] = useState(init.month);
+  const [year, setYear] = useState(init.year);
 
   // Debounced search
   useEffect(() => {
@@ -62,12 +77,20 @@ export function PointForm({ latitude, longitude, initialData, onSubmit, onCancel
   }, [partnerQuery]);
 
   async function handleSubmit() {
+    const d = parseInt(day, 10);
+    const m = parseInt(month, 10);
+    const y = parseInt(year, 10);
+    let happenedAt: string | undefined;
+    if (d >= 1 && d <= 31 && m >= 1 && m <= 12 && y >= 2000 && y <= new Date().getFullYear()) {
+      happenedAt = new Date(y, m - 1, d, 12, 0, 0).toISOString();
+    }
     setSubmitting(true);
     await onSubmit({
       note,
       durationMinutes: duration ? parseInt(duration, 10) : undefined,
       comment: comment.trim() || undefined,
       partnerId: selectedPartner?.id,
+      happenedAt,
     });
     setSubmitting(false);
   }
@@ -97,6 +120,40 @@ export function PointForm({ latitude, longitude, initialData, onSubmit, onCancel
         keyboardType="numeric"
         style={styles.input}
       />
+
+      {/* Date */}
+      <Text style={styles.label}>Date</Text>
+      <View style={styles.dateRow}>
+        <TextInput
+          style={[styles.dateInput, styles.dateInputShort]}
+          value={day}
+          onChangeText={(v) => setDay(v.replace(/[^0-9]/g, '').slice(0, 2))}
+          keyboardType="numeric"
+          placeholder="JJ"
+          placeholderTextColor="#555"
+          maxLength={2}
+        />
+        <Text style={styles.dateSep}>/</Text>
+        <TextInput
+          style={[styles.dateInput, styles.dateInputShort]}
+          value={month}
+          onChangeText={(v) => setMonth(v.replace(/[^0-9]/g, '').slice(0, 2))}
+          keyboardType="numeric"
+          placeholder="MM"
+          placeholderTextColor="#555"
+          maxLength={2}
+        />
+        <Text style={styles.dateSep}>/</Text>
+        <TextInput
+          style={[styles.dateInput, styles.dateInputLong]}
+          value={year}
+          onChangeText={(v) => setYear(v.replace(/[^0-9]/g, '').slice(0, 4))}
+          keyboardType="numeric"
+          placeholder="AAAA"
+          placeholderTextColor="#555"
+          maxLength={4}
+        />
+      </View>
 
       {/* Commentaire */}
       <View style={styles.commentContainer}>
@@ -216,6 +273,34 @@ const styles = StyleSheet.create({
   },
   input: {
     marginBottom: 4,
+  },
+  dateRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 4,
+    gap: 4,
+  },
+  dateInput: {
+    backgroundColor: '#1a1a1a',
+    color: '#ffffff',
+    borderWidth: 1,
+    borderColor: '#333',
+    borderRadius: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    fontSize: 14,
+    textAlign: 'center',
+  },
+  dateInputShort: {
+    width: 56,
+  },
+  dateInputLong: {
+    width: 80,
+  },
+  dateSep: {
+    color: '#555',
+    fontSize: 18,
+    fontWeight: 'bold',
   },
   commentContainer: {
     marginBottom: 4,

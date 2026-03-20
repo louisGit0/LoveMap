@@ -38,6 +38,7 @@ export function usePoints() {
     note: number;
     comment?: string;
     durationMinutes?: number;
+    happenedAt?: string;
   }): Promise<MapPoint | null> => {
     const { data, error } = await supabase
       .from('points')
@@ -48,6 +49,7 @@ export function usePoints() {
         note: params.note,
         comment: params.comment ?? null,
         duration_minutes: params.durationMinutes ?? null,
+        happened_at: params.happenedAt ?? new Date().toISOString(),
         is_visible: false,
       })
       .select()

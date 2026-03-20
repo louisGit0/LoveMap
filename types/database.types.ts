@@ -47,6 +47,7 @@ export interface Database {
           note: number;
           comment: string | null;
           duration_minutes: number | null;
+          happened_at: string;
           is_visible: boolean;
           created_at: string;
           updated_at: string;
@@ -58,6 +59,7 @@ export interface Database {
           note: number;
           comment?: string | null;
           duration_minutes?: number | null;
+          happened_at?: string;
           is_visible?: boolean;
           created_at?: string;
           updated_at?: string;
