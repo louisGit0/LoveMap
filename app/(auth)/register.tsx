@@ -83,6 +83,11 @@ export default function Register() {
       return;
     }
 
+    // Activer la session dans le client avant l'insert (requis pour la RLS)
+    if (data.session) {
+      await supabase.auth.setSession(data.session);
+    }
+
     // Créer le profil manuellement (trigger supprimé)
     const { error: profileError } = await (supabase as any).from('profiles').insert({
       id: data.user.id,
