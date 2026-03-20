@@ -6,24 +6,22 @@ import {
   ScrollView,
   TouchableOpacity,
   ActivityIndicator,
+  Image,
 } from 'react-native';
 import { router } from 'expo-router';
 import { Snackbar } from 'react-native-paper';
+import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '@/hooks/useAuth';
 import { usePoints } from '@/hooks/usePoints';
 import { useFriends } from '@/hooks/useFriends';
 import { supabase } from '@/lib/supabase';
-import { Input } from '@/components/ui/Input';
 
 export default function ProfileScreen() {
   const { user, profile, fetchProfile } = useAuth();
   const { points, fetchMyPoints } = usePoints();
   const { friends, fetchFriends } = useFriends();
 
-  const [editing, setEditing] = useState(false);
-  const [displayName, setDisplayName] = useState('');
-  const [avatarUrl, setAvatarUrl] = useState('');
-  const [saving, setSaving] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [loading, setLoading] = useState(true);
   const [snackbar, setSnackbar] = useState<string | null>(null);
 
@@ -36,13 +34,6 @@ export default function ProfileScreen() {
     })();
   }, [user]);
 
-  useEffect(() => {
-    if (profile) {
-      setDisplayName(profile.display_name ?? '');
-      setAvatarUrl(profile.avatar_url ?? '');
-    }
-  }, [profile]);
-
   const avgNote =
     points.length > 0
       ? (points.reduce((sum, p) => sum + p.note, 0) / points.length).toFixed(1)
@@ -50,22 +41,62 @@ export default function ProfileScreen() {
 
   const initials = (profile?.display_name ?? profile?.username ?? '?')[0]?.toUpperCase();
 
-  async function handleSave() {
-    if (!user) return;
-    setSaving(true);
-    const { error } = await supabase
-      .from('profiles')
-      .update({ display_name: displayName.trim(), avatar_url: avatarUrl.trim() || null })
-      .eq('id', user.id);
-
-    if (error) {
-      setSnackbar('Erreur lors de la sauvegarde.');
-    } else {
-      await fetchProfile(user.id);
-      setEditing(false);
-      setSnackbar('Profil mis à jour !');
+  async function handlePickAvatar() {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      setSnackbar("Permission d'accès à la galerie refusée.");
+      return;
     }
-    setSaving(false);
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.7,
+    });
+
+    if (result.canceled || !result.assets[0]) return;
+
+    setUploadingAvatar(true);
+    try {
+      const asset = result.assets[0];
+      const ext = asset.uri.split('.').pop() ?? 'jpg';
+      const fileName = `${user!.id}.${ext}`;
+
+      const response = await fetch(asset.uri);
+      const blob = await response.blob();
+      const arrayBuffer = await blob.arrayBuffer();
+
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(fileName, arrayBuffer, {
+          contentType: `image/${ext}`,
+          upsert: true,
+        });
+
+      if (uploadError) {
+        setSnackbar("Erreur lors de l'upload.");
+        return;
+      }
+
+      const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(fileName);
+      const publicUrl = urlData.publicUrl;
+
+      const { error: updateError } = await (supabase as any)
+        .from('profiles')
+        .update({ avatar_url: publicUrl })
+        .eq('id', user!.id);
+
+      if (updateError) {
+        setSnackbar('Erreur lors de la mise à jour du profil.');
+        return;
+      }
+
+      await fetchProfile(user!.id);
+      setSnackbar('Photo de profil mise à jour !');
+    } finally {
+      setUploadingAvatar(false);
+    }
   }
 
   if (loading) {
@@ -81,11 +112,31 @@ export default function ProfileScreen() {
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Header */}
         <View style={styles.header}>
-          <View style={styles.avatarCircle}>
-            <Text style={styles.avatarText}>{initials}</Text>
-          </View>
+          {/* Avatar cliquable */}
+          <TouchableOpacity
+            style={styles.avatarWrapper}
+            onPress={handlePickAvatar}
+            activeOpacity={0.8}
+            disabled={uploadingAvatar}
+          >
+            {profile?.avatar_url ? (
+              <Image source={{ uri: profile.avatar_url }} style={styles.avatarImage} />
+            ) : (
+              <View style={styles.avatarCircle}>
+                <Text style={styles.avatarText}>{initials}</Text>
+              </View>
+            )}
+            <View style={styles.avatarEditBadge}>
+              {uploadingAvatar
+                ? <ActivityIndicator size="small" color="#ffffff" />
+                : <Text style={styles.avatarEditIcon}>📷</Text>
+              }
+            </View>
+          </TouchableOpacity>
+
           <Text style={styles.displayName}>{profile?.display_name ?? profile?.username}</Text>
           <Text style={styles.username}>@{profile?.username}</Text>
+
           <TouchableOpacity
             style={styles.settingsButton}
             onPress={() => router.push('/(app)/profile/settings')}
@@ -109,52 +160,6 @@ export default function ProfileScreen() {
             <Text style={styles.statLabel}>Amis</Text>
           </View>
         </View>
-
-        {/* Édition du profil */}
-        {editing ? (
-          <View style={styles.editSection}>
-            <Text style={styles.sectionTitle}>Modifier le profil</Text>
-            <Input
-              label="Nom d'affichage"
-              value={displayName}
-              onChangeText={setDisplayName}
-              style={styles.input}
-            />
-            <Input
-              label="URL de l'avatar (optionnel)"
-              value={avatarUrl}
-              onChangeText={setAvatarUrl}
-              autoCapitalize="none"
-              keyboardType="url"
-              style={styles.input}
-            />
-            <View style={styles.editActions}>
-              <TouchableOpacity
-                style={styles.cancelEdit}
-                onPress={() => setEditing(false)}
-              >
-                <Text style={styles.cancelEditText}>Annuler</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.saveButton, saving && styles.buttonDisabled]}
-                onPress={handleSave}
-                disabled={saving}
-              >
-                <Text style={styles.saveButtonText}>
-                  {saving ? 'Sauvegarde...' : 'Sauvegarder'}
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        ) : (
-          <TouchableOpacity
-            style={styles.editButton}
-            onPress={() => setEditing(true)}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.editButtonText}>Modifier le profil</Text>
-          </TouchableOpacity>
-        )}
 
         {/* Dernier points */}
         {points.length > 0 && (
@@ -218,14 +223,24 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingBottom: 24,
   },
+  avatarWrapper: {
+    marginBottom: 12,
+    position: 'relative',
+  },
   avatarCircle: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+    width: 88,
+    height: 88,
+    borderRadius: 44,
     backgroundColor: '#e91e8c33',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 12,
+    borderWidth: 2,
+    borderColor: '#e91e8c',
+  },
+  avatarImage: {
+    width: 88,
+    height: 88,
+    borderRadius: 44,
     borderWidth: 2,
     borderColor: '#e91e8c',
   },
@@ -233,6 +248,22 @@ const styles = StyleSheet.create({
     color: '#e91e8c',
     fontWeight: 'bold',
     fontSize: 32,
+  },
+  avatarEditBadge: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: '#e91e8c',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: '#0f0f0f',
+  },
+  avatarEditIcon: {
+    fontSize: 13,
   },
   displayName: {
     color: '#ffffff',
@@ -280,65 +311,6 @@ const styles = StyleSheet.create({
     color: '#888888',
     fontSize: 11,
     marginTop: 4,
-  },
-  editButton: {
-    marginHorizontal: 16,
-    backgroundColor: '#1a1a1a',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#e91e8c44',
-    paddingVertical: 14,
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  editButtonText: {
-    color: '#e91e8c',
-    fontWeight: '600',
-    fontSize: 14,
-  },
-  editSection: {
-    marginHorizontal: 16,
-    backgroundColor: '#1a1a1a',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#2a2a2a',
-    padding: 16,
-    marginBottom: 16,
-  },
-  input: {
-    marginBottom: 8,
-  },
-  editActions: {
-    flexDirection: 'row',
-    gap: 12,
-    marginTop: 8,
-  },
-  cancelEdit: {
-    flex: 1,
-    borderWidth: 1,
-    borderColor: '#2a2a2a',
-    borderRadius: 8,
-    paddingVertical: 12,
-    alignItems: 'center',
-  },
-  cancelEditText: {
-    color: '#888888',
-    fontSize: 14,
-  },
-  saveButton: {
-    flex: 2,
-    backgroundColor: '#e91e8c',
-    borderRadius: 8,
-    paddingVertical: 12,
-    alignItems: 'center',
-  },
-  buttonDisabled: {
-    opacity: 0.6,
-  },
-  saveButtonText: {
-    color: '#ffffff',
-    fontWeight: '600',
-    fontSize: 14,
   },
   section: {
     marginHorizontal: 16,
