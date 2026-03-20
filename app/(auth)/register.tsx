@@ -73,7 +73,7 @@ export default function Register() {
         data: {
           username: username.trim(),
           display_name: displayName.trim(),
-          date_of_birth: dateOfBirth,
+          date_of_birth: dateOfBirth ?? null,
         },
       },
     });
