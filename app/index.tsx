@@ -6,9 +6,9 @@ export default function Index() {
 
   if (isLoading) return null; // Splash screen géré par Expo
 
+  if (session) return <Redirect href="/(app)/map" />;
+
   if (!ageVerified) return <Redirect href="/(auth)/age-gate" />;
 
-  if (!session) return <Redirect href="/(auth)/login" />;
-
-  return <Redirect href="/(app)/map" />;
+  return <Redirect href="/(auth)/login" />;
 }
