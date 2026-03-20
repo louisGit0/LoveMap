@@ -69,18 +69,35 @@ export default function Register() {
     const { data, error } = await supabase.auth.signUp({
       email: email.trim(),
       password,
-      options: {
-        data: {
-          username: username.trim(),
-          display_name: displayName.trim(),
-          date_of_birth: dateOfBirth ?? null,
-        },
-      },
     });
 
     if (error) {
       setLoading(false);
       Alert.alert('Erreur inscription', error.message);
+      return;
+    }
+
+    if (!data.user) {
+      setLoading(false);
+      Alert.alert('Erreur', 'Impossible de créer le compte.');
+      return;
+    }
+
+    // Créer le profil manuellement (trigger supprimé)
+    const { error: profileError } = await (supabase as any).from('profiles').insert({
+      id: data.user.id,
+      username: username.trim(),
+      display_name: displayName.trim(),
+      date_of_birth: dateOfBirth ?? null,
+    });
+
+    if (profileError) {
+      setLoading(false);
+      if (profileError.message.includes('unique') || profileError.message.includes('username')) {
+        Alert.alert('Erreur inscription', 'Ce nom d\'utilisateur est déjà pris.');
+      } else {
+        Alert.alert('Erreur inscription', profileError.message);
+      }
       return;
     }
 
