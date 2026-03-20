@@ -17,7 +17,7 @@ import { Input } from '@/components/ui/Input';
 const USERNAME_REGEX = /^[a-zA-Z0-9_]+$/;
 
 export default function Register() {
-  const { ageVerified } = useAuthStore();
+  const { dateOfBirth } = useAuthStore();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -64,13 +64,14 @@ export default function Register() {
     if (!validate()) return;
 
     setLoading(true);
-    const { data, error } = await supabase.auth.signUp({
+    const { error } = await supabase.auth.signUp({
       email: email.trim(),
       password,
       options: {
         data: {
           username: username.trim(),
           display_name: displayName.trim(),
+          date_of_birth: dateOfBirth,
         },
       },
     });

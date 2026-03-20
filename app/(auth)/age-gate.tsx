@@ -10,7 +10,9 @@ import {
 } from 'react-native';
 import { router } from 'expo-router';
 import { useAuthStore } from '@/stores/authStore';
-import { MIN_AGE } from '@/constants/config';
+import { APP_CONFIG } from '@/constants/config';
+
+const MIN_AGE = APP_CONFIG.MIN_AGE;
 
 const MONTHS = [
   'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
@@ -90,7 +92,8 @@ export default function AgeGate() {
       return;
     }
     setError(null);
-    setAgeVerified(true);
+    const dateOfBirth = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    setAgeVerified(true, dateOfBirth);
     router.replace('/(auth)/login');
   }
 
