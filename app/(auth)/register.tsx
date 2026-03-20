@@ -18,6 +18,7 @@ const USERNAME_REGEX = /^[a-zA-Z0-9_]+$/;
 
 export default function Register() {
   const { dateOfBirth } = useAuthStore();
+  const setSession = useAuthStore((s) => s.setSession);
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -64,7 +65,7 @@ export default function Register() {
     if (!validate()) return;
 
     setLoading(true);
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email: email.trim(),
       password,
       options: {
@@ -88,8 +89,14 @@ export default function Register() {
       return;
     }
 
-    setLoading(false);
-    router.replace('/(app)/map');
+    if (data.session) {
+      setSession(data.session);
+      setLoading(false);
+      router.replace('/(app)/map');
+    } else {
+      setLoading(false);
+      setSnackbar('Compte créé ! Vérifiez votre email pour confirmer votre compte.');
+    }
   }
 
   return (

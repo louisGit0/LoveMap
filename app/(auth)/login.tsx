@@ -12,11 +12,13 @@ import { router } from 'expo-router';
 import { Snackbar } from 'react-native-paper';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
+import { useAuthStore } from '@/stores/authStore';
 import { TextInput as PaperInput } from 'react-native-paper';
 import { Input } from '@/components/ui/Input';
 
 export default function Login() {
   const { fetchProfile } = useAuth();
+  const { setSession } = useAuthStore();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -35,6 +37,9 @@ export default function Login() {
       setSnackbar('Email ou mot de passe incorrect.');
       setLoading(false);
       return;
+    }
+    if (data.session) {
+      setSession(data.session);
     }
     if (data.user) {
       await fetchProfile(data.user.id);
