@@ -2,10 +2,13 @@ import { useEffect, useRef } from 'react';
 import { Stack, router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { PaperProvider, MD3DarkTheme } from 'react-native-paper';
+import { fr, registerTranslation } from 'react-native-paper-dates';
 import * as Notifications from 'expo-notifications';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/stores/authStore';
 import { registerForPushNotificationsAsync, savePushToken } from '@/lib/notifications';
+
+registerTranslation('fr', fr);
 
 const theme = {
   ...MD3DarkTheme,

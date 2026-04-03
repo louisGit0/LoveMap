@@ -8,6 +8,8 @@ interface MapState {
   viewMode: MapViewMode;
   selectedPointId: string | null;
   isCreating: boolean;
+  viewingFriendId: string | null;
+  viewingFriendName: string | null;
 
   setPoints: (points: MapPoint[]) => void;
   addPoint: (point: MapPoint) => void;
@@ -16,6 +18,7 @@ interface MapState {
   setViewMode: (mode: MapViewMode) => void;
   setSelectedPointId: (id: string | null) => void;
   setIsCreating: (creating: boolean) => void;
+  setViewingFriend: (id: string | null, name?: string | null) => void;
 }
 
 export const useMapStore = create<MapState>((set) => ({
@@ -23,6 +26,8 @@ export const useMapStore = create<MapState>((set) => ({
   viewMode: 'pins',
   selectedPointId: null,
   isCreating: false,
+  viewingFriendId: null,
+  viewingFriendName: null,
 
   setPoints: (points) => set({ points }),
 
@@ -42,4 +47,6 @@ export const useMapStore = create<MapState>((set) => ({
   setSelectedPointId: (selectedPointId) => set({ selectedPointId }),
 
   setIsCreating: (isCreating) => set({ isCreating }),
+
+  setViewingFriend: (id, name) => set({ viewingFriendId: id, viewingFriendName: name ?? null }),
 }));

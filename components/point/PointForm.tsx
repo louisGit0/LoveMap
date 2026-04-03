@@ -8,9 +8,12 @@ import {
   TextInput,
   ActivityIndicator,
 } from 'react-native';
+import { DatePickerModal } from 'react-native-paper-dates';
+import type * as ImagePickerTypes from 'expo-image-picker';
 import { supabase } from '@/lib/supabase';
 import type { MapPoint, Profile } from '@/types/app.types';
 import { Input } from '@/components/ui/Input';
+import { PhotoPicker } from '@/components/point/PhotoPicker';
 
 export interface PointFormData {
   note: number;
@@ -18,11 +21,13 @@ export interface PointFormData {
   comment?: string;
   partnerId?: string;
   happenedAt?: string;
+  photos?: ImagePickerTypes.ImagePickerAsset[];
 }
 
 interface Props {
   latitude: number;
   longitude: number;
+  address?: string;
   initialData?: Partial<MapPoint>;
   onSubmit: (data: PointFormData) => Promise<void>;
   onCancel: () => void;
@@ -35,16 +40,16 @@ function noteColor(note: number): string {
   return '#4caf50';
 }
 
-function todayParts() {
-  const now = new Date();
-  return {
-    day: String(now.getDate()).padStart(2, '0'),
-    month: String(now.getMonth() + 1).padStart(2, '0'),
-    year: String(now.getFullYear()),
-  };
+const MONTHS_FR = [
+  'janvier', 'février', 'mars', 'avril', 'mai', 'juin',
+  'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre',
+];
+
+function formatDateFR(date: Date): string {
+  return `${date.getDate()} ${MONTHS_FR[date.getMonth()]} ${date.getFullYear()}`;
 }
 
-export function PointForm({ latitude, longitude, initialData, onSubmit, onCancel }: Props) {
+export function PointForm({ latitude, longitude, address, initialData, onSubmit, onCancel }: Props) {
   const [note, setNote] = useState<number>(initialData?.note ?? 5);
   const [duration, setDuration] = useState<string>(
     initialData?.duration_minutes?.toString() ?? ''
@@ -56,10 +61,24 @@ export function PointForm({ latitude, longitude, initialData, onSubmit, onCancel
   const [searchLoading, setSearchLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
-  const init = todayParts();
-  const [day, setDay] = useState(init.day);
-  const [month, setMonth] = useState(init.month);
-  const [year, setYear] = useState(init.year);
+  const [date, setDate] = useState<Date>(new Date());
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [photos, setPhotos] = useState<ImagePickerTypes.ImagePickerAsset[]>([]);
+
+  async function handleAddPhoto() {
+    const ImagePicker = await import('expo-image-picker');
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') return;
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsMultipleSelection: true,
+      selectionLimit: 5 - photos.length,
+      quality: 0.7,
+    });
+    if (!result.canceled) {
+      setPhotos((prev) => [...prev, ...result.assets].slice(0, 5));
+    }
+  }
 
   // Debounced search
   useEffect(() => {
@@ -77,13 +96,9 @@ export function PointForm({ latitude, longitude, initialData, onSubmit, onCancel
   }, [partnerQuery]);
 
   async function handleSubmit() {
-    const d = parseInt(day, 10);
-    const m = parseInt(month, 10);
-    const y = parseInt(year, 10);
-    let happenedAt: string | undefined;
-    if (d >= 1 && d <= 31 && m >= 1 && m <= 12 && y >= 2000 && y <= new Date().getFullYear()) {
-      happenedAt = new Date(y, m - 1, d, 12, 0, 0).toISOString();
-    }
+    const happenedAt = new Date(
+      date.getFullYear(), date.getMonth(), date.getDate(), 12, 0, 0
+    ).toISOString();
     setSubmitting(true);
     await onSubmit({
       note,
@@ -91,6 +106,7 @@ export function PointForm({ latitude, longitude, initialData, onSubmit, onCancel
       comment: comment.trim() || undefined,
       partnerId: selectedPartner?.id,
       happenedAt,
+      photos: photos.length > 0 ? photos : undefined,
     });
     setSubmitting(false);
   }
@@ -99,6 +115,14 @@ export function PointForm({ latitude, longitude, initialData, onSubmit, onCancel
 
   return (
     <ScrollView style={styles.container} keyboardShouldPersistTaps="handled">
+      {/* Adresse */}
+      {address ? (
+        <View style={styles.addressRow}>
+          <Text style={styles.addressIcon}>📍</Text>
+          <Text style={styles.addressText}>{address}</Text>
+        </View>
+      ) : null}
+
       {/* Note */}
       <Text style={styles.label}>Note</Text>
       <View style={styles.noteRow}>
@@ -123,37 +147,28 @@ export function PointForm({ latitude, longitude, initialData, onSubmit, onCancel
 
       {/* Date */}
       <Text style={styles.label}>Date</Text>
-      <View style={styles.dateRow}>
-        <TextInput
-          style={[styles.dateInput, styles.dateInputShort]}
-          value={day}
-          onChangeText={(v) => setDay(v.replace(/[^0-9]/g, '').slice(0, 2))}
-          keyboardType="numeric"
-          placeholder="JJ"
-          placeholderTextColor="#555"
-          maxLength={2}
-        />
-        <Text style={styles.dateSep}>/</Text>
-        <TextInput
-          style={[styles.dateInput, styles.dateInputShort]}
-          value={month}
-          onChangeText={(v) => setMonth(v.replace(/[^0-9]/g, '').slice(0, 2))}
-          keyboardType="numeric"
-          placeholder="MM"
-          placeholderTextColor="#555"
-          maxLength={2}
-        />
-        <Text style={styles.dateSep}>/</Text>
-        <TextInput
-          style={[styles.dateInput, styles.dateInputLong]}
-          value={year}
-          onChangeText={(v) => setYear(v.replace(/[^0-9]/g, '').slice(0, 4))}
-          keyboardType="numeric"
-          placeholder="AAAA"
-          placeholderTextColor="#555"
-          maxLength={4}
-        />
-      </View>
+      <TouchableOpacity
+        style={styles.dateButton}
+        onPress={() => setShowDatePicker(true)}
+        activeOpacity={0.7}
+      >
+        <Text style={styles.dateButtonIcon}>📅</Text>
+        <Text style={styles.dateButtonText}>{formatDateFR(date)}</Text>
+      </TouchableOpacity>
+      <DatePickerModal
+        locale="fr"
+        mode="single"
+        visible={showDatePicker}
+        onDismiss={() => setShowDatePicker(false)}
+        date={date}
+        onConfirm={({ date: picked }) => {
+          setShowDatePicker(false);
+          if (picked) setDate(picked);
+        }}
+        validRange={{ endDate: new Date() }}
+        label="Choisir une date"
+        saveLabel="Confirmer"
+      />
 
       {/* Commentaire */}
       <View style={styles.commentContainer}>
@@ -171,8 +186,16 @@ export function PointForm({ latitude, longitude, initialData, onSubmit, onCancel
         <Text style={styles.charCount}>{comment.length}/500</Text>
       </View>
 
+      {/* Photos */}
+      <Text style={styles.label}>Photos</Text>
+      <PhotoPicker
+        photos={photos}
+        onAdd={handleAddPhoto}
+        onRemove={(i) => setPhotos((prev) => prev.filter((_, idx) => idx !== i))}
+      />
+
       {/* Partenaire */}
-      <Text style={styles.label}>Partenaire (optionnel)</Text>
+      <Text style={styles.label}>Partenaire</Text>
       {selectedPartner ? (
         <View style={styles.partnerSelected}>
           <Text style={styles.partnerName}>
@@ -226,9 +249,9 @@ export function PointForm({ latitude, longitude, initialData, onSubmit, onCancel
           <Text style={styles.cancelButtonText}>Annuler</Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={[styles.submitButton, submitting && styles.buttonDisabled]}
+          style={[styles.submitButton, (submitting || !selectedPartner) && styles.buttonDisabled]}
           onPress={handleSubmit}
-          disabled={submitting}
+          disabled={submitting || !selectedPartner}
           activeOpacity={0.8}
         >
           <Text style={styles.submitButtonText}>
@@ -242,6 +265,24 @@ export function PointForm({ latitude, longitude, initialData, onSubmit, onCancel
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
+  },
+  addressRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#1a1a1a',
+    borderRadius: 8,
+    padding: 10,
+    marginBottom: 8,
+    gap: 8,
+  },
+  addressIcon: {
+    fontSize: 14,
+  },
+  addressText: {
+    color: '#888888',
+    fontSize: 13,
+    fontStyle: 'italic',
     flex: 1,
   },
   label: {
@@ -274,33 +315,24 @@ const styles = StyleSheet.create({
   input: {
     marginBottom: 4,
   },
-  dateRow: {
+  dateButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 4,
-    gap: 4,
-  },
-  dateInput: {
     backgroundColor: '#1a1a1a',
-    color: '#ffffff',
     borderWidth: 1,
     borderColor: '#333',
     borderRadius: 8,
-    paddingVertical: 12,
-    paddingHorizontal: 12,
-    fontSize: 14,
-    textAlign: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    marginBottom: 4,
+    gap: 10,
   },
-  dateInputShort: {
-    width: 56,
-  },
-  dateInputLong: {
-    width: 80,
-  },
-  dateSep: {
-    color: '#555',
+  dateButtonIcon: {
     fontSize: 18,
-    fontWeight: 'bold',
+  },
+  dateButtonText: {
+    color: '#ffffff',
+    fontSize: 15,
   },
   commentContainer: {
     marginBottom: 4,

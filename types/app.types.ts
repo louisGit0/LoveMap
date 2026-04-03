@@ -9,6 +9,8 @@ export type Friendship = Database['public']['Tables']['friendships']['Row'];
 export interface MapPoint extends Omit<Point, 'location'> {
   latitude: number;
   longitude: number;
+  partnerUsername?: string;
+  partnerDisplayName?: string;
 }
 
 // Amitié enrichie avec le profil de l'autre utilisateur

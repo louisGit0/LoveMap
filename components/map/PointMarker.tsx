@@ -80,6 +80,10 @@ export function PointMarker({ point, isOwner = false, onDelete }: Props) {
           <Stars note={point.note} />
           <Text style={styles.noteLabel}>{point.note}/10</Text>
 
+          {point.partnerUsername && (
+            <Text style={styles.partnerTag}>avec @{point.partnerUsername}</Text>
+          )}
+
           {point.comment ? (
             <Text style={styles.comment} numberOfLines={3}>
               {point.comment.length > 100 ? point.comment.slice(0, 100) + '…' : point.comment}
@@ -92,6 +96,10 @@ export function PointMarker({ point, isOwner = false, onDelete }: Props) {
             ) : null}
             <Text style={styles.metaText}>📅 {formatDate(point.created_at)}</Text>
           </View>
+
+          {(point as any).address && (
+            <Text style={styles.addressText}>📍 {(point as any).address}</Text>
+          )}
 
           <View style={styles.actions}>
             <TouchableOpacity
@@ -159,6 +167,13 @@ const styles = StyleSheet.create({
     marginTop: 4,
     marginBottom: 12,
   },
+  partnerTag: {
+    color: '#e91e8c',
+    fontSize: 13,
+    fontWeight: '600',
+    textAlign: 'center',
+    marginBottom: 8,
+  },
   comment: {
     color: '#ffffff',
     fontSize: 15,
@@ -175,6 +190,13 @@ const styles = StyleSheet.create({
   metaText: {
     color: '#888888',
     fontSize: 13,
+  },
+  addressText: {
+    color: '#888888',
+    fontSize: 12,
+    textAlign: 'center',
+    marginBottom: 12,
+    fontStyle: 'italic',
   },
   actions: {
     flexDirection: 'row',

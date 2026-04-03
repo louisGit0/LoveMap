@@ -19,7 +19,7 @@ export function usePoints() {
   const fetchMyPoints = useCallback(async (userId: string) => {
     const { data, error } = await supabase
       .from('points')
-      .select('*')
+      .select('*, point_partners(partner_id, status, profiles:partner_id(username, display_name))')
       .eq('creator_id', userId)
       .order('created_at', { ascending: false });
 
@@ -28,7 +28,15 @@ export function usePoints() {
       return;
     }
 
-    setPoints((data ?? []).map(toMapPoint));
+    setPoints((data ?? []).map((raw: any) => {
+      const mapped = toMapPoint(raw);
+      const pp = raw.point_partners?.[0];
+      if (pp?.profiles) {
+        mapped.partnerUsername = pp.profiles.username;
+        mapped.partnerDisplayName = pp.profiles.display_name;
+      }
+      return mapped;
+    }));
   }, [setPoints]);
 
   const createPoint = useCallback(async (params: {
@@ -39,6 +47,7 @@ export function usePoints() {
     comment?: string;
     durationMinutes?: number;
     happenedAt?: string;
+    address?: string;
   }): Promise<MapPoint | null> => {
     const { data, error } = await supabase
       .from('points')
@@ -51,6 +60,7 @@ export function usePoints() {
         duration_minutes: params.durationMinutes ?? null,
         happened_at: params.happenedAt ?? new Date().toISOString(),
         is_visible: false,
+        address: params.address ?? null,
       })
       .select()
       .single();
@@ -80,5 +90,47 @@ export function usePoints() {
     return true;
   }, [removePoint]);
 
-  return { points, fetchMyPoints, createPoint, deletePoint, updatePoint };
+  const fetchFriendPoints = useCallback(async (friendId: string) => {
+    const { data, error } = await supabase
+      .from('points')
+      .select('*, point_partners(partner_id, status, profiles:partner_id(username, display_name))')
+      .eq('creator_id', friendId)
+      .eq('is_visible', true)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('[usePoints] fetchFriendPoints error:', error.message);
+      return;
+    }
+
+    setPoints((data ?? []).map((raw: any) => {
+      const mapped = toMapPoint(raw);
+      const pp = raw.point_partners?.[0];
+      if (pp?.profiles) {
+        mapped.partnerUsername = pp.profiles.username;
+        mapped.partnerDisplayName = pp.profiles.display_name;
+      }
+      return mapped;
+    }));
+  }, [setPoints]);
+
+  const updatePointFields = useCallback(async (pointId: string, fields: {
+    note?: number;
+    comment?: string | null;
+    duration_minutes?: number | null;
+    happened_at?: string;
+  }) => {
+    const { error } = await supabase
+      .from('points')
+      .update(fields)
+      .eq('id', pointId);
+
+    if (error) {
+      console.error('[usePoints] updatePointFields error:', error.message);
+      return false;
+    }
+    return true;
+  }, []);
+
+  return { points, fetchMyPoints, fetchFriendPoints, createPoint, deletePoint, updatePoint, updatePointFields };
 }

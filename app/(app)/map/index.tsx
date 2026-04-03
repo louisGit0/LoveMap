@@ -1,30 +1,43 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { View, StyleSheet, ActivityIndicator, Alert } from 'react-native';
 import { router } from 'expo-router';
-import { FAB, SegmentedButtons, Snackbar } from 'react-native-paper';
+import { FAB, Snackbar } from 'react-native-paper';
 import { useAuth } from '@/hooks/useAuth';
 import { usePoints } from '@/hooks/usePoints';
+import { useFriends } from '@/hooks/useFriends';
 import { useMapStore } from '@/stores/mapStore';
 import { AppMapView } from '@/components/map/AppMapView';
+import { MapHeader } from '@/components/map/MapHeader';
+import { FriendSelector } from '@/components/map/FriendSelector';
 import { PointMarker } from '@/components/map/PointMarker';
 import { HeatmapLayer } from '@/components/map/HeatmapLayer';
 import { supabase } from '@/lib/supabase';
 
 export default function MapScreen() {
   const { user } = useAuth();
-  const { points, fetchMyPoints, deletePoint } = usePoints();
-  const { viewMode, setViewMode } = useMapStore();
+  const { points, fetchMyPoints, fetchFriendPoints, deletePoint } = usePoints();
+  const { fetchFriends } = useFriends();
+  const { viewMode, setViewMode, viewingFriendId, viewingFriendName, setViewingFriend } = useMapStore();
 
   const [loading, setLoading] = useState(true);
   const [snackbar, setSnackbar] = useState<string | null>(null);
   const [centerCoords, setCenterCoords] = useState({ latitude: 48.8566, longitude: 2.3522 });
 
+  // Charger la liste d'amis au montage
+  useEffect(() => {
+    if (user) fetchFriends(user.id);
+  }, [user]);
+
   const loadPoints = useCallback(async () => {
     if (!user) return;
     setLoading(true);
-    await fetchMyPoints(user.id);
+    if (viewingFriendId) {
+      await fetchFriendPoints(viewingFriendId);
+    } else {
+      await fetchMyPoints(user.id);
+    }
     setLoading(false);
-  }, [user, fetchMyPoints]);
+  }, [user, viewingFriendId, fetchMyPoints, fetchFriendPoints]);
 
   useEffect(() => {
     loadPoints();
@@ -65,7 +78,7 @@ export default function MapScreen() {
   return (
     <View style={styles.container}>
       <AppMapView
-        onLongPress={handleLongPress}
+        onLongPress={viewingFriendId ? undefined : handleLongPress}
         onCenterChange={setCenterCoords}
       >
         {viewMode === 'pins' &&
@@ -80,25 +93,20 @@ export default function MapScreen() {
         {viewMode === 'heatmap' && <HeatmapLayer points={points} />}
       </AppMapView>
 
-      {/* Toggle Pins / Heatmap */}
-      <View style={styles.toggleContainer}>
-        <SegmentedButtons
-          value={viewMode}
-          onValueChange={(v) => setViewMode(v as 'pins' | 'heatmap')}
-          buttons={[
-            { value: 'pins', label: 'Pins', icon: 'map-marker' },
-            { value: 'heatmap', label: 'Heatmap', icon: 'fire' },
-          ]}
-          style={styles.segmented}
-          theme={{
-            colors: {
-              secondaryContainer: '#e91e8c22',
-              onSecondaryContainer: '#e91e8c',
-              outline: '#2a2a2a',
-            },
-          }}
-        />
-      </View>
+      {/* Header */}
+      <MapHeader
+        viewMode={viewMode}
+        onViewModeChange={(v) => setViewMode(v)}
+        friendName={viewingFriendName}
+        onFriendClear={() => setViewingFriend(null)}
+        leftSlot={
+          <FriendSelector
+            isViewingFriend={!!viewingFriendId}
+            onSelectFriend={(id, name) => setViewingFriend(id, name)}
+            onSelectSelf={() => setViewingFriend(null)}
+          />
+        }
+      />
 
       {/* Loading overlay */}
       {loading && (
@@ -107,13 +115,15 @@ export default function MapScreen() {
         </View>
       )}
 
-      {/* FAB */}
-      <FAB
-        icon="plus"
-        style={styles.fab}
-        color="#ffffff"
-        onPress={handleFabPress}
-      />
+      {/* FAB — masqué quand on consulte la carte d'un ami */}
+      {!viewingFriendId && (
+        <FAB
+          icon="plus"
+          style={styles.fab}
+          color="#ffffff"
+          onPress={handleFabPress}
+        />
+      )}
 
       <Snackbar
         visible={!!snackbar}
@@ -131,15 +141,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#0f0f0f',
-  },
-  toggleContainer: {
-    position: 'absolute',
-    top: 56,
-    left: 16,
-    right: 16,
-  },
-  segmented: {
-    backgroundColor: '#1a1a1aee',
   },
   loadingOverlay: {
     ...StyleSheet.absoluteFillObject,

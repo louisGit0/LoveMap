@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -10,6 +10,7 @@ import {
 import { router, useLocalSearchParams } from 'expo-router';
 import { Snackbar } from 'react-native-paper';
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
+import * as Location from 'expo-location';
 import { useAuth } from '@/hooks/useAuth';
 import { usePoints } from '@/hooks/usePoints';
 import { supabase } from '@/lib/supabase';
@@ -29,8 +30,25 @@ export default function NewPoint() {
 
   const [latitude, setLatitude] = useState(parseFloat(params.latitude ?? '48.8566'));
   const [longitude, setLongitude] = useState(parseFloat(params.longitude ?? '2.3522'));
+  const [address, setAddress] = useState('');
 
   const [snackbar, setSnackbar] = useState<string | null>(null);
+
+  async function reverseGeocode(lat: number, lng: number) {
+    try {
+      const results = await Location.reverseGeocodeAsync({ latitude: lat, longitude: lng });
+      if (results[0]) {
+        const r = results[0];
+        setAddress([r.street, r.city, r.region].filter(Boolean).join(', '));
+      }
+    } catch {
+      // Silently fail — address is optional
+    }
+  }
+
+  useEffect(() => {
+    reverseGeocode(latitude, longitude);
+  }, []);
 
   async function handleSubmit(data: PointFormData) {
     if (!user) return;
@@ -43,6 +61,7 @@ export default function NewPoint() {
       comment: data.comment,
       durationMinutes: data.durationMinutes,
       happenedAt: data.happenedAt,
+      address: address || undefined,
     });
 
     if (!point) {
@@ -50,36 +69,59 @@ export default function NewPoint() {
       return;
     }
 
-    // Taguer le partenaire si sélectionné
-    if (data.partnerId) {
-      const { error } = await supabase.from('point_partners').insert({
-        point_id: point.id,
-        partner_id: data.partnerId,
-        status: 'pending',
-        notified_at: new Date().toISOString(),
-      });
+    // Upload des photos si présentes
+    if (data.photos && data.photos.length > 0) {
+      await Promise.all(
+        data.photos.map(async (photo, index) => {
+          const ext = photo.uri.split('.').pop() ?? 'jpg';
+          const path = `${point.id}/${index}.${ext}`;
+          const response = await fetch(photo.uri);
+          const blob = await response.blob();
 
-      if (!error) {
-        // Envoyer notification push au partenaire
-        const { data: partnerProfile } = await supabase
-          .from('profiles')
-          .select('push_token, display_name')
-          .eq('id', data.partnerId)
-          .single();
+          const { error: uploadError } = await supabase.storage
+            .from('point-photos')
+            .upload(path, blob, { contentType: `image/${ext}`, upsert: true });
 
-        if (partnerProfile?.push_token) {
-          const senderName = user.user_metadata?.display_name ?? 'Quelqu\'un';
-          await fetch('https://exp.host/--/api/v2/push/send', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              to: partnerProfile.push_token,
-              title: 'LoveMap — Vous avez été tagué',
-              body: `${senderName} vous a tagué sur un point. Acceptez-vous ?`,
-              data: { pointId: point.id, type: 'partner_tag' },
-            }),
-          });
-        }
+          if (!uploadError) {
+            const { data: urlData } = supabase.storage.from('point-photos').getPublicUrl(path);
+            await supabase.from('point_photos').insert({
+              point_id: point.id,
+              photo_url: urlData.publicUrl,
+              position: index,
+            });
+          }
+        })
+      );
+    }
+
+    // Taguer le partenaire (obligatoire)
+    const { error } = await supabase.from('point_partners').insert({
+      point_id: point.id,
+      partner_id: data.partnerId!,
+      status: 'pending',
+      notified_at: new Date().toISOString(),
+    });
+
+    if (!error) {
+      // Envoyer notification push au partenaire
+      const { data: partnerProfile } = await supabase
+        .from('profiles')
+        .select('push_token, display_name')
+        .eq('id', data.partnerId!)
+        .single();
+
+      if (partnerProfile?.push_token) {
+        const senderName = user.user_metadata?.display_name ?? 'Quelqu\'un';
+        await fetch('https://exp.host/--/api/v2/push/send', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            to: partnerProfile.push_token,
+            title: 'LoveMap — Vous avez été tagué',
+            body: `${senderName} vous a tagué sur un point. Acceptez-vous ?`,
+            data: { pointId: point.id, type: 'partner_tag' },
+          }),
+        });
       }
     }
 
@@ -115,8 +157,10 @@ export default function NewPoint() {
               pinColor="#e91e8c"
               draggable
               onDragEnd={(e) => {
-                setLatitude(e.nativeEvent.coordinate.latitude);
-                setLongitude(e.nativeEvent.coordinate.longitude);
+                const { latitude: lat, longitude: lng } = e.nativeEvent.coordinate;
+                setLatitude(lat);
+                setLongitude(lng);
+                reverseGeocode(lat, lng);
               }}
             />
           </MapView>
@@ -127,6 +171,7 @@ export default function NewPoint() {
           <PointForm
             latitude={latitude}
             longitude={longitude}
+            address={address}
             onSubmit={handleSubmit}
             onCancel={() => router.back()}
           />

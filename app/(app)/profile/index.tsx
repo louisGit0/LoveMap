@@ -10,7 +10,6 @@ import {
 } from 'react-native';
 import { router } from 'expo-router';
 import { Snackbar } from 'react-native-paper';
-import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '@/hooks/useAuth';
 import { usePoints } from '@/hooks/usePoints';
 import { useFriends } from '@/hooks/useFriends';
@@ -42,6 +41,7 @@ export default function ProfileScreen() {
   const initials = (profile?.display_name ?? profile?.username ?? '?')[0]?.toUpperCase();
 
   async function handlePickAvatar() {
+    const ImagePicker = await import('expo-image-picker');
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
       setSnackbar("Permission d'accès à la galerie refusée.");
@@ -161,10 +161,15 @@ export default function ProfileScreen() {
           </View>
         </View>
 
-        {/* Dernier points */}
+        {/* Derniers points */}
         {points.length > 0 && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Mes derniers points</Text>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Mes derniers points</Text>
+              <TouchableOpacity onPress={() => router.push('/(app)/point/list')}>
+                <Text style={styles.seeAllLink}>Voir tout ›</Text>
+              </TouchableOpacity>
+            </View>
             {points.slice(0, 5).map((p) => (
               <TouchableOpacity
                 key={p.id}
@@ -316,12 +321,22 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
     marginBottom: 24,
   },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
   sectionTitle: {
     color: '#888888',
     fontSize: 12,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
-    marginBottom: 12,
+  },
+  seeAllLink: {
+    color: '#e91e8c',
+    fontSize: 13,
+    fontWeight: '600',
   },
   pointRow: {
     flexDirection: 'row',

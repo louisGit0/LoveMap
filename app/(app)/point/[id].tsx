@@ -2,15 +2,18 @@ import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
+  Image,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
+  TextInput,
   Alert,
   ActivityIndicator,
   Platform,
 } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Snackbar } from 'react-native-paper';
+import { DatePickerModal } from 'react-native-paper-dates';
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
@@ -56,13 +59,23 @@ function consentLabel(status: string): string {
 export default function PointDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { user } = useAuth();
-  const { deletePoint } = usePoints();
+  const { deletePoint, updatePointFields } = usePoints();
 
   const [point, setPoint] = useState<MapPoint | null>(null);
   const [partnerRecord, setPartnerRecord] = useState<PointPartner | null>(null);
   const [partnerProfile, setPartnerProfile] = useState<Profile | null>(null);
+  const [photos, setPhotos] = useState<{ id: string; photo_url: string; position: number }[]>([]);
   const [loading, setLoading] = useState(true);
   const [snackbar, setSnackbar] = useState<string | null>(null);
+
+  // Mode édition partenaire
+  const [editing, setEditing] = useState(false);
+  const [editNote, setEditNote] = useState(5);
+  const [editDuration, setEditDuration] = useState('');
+  const [editComment, setEditComment] = useState('');
+  const [editDate, setEditDate] = useState(new Date());
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -100,6 +113,14 @@ export default function PointDetail() {
       setPartnerProfile(profile as Profile);
     }
 
+    // Charger photos
+    const { data: photoData } = await supabase
+      .from('point_photos')
+      .select('id, photo_url, position')
+      .eq('point_id', id)
+      .order('position');
+    setPhotos(photoData ?? []);
+
     setLoading(false);
   }
 
@@ -117,6 +138,34 @@ export default function PointDetail() {
         },
       },
     ]);
+  }
+
+  function enterEditMode() {
+    if (!point) return;
+    setEditNote(point.note);
+    setEditDuration(point.duration_minutes?.toString() ?? '');
+    setEditComment(point.comment ?? '');
+    setEditDate(point.happened_at ? new Date(point.happened_at) : new Date(point.created_at));
+    setEditing(true);
+  }
+
+  async function handleSaveAndAccept() {
+    if (!point || !partnerRecord) return;
+    setSaving(true);
+    const ok = await updatePointFields(point.id, {
+      note: editNote,
+      comment: editComment.trim() || null,
+      duration_minutes: editDuration ? parseInt(editDuration, 10) : null,
+      happened_at: new Date(editDate.getFullYear(), editDate.getMonth(), editDate.getDate(), 12, 0, 0).toISOString(),
+    });
+    if (!ok) {
+      setSnackbar('Erreur lors de la sauvegarde.');
+      setSaving(false);
+      return;
+    }
+    await handleConsent(true);
+    setEditing(false);
+    setSaving(false);
   }
 
   async function handleConsent(accept: boolean) {
@@ -185,6 +234,15 @@ export default function PointDetail() {
         </View>
 
         <View style={styles.content}>
+          {/* Partenaire badge */}
+          {partnerProfile && (
+            <View style={styles.partnerBadge}>
+              <Text style={styles.partnerBadgeText}>
+                avec @{partnerProfile.username}
+              </Text>
+            </View>
+          )}
+
           {/* Note */}
           <View style={styles.noteContainer}>
             <Text style={[styles.noteValue, { color }]}>{point.note}/10</Text>
@@ -193,11 +251,35 @@ export default function PointDetail() {
             </Text>
           </View>
 
+          {/* Photos */}
+          {photos.length > 0 && (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.photosRow}>
+              {photos.map((photo) => (
+                <Image
+                  key={photo.id}
+                  source={{ uri: photo.photo_url }}
+                  style={styles.photoThumb}
+                />
+              ))}
+            </ScrollView>
+          )}
+
           {/* Détails */}
           <View style={styles.card}>
+            {(point as any).address && (
+              <>
+                <View style={styles.row}>
+                  <Text style={styles.rowLabel}>Adresse</Text>
+                  <Text style={[styles.rowValue, { flex: 1, textAlign: 'right' }]} numberOfLines={2}>
+                    {(point as any).address}
+                  </Text>
+                </View>
+                <View style={styles.separator} />
+              </>
+            )}
             <View style={styles.row}>
               <Text style={styles.rowLabel}>Date</Text>
-              <Text style={styles.rowValue}>{formatDate(point.created_at)}</Text>
+              <Text style={styles.rowValue}>{formatDate(point.happened_at ?? point.created_at)}</Text>
             </View>
             <View style={styles.separator} />
             <View style={styles.row}>
@@ -237,8 +319,15 @@ export default function PointDetail() {
               </View>
 
               {/* Boutons consentement — visible uniquement pour le partenaire en attente */}
-              {isPartner && isPending && (
+              {isPartner && isPending && !editing && (
                 <View style={styles.consentActions}>
+                  <TouchableOpacity
+                    style={styles.editButton}
+                    onPress={enterEditMode}
+                    activeOpacity={0.8}
+                  >
+                    <Text style={styles.editButtonText}>Modifier</Text>
+                  </TouchableOpacity>
                   <TouchableOpacity
                     style={styles.acceptButton}
                     onPress={() => handleConsent(true)}
@@ -255,6 +344,106 @@ export default function PointDetail() {
                   </TouchableOpacity>
                 </View>
               )}
+            </View>
+          )}
+
+          {/* Formulaire d'édition partenaire */}
+          {editing && (
+            <View style={styles.card}>
+              <Text style={styles.sectionTitle}>Modifier le point</Text>
+
+              {/* Note */}
+              <Text style={styles.editLabel}>Note</Text>
+              <View style={styles.editNoteRow}>
+                <Text style={[styles.editNoteValue, { color: noteColor(editNote) }]}>{editNote}/10</Text>
+              </View>
+              <View style={styles.editStarsRow}>
+                {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => (
+                  <TouchableOpacity key={n} onPress={() => setEditNote(n)} style={styles.editStarButton}>
+                    <Text style={[styles.editStar, { color: n <= editNote ? noteColor(editNote) : '#333' }]}>★</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              {/* Durée */}
+              <Text style={styles.editLabel}>Durée (minutes)</Text>
+              <TextInput
+                style={styles.editInput}
+                value={editDuration}
+                onChangeText={(v) => setEditDuration(v.replace(/[^0-9]/g, ''))}
+                keyboardType="numeric"
+                placeholder="Durée en minutes"
+                placeholderTextColor="#555"
+              />
+
+              {/* Date */}
+              <Text style={styles.editLabel}>Date</Text>
+              <TouchableOpacity
+                style={styles.editDateButton}
+                onPress={() => setShowDatePicker(true)}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.editDateText}>
+                  📅 {editDate.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
+                </Text>
+              </TouchableOpacity>
+              <DatePickerModal
+                locale="fr"
+                mode="single"
+                visible={showDatePicker}
+                onDismiss={() => setShowDatePicker(false)}
+                date={editDate}
+                onConfirm={({ date: picked }) => {
+                  setShowDatePicker(false);
+                  if (picked) setEditDate(picked);
+                }}
+                validRange={{ endDate: new Date() }}
+                label="Choisir une date"
+                saveLabel="Confirmer"
+              />
+
+              {/* Commentaire */}
+              <Text style={styles.editLabel}>Commentaire</Text>
+              <TextInput
+                style={styles.editCommentInput}
+                value={editComment}
+                onChangeText={(v) => v.length <= 500 && setEditComment(v)}
+                multiline
+                numberOfLines={3}
+                placeholder="Commentaire..."
+                placeholderTextColor="#555"
+                maxLength={500}
+              />
+              <Text style={styles.editCharCount}>{editComment.length}/500</Text>
+
+              {/* Actions édition */}
+              <View style={styles.consentActions}>
+                <TouchableOpacity
+                  style={styles.cancelEditButton}
+                  onPress={() => setEditing(false)}
+                  activeOpacity={0.8}
+                >
+                  <Text style={styles.cancelEditText}>Annuler</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.saveAcceptButton, saving && styles.buttonDisabled]}
+                  onPress={handleSaveAndAccept}
+                  disabled={saving}
+                  activeOpacity={0.8}
+                >
+                  <Text style={styles.saveAcceptText}>
+                    {saving ? 'Sauvegarde...' : 'Sauvegarder et accepter'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+
+              <TouchableOpacity
+                style={styles.rejectButton}
+                onPress={() => { setEditing(false); handleConsent(false); }}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.rejectButtonText}>Refuser</Text>
+              </TouchableOpacity>
             </View>
           )}
 
@@ -305,6 +494,31 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: 16,
+  },
+  partnerBadge: {
+    alignSelf: 'center',
+    backgroundColor: '#e91e8c22',
+    borderWidth: 1,
+    borderColor: '#e91e8c44',
+    borderRadius: 16,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    marginBottom: 12,
+  },
+  partnerBadgeText: {
+    color: '#e91e8c',
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  photosRow: {
+    marginBottom: 12,
+  },
+  photoThumb: {
+    width: 120,
+    height: 120,
+    borderRadius: 8,
+    marginRight: 8,
+    backgroundColor: '#1a1a1a',
   },
   noteContainer: {
     alignItems: 'center',
@@ -427,6 +641,114 @@ const styles = StyleSheet.create({
     color: '#f44336',
     fontWeight: '600',
     fontSize: 14,
+  },
+  editButton: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: '#e91e8c',
+    borderRadius: 12,
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  editButtonText: {
+    color: '#e91e8c',
+    fontWeight: '600',
+    fontSize: 14,
+  },
+  editLabel: {
+    color: '#888888',
+    fontSize: 12,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 6,
+    marginTop: 12,
+  },
+  editNoteRow: {
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  editNoteValue: {
+    fontSize: 28,
+    fontWeight: 'bold',
+  },
+  editStarsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  editStarButton: {
+    padding: 2,
+  },
+  editStar: {
+    fontSize: 22,
+  },
+  editInput: {
+    backgroundColor: '#0f0f0f',
+    color: '#ffffff',
+    borderWidth: 1,
+    borderColor: '#333',
+    borderRadius: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    fontSize: 14,
+  },
+  editDateButton: {
+    backgroundColor: '#0f0f0f',
+    borderWidth: 1,
+    borderColor: '#333',
+    borderRadius: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+  },
+  editDateText: {
+    color: '#ffffff',
+    fontSize: 14,
+  },
+  editCommentInput: {
+    backgroundColor: '#0f0f0f',
+    color: '#ffffff',
+    borderWidth: 1,
+    borderColor: '#333',
+    borderRadius: 8,
+    padding: 12,
+    minHeight: 80,
+    textAlignVertical: 'top',
+    fontSize: 14,
+  },
+  editCharCount: {
+    color: '#555',
+    fontSize: 11,
+    textAlign: 'right',
+    marginTop: 4,
+    marginBottom: 8,
+  },
+  cancelEditButton: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: '#2a2a2a',
+    borderRadius: 12,
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  cancelEditText: {
+    color: '#888888',
+    fontWeight: '500',
+    fontSize: 14,
+  },
+  saveAcceptButton: {
+    flex: 2,
+    backgroundColor: '#4caf50',
+    borderRadius: 12,
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  saveAcceptText: {
+    color: '#ffffff',
+    fontWeight: '600',
+    fontSize: 14,
+  },
+  buttonDisabled: {
+    opacity: 0.6,
   },
   deleteButton: {
     borderWidth: 1,
