@@ -63,7 +63,9 @@
       }
     },
     "owner": "expomannnnn",
-    "runtimeVersion": "1.0.0",
+    "runtimeVersion": {
+      "policy": "sdkVersion"
+    },
     "updates": {
       "url": "https://u.expo.dev/4a840651-f42d-499a-a705-4b5a4109d804"
     }
