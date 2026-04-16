@@ -5,9 +5,7 @@ import {
   StyleSheet,
   SectionList,
   ActivityIndicator,
-  TouchableOpacity,
 } from 'react-native';
-import { router } from 'expo-router';
 import { useAuth } from '@/hooks/useAuth';
 import { usePoints } from '@/hooks/usePoints';
 import { PointListItem } from '@/components/point/PointListItem';
@@ -62,9 +60,6 @@ export default function PointList() {
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Text style={styles.backText}>← Retour</Text>
-        </TouchableOpacity>
         <Text style={styles.title}>Mes points</Text>
         <Text style={styles.count}>{points.length} point{points.length > 1 ? 's' : ''}</Text>
       </View>
@@ -104,13 +99,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     borderBottomWidth: 1,
     borderBottomColor: '#2a2a2a',
-  },
-  backButton: {
-    marginBottom: 8,
-  },
-  backText: {
-    color: '#888888',
-    fontSize: 14,
   },
   title: {
     color: '#ffffff',

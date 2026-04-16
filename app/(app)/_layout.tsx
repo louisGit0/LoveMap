@@ -39,6 +39,15 @@ export default function AppLayout() {
         }}
       />
       <Tabs.Screen
+        name="point/list"
+        options={{
+          title: 'Points',
+          tabBarIcon: ({ color, size }) => (
+            <MaterialCommunityIcons name="map-marker-multiple" color={color} size={size} />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="friends/index"
         options={{
           title: 'Amis',
@@ -63,7 +72,6 @@ export default function AppLayout() {
       <Tabs.Screen name="point/new" options={{ href: null }} />
       <Tabs.Screen name="point/[id]" options={{ href: null }} />
       <Tabs.Screen name="profile/settings" options={{ href: null }} />
-      <Tabs.Screen name="point/list" options={{ href: null }} />
     </Tabs>
   );
 }

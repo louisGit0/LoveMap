@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -6,6 +6,8 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
+  TextInput,
+  TouchableOpacity,
 } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Snackbar } from 'react-native-paper';
@@ -13,6 +15,7 @@ import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import * as Location from 'expo-location';
 import { useAuth } from '@/hooks/useAuth';
 import { usePoints } from '@/hooks/usePoints';
+import { useFriendStore } from '@/stores/friendStore';
 import { supabase } from '@/lib/supabase';
 import { PointForm, PointFormData } from '@/components/point/PointForm';
 
@@ -26,13 +29,20 @@ const darkMapStyle = [
 export default function NewPoint() {
   const { user } = useAuth();
   const { createPoint } = usePoints();
+  const friends = useFriendStore((s) => s.friends);
   const params = useLocalSearchParams<{ latitude: string; longitude: string }>();
 
-  const [latitude, setLatitude] = useState(parseFloat(params.latitude ?? '48.8566'));
-  const [longitude, setLongitude] = useState(parseFloat(params.longitude ?? '2.3522'));
-  const [address, setAddress] = useState('');
+  const hasParams =
+    !!params.latitude && !!params.longitude &&
+    !isNaN(parseFloat(params.latitude)) && !isNaN(parseFloat(params.longitude));
 
+  const [latitude, setLatitude] = useState(hasParams ? parseFloat(params.latitude!) : 48.8566);
+  const [longitude, setLongitude] = useState(hasParams ? parseFloat(params.longitude!) : 2.3522);
+  const [address, setAddress] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
   const [snackbar, setSnackbar] = useState<string | null>(null);
+
+  const mapRef = useRef<MapView>(null);
 
   async function reverseGeocode(lat: number, lng: number) {
     try {
@@ -46,9 +56,59 @@ export default function NewPoint() {
     }
   }
 
+  function animateTo(lat: number, lng: number) {
+    mapRef.current?.animateToRegion(
+      { latitude: lat, longitude: lng, latitudeDelta: 0.005, longitudeDelta: 0.005 },
+      600
+    );
+  }
+
   useEffect(() => {
-    reverseGeocode(latitude, longitude);
+    if (hasParams) {
+      reverseGeocode(latitude, longitude);
+      return;
+    }
+
+    (async () => {
+      try {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== 'granted') {
+          reverseGeocode(latitude, longitude);
+          return;
+        }
+        const pos = await Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.Balanced,
+        });
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
+        setLatitude(lat);
+        setLongitude(lng);
+        animateTo(lat, lng);
+        reverseGeocode(lat, lng);
+      } catch {
+        reverseGeocode(latitude, longitude);
+      }
+    })();
   }, []);
+
+  async function handleSearch() {
+    const query = searchQuery.trim();
+    if (!query) return;
+    try {
+      const results = await Location.geocodeAsync(query);
+      if (!results || results.length === 0) {
+        setSnackbar('Adresse introuvable.');
+        return;
+      }
+      const { latitude: lat, longitude: lng } = results[0];
+      setLatitude(lat);
+      setLongitude(lng);
+      animateTo(lat, lng);
+      reverseGeocode(lat, lng);
+    } catch {
+      setSnackbar('Adresse introuvable.');
+    }
+  }
 
   async function handleSubmit(data: PointFormData) {
     if (!user) return;
@@ -67,31 +127,6 @@ export default function NewPoint() {
     if (!point) {
       setSnackbar('Erreur lors de la création du point.');
       return;
-    }
-
-    // Upload des photos si présentes
-    if (data.photos && data.photos.length > 0) {
-      await Promise.all(
-        data.photos.map(async (photo, index) => {
-          const ext = photo.uri.split('.').pop() ?? 'jpg';
-          const path = `${point.id}/${index}.${ext}`;
-          const response = await fetch(photo.uri);
-          const blob = await response.blob();
-
-          const { error: uploadError } = await supabase.storage
-            .from('point-photos')
-            .upload(path, blob, { contentType: `image/${ext}`, upsert: true });
-
-          if (!uploadError) {
-            const { data: urlData } = supabase.storage.from('point-photos').getPublicUrl(path);
-            await supabase.from('point_photos').insert({
-              point_id: point.id,
-              photo_url: urlData.publicUrl,
-              position: index,
-            });
-          }
-        })
-      );
     }
 
     // Taguer le partenaire (obligatoire)
@@ -126,7 +161,6 @@ export default function NewPoint() {
     }
 
     router.replace('/(app)/map');
-    // Le snackbar ne sera pas visible après replace — on passe via params si besoin
   }
 
   return (
@@ -138,10 +172,27 @@ export default function NewPoint() {
         {/* Header */}
         <Text style={styles.title}>Nouveau point</Text>
 
-        {/* Carte interactive — déplacer le marqueur pour choisir l'emplacement */}
+        {/* Barre de recherche d'adresse */}
+        <View style={styles.searchRow}>
+          <TextInput
+            style={styles.searchInput}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            placeholder="Rechercher une adresse..."
+            placeholderTextColor="#555"
+            returnKeyType="search"
+            onSubmitEditing={handleSearch}
+          />
+          <TouchableOpacity style={styles.searchButton} onPress={handleSearch} activeOpacity={0.8}>
+            <Text style={styles.searchButtonText}>🔍</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Carte interactive — déplacer le marqueur pour ajuster l'emplacement */}
         <Text style={styles.mapHint}>Déplacez le marqueur pour ajuster l'emplacement</Text>
         <View style={styles.miniMap}>
           <MapView
+            ref={mapRef}
             style={StyleSheet.absoluteFillObject}
             provider={Platform.OS === 'android' ? PROVIDER_GOOGLE : undefined}
             initialRegion={{
@@ -172,6 +223,7 @@ export default function NewPoint() {
             latitude={latitude}
             longitude={longitude}
             address={address}
+            friends={friends}
             onSubmit={handleSubmit}
             onCancel={() => router.back()}
           />
@@ -203,6 +255,35 @@ const styles = StyleSheet.create({
     paddingTop: 56,
     paddingBottom: 16,
     paddingHorizontal: 24,
+  },
+  searchRow: {
+    flexDirection: 'row',
+    marginHorizontal: 16,
+    marginBottom: 8,
+    gap: 8,
+  },
+  searchInput: {
+    flex: 1,
+    backgroundColor: '#1a1a1a',
+    borderWidth: 1,
+    borderColor: '#2a2a2a',
+    borderRadius: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    color: '#ffffff',
+    fontSize: 14,
+  },
+  searchButton: {
+    backgroundColor: '#1a1a1a',
+    borderWidth: 1,
+    borderColor: '#2a2a2a',
+    borderRadius: 8,
+    paddingHorizontal: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  searchButtonText: {
+    fontSize: 18,
   },
   mapHint: {
     color: '#888888',

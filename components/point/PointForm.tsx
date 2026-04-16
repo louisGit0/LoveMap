@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -6,14 +6,10 @@ import {
   TouchableOpacity,
   ScrollView,
   TextInput,
-  ActivityIndicator,
 } from 'react-native';
 import { DatePickerModal } from 'react-native-paper-dates';
-import type * as ImagePickerTypes from 'expo-image-picker';
-import { supabase } from '@/lib/supabase';
-import type { MapPoint, Profile } from '@/types/app.types';
+import type { FriendWithProfile, Profile } from '@/types/app.types';
 import { Input } from '@/components/ui/Input';
-import { PhotoPicker } from '@/components/point/PhotoPicker';
 
 export interface PointFormData {
   note: number;
@@ -21,14 +17,14 @@ export interface PointFormData {
   comment?: string;
   partnerId?: string;
   happenedAt?: string;
-  photos?: ImagePickerTypes.ImagePickerAsset[];
 }
 
 interface Props {
   latitude: number;
   longitude: number;
   address?: string;
-  initialData?: Partial<MapPoint>;
+  friends: FriendWithProfile[];
+  initialData?: Partial<{ note: number; comment: string; duration_minutes: number }>;
   onSubmit: (data: PointFormData) => Promise<void>;
   onCancel: () => void;
 }
@@ -49,51 +45,17 @@ function formatDateFR(date: Date): string {
   return `${date.getDate()} ${MONTHS_FR[date.getMonth()]} ${date.getFullYear()}`;
 }
 
-export function PointForm({ latitude, longitude, address, initialData, onSubmit, onCancel }: Props) {
+export function PointForm({ latitude, longitude, address, friends, initialData, onSubmit, onCancel }: Props) {
   const [note, setNote] = useState<number>(initialData?.note ?? 5);
   const [duration, setDuration] = useState<string>(
     initialData?.duration_minutes?.toString() ?? ''
   );
   const [comment, setComment] = useState<string>(initialData?.comment ?? '');
-  const [partnerQuery, setPartnerQuery] = useState('');
-  const [partnerResults, setPartnerResults] = useState<Profile[]>([]);
   const [selectedPartner, setSelectedPartner] = useState<Profile | null>(null);
-  const [searchLoading, setSearchLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   const [date, setDate] = useState<Date>(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
-  const [photos, setPhotos] = useState<ImagePickerTypes.ImagePickerAsset[]>([]);
-
-  async function handleAddPhoto() {
-    const ImagePicker = await import('expo-image-picker');
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== 'granted') return;
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'],
-      allowsMultipleSelection: true,
-      selectionLimit: 5 - photos.length,
-      quality: 0.7,
-    });
-    if (!result.canceled) {
-      setPhotos((prev) => [...prev, ...result.assets].slice(0, 5));
-    }
-  }
-
-  // Debounced search
-  useEffect(() => {
-    if (partnerQuery.trim().length < 2) {
-      setPartnerResults([]);
-      return;
-    }
-    const timer = setTimeout(async () => {
-      setSearchLoading(true);
-      const { data } = await supabase.rpc('search_users', { query: partnerQuery.trim() });
-      setPartnerResults((data ?? []) as Profile[]);
-      setSearchLoading(false);
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [partnerQuery]);
 
   async function handleSubmit() {
     const happenedAt = new Date(
@@ -106,7 +68,6 @@ export function PointForm({ latitude, longitude, address, initialData, onSubmit,
       comment: comment.trim() || undefined,
       partnerId: selectedPartner?.id,
       happenedAt,
-      photos: photos.length > 0 ? photos : undefined,
     });
     setSubmitting(false);
   }
@@ -186,14 +147,6 @@ export function PointForm({ latitude, longitude, address, initialData, onSubmit,
         <Text style={styles.charCount}>{comment.length}/500</Text>
       </View>
 
-      {/* Photos */}
-      <Text style={styles.label}>Photos</Text>
-      <PhotoPicker
-        photos={photos}
-        onAdd={handleAddPhoto}
-        onRemove={(i) => setPhotos((prev) => prev.filter((_, idx) => idx !== i))}
-      />
-
       {/* Partenaire */}
       <Text style={styles.label}>Partenaire</Text>
       {selectedPartner ? (
@@ -205,42 +158,36 @@ export function PointForm({ latitude, longitude, address, initialData, onSubmit,
             <Text style={styles.removePartnerText}>✕</Text>
           </TouchableOpacity>
         </View>
+      ) : friends.length === 0 ? (
+        <View style={styles.noFriendsBox}>
+          <Text style={styles.noFriendsText}>Aucun ami pour l'instant</Text>
+        </View>
       ) : (
-        <>
-          <Input
-            label="Rechercher par @pseudo"
-            value={partnerQuery}
-            onChangeText={setPartnerQuery}
-            autoCapitalize="none"
-            style={styles.input}
-            right={searchLoading ? <ActivityIndicator color="#e91e8c" size="small" /> : undefined}
-          />
-          {partnerResults.length > 0 && (
-            <View style={styles.searchResults}>
-              {partnerResults.map((u) => (
-                <TouchableOpacity
-                  key={u.id}
-                  style={styles.searchResultItem}
-                  onPress={() => {
-                    setSelectedPartner(u);
-                    setPartnerQuery('');
-                    setPartnerResults([]);
-                  }}
-                >
-                  <View style={styles.avatarCircle}>
-                    <Text style={styles.avatarText}>
-                      {(u.display_name ?? u.username)[0].toUpperCase()}
-                    </Text>
-                  </View>
-                  <View>
-                    <Text style={styles.resultName}>{u.display_name}</Text>
-                    <Text style={styles.resultUsername}>@{u.username}</Text>
-                  </View>
-                </TouchableOpacity>
-              ))}
-            </View>
-          )}
-        </>
+        <ScrollView
+          horizontal={false}
+          style={styles.friendsList}
+          keyboardShouldPersistTaps="handled"
+          nestedScrollEnabled
+        >
+          {friends.map((f) => (
+            <TouchableOpacity
+              key={f.id}
+              style={styles.friendItem}
+              onPress={() => setSelectedPartner(f.profile)}
+              activeOpacity={0.7}
+            >
+              <View style={styles.avatarCircle}>
+                <Text style={styles.avatarText}>
+                  {(f.profile.display_name ?? f.profile.username)[0].toUpperCase()}
+                </Text>
+              </View>
+              <View>
+                <Text style={styles.resultName}>{f.profile.display_name}</Text>
+                <Text style={styles.resultUsername}>@{f.profile.username}</Text>
+              </View>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
       )}
 
       {/* Actions */}
@@ -376,15 +323,26 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
   },
-  searchResults: {
+  noFriendsBox: {
     backgroundColor: '#1a1a1a',
     borderRadius: 8,
     borderWidth: 1,
     borderColor: '#2a2a2a',
-    marginTop: 4,
-    overflow: 'hidden',
+    padding: 16,
+    alignItems: 'center',
   },
-  searchResultItem: {
+  noFriendsText: {
+    color: '#555',
+    fontSize: 14,
+  },
+  friendsList: {
+    backgroundColor: '#1a1a1a',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#2a2a2a',
+    maxHeight: 220,
+  },
+  friendItem: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: 12,

@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { router } from 'expo-router';
 import { Snackbar } from 'react-native-paper';
+import * as FileSystem from 'expo-file-system';
 import { useAuth } from '@/hooks/useAuth';
 import { usePoints } from '@/hooks/usePoints';
 import { useFriends } from '@/hooks/useFriends';
@@ -60,29 +61,41 @@ export default function ProfileScreen() {
     setUploadingAvatar(true);
     try {
       const asset = result.assets[0];
-      const ext = asset.uri.split('.').pop() ?? 'jpg';
+      const ext = asset.uri.split('.').pop()?.toLowerCase() ?? 'jpg';
       const fileName = `${user!.id}.${ext}`;
 
-      const response = await fetch(asset.uri);
-      const blob = await response.blob();
-      const arrayBuffer = await blob.arrayBuffer();
+      // Lecture base64 via expo-file-system (fiable sur React Native / Hermes)
+      const base64 = await FileSystem.readAsStringAsync(asset.uri, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
+
+      // Conversion base64 → ArrayBuffer
+      const byteCharacters = atob(base64);
+      const byteArray = new Uint8Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteArray[i] = byteCharacters.charCodeAt(i);
+      }
 
       const { error: uploadError } = await supabase.storage
         .from('avatars')
-        .upload(fileName, arrayBuffer, {
+        .upload(fileName, byteArray.buffer, {
           contentType: `image/${ext}`,
           upsert: true,
         });
 
       if (uploadError) {
-        setSnackbar("Erreur lors de l'upload.");
+        if (uploadError.message.includes('Bucket not found') || uploadError.message.includes('bucket')) {
+          setSnackbar("Bucket avatars manquant — contacter l'admin.");
+        } else {
+          setSnackbar("Erreur lors de l'upload : " + uploadError.message);
+        }
         return;
       }
 
       const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(fileName);
       const publicUrl = urlData.publicUrl;
 
-      const { error: updateError } = await (supabase as any)
+      const { error: updateError } = await supabase
         .from('profiles')
         .update({ avatar_url: publicUrl })
         .eq('id', user!.id);
@@ -94,6 +107,9 @@ export default function ProfileScreen() {
 
       await fetchProfile(user!.id);
       setSnackbar('Photo de profil mise à jour !');
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : 'Erreur inconnue';
+      setSnackbar("Erreur lors de l'upload : " + message);
     } finally {
       setUploadingAvatar(false);
     }
@@ -134,8 +150,11 @@ export default function ProfileScreen() {
             </View>
           </TouchableOpacity>
 
-          <Text style={styles.displayName}>{profile?.display_name ?? profile?.username}</Text>
-          <Text style={styles.username}>@{profile?.username}</Text>
+          {/* Nom complet + @pseudo sur une ligne */}
+          <View style={styles.nameRow}>
+            <Text style={styles.displayName}>{profile?.display_name ?? profile?.username}</Text>
+            <Text style={styles.username}>@{profile?.username}</Text>
+          </View>
 
           <TouchableOpacity
             style={styles.settingsButton}
@@ -270,16 +289,20 @@ const styles = StyleSheet.create({
   avatarEditIcon: {
     fontSize: 13,
   },
+  nameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 12,
+  },
   displayName: {
     color: '#ffffff',
-    fontSize: 22,
+    fontSize: 18,
     fontWeight: 'bold',
   },
   username: {
     color: '#888888',
     fontSize: 14,
-    marginTop: 4,
-    marginBottom: 12,
   },
   settingsButton: {
     borderWidth: 1,
