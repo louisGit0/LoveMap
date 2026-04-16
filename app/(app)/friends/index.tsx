@@ -205,7 +205,6 @@ export default function SocialScreen() {
               value={searchQuery}
               onChangeText={setSearchQuery}
               autoCapitalize="none"
-              right={searchLoading ? <ActivityIndicator color="#e91e8c" size="small" /> : undefined}
             />
             {searchResults.length > 0 && (
               <View style={styles.searchResults}>

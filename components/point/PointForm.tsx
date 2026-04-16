@@ -167,7 +167,6 @@ export function PointForm({ initialData, onSubmit, onCancel, onLocationChange }:
             value={addressQuery}
             onChangeText={setAddressQuery}
             style={styles.input}
-            right={addressLoading ? <ActivityIndicator color="#e91e8c" size="small" /> : undefined}
           />
           {addressResults.length > 0 && (
             <View style={styles.searchResults}>
@@ -280,7 +279,6 @@ export function PointForm({ initialData, onSubmit, onCancel, onLocationChange }:
             onChangeText={setPartnerQuery}
             autoCapitalize="none"
             style={styles.input}
-            right={searchLoading ? <ActivityIndicator color="#e91e8c" size="small" /> : undefined}
           />
           {partnerResults.length > 0 && (
             <View style={styles.searchResults}>
