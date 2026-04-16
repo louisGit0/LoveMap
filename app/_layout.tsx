@@ -24,12 +24,16 @@ export default function RootLayout() {
   const notifResponseRef = useRef<Notifications.Subscription | null>(null);
 
   useEffect(() => {
+    const timeout = setTimeout(() => setLoading(false), 5000);
+
     supabase.auth.getSession()
       .then(({ data: { session } }) => {
+        clearTimeout(timeout);
         setSession(session);
         setLoading(false);
       })
       .catch(() => {
+        clearTimeout(timeout);
         setLoading(false);
       });
 
