@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { View } from 'react-native';
 import { Tabs, router } from 'expo-router';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useAuthStore } from '@/stores/authStore';
@@ -8,15 +9,16 @@ import { useAuth } from '@/hooks/useAuth';
 
 export default function AppLayout() {
   const session = useAuthStore((s) => s.session);
+  const isLoading = useAuthStore((s) => s.isLoading);
   const pendingReceived = useFriendStore((s) => s.pendingReceived);
   const { user } = useAuth();
   const [unreadMessages, setUnreadMessages] = useState(0);
 
   useEffect(() => {
-    if (!session) {
+    if (!isLoading && !session) {
       router.replace('/(auth)/login');
     }
-  }, [session]);
+  }, [session, isLoading]);
 
   // Compter les messages non lus
   useEffect(() => {
@@ -45,7 +47,9 @@ export default function AppLayout() {
     return () => { supabase.removeChannel(channel); };
   }, [user]);
 
-  if (!session) return null;
+  if (isLoading || !session) {
+    return <View style={{ flex: 1, backgroundColor: '#0f0f0f' }} />;
+  }
 
   const socialBadge = pendingReceived.length + unreadMessages;
 
