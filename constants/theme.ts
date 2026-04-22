@@ -1,0 +1,15 @@
+export const T = {
+  bg: '#0a0610',
+  surface: '#17131e',
+  surface2: '#221829',
+  border: '#2d2040',
+  text: '#fff4f8',
+  textDim: '#a090a8',
+  textFaint: '#6a5a72',
+  primary: '#ec2d8c',
+  secondary: '#8b33cc',
+  success: '#4ade80',
+  danger: '#f87171',
+  cardRadius: 18,
+  pill: 999,
+} as const;
