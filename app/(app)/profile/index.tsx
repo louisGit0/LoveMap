@@ -11,6 +11,7 @@ import {
 import { router } from 'expo-router';
 import { Snackbar } from 'react-native-paper';
 import * as FileSystem from 'expo-file-system';
+import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '@/hooks/useAuth';
 import { usePoints } from '@/hooks/usePoints';
 import { useFriends } from '@/hooks/useFriends';
@@ -43,7 +44,6 @@ export default function ProfileScreen() {
   const initials = (profile?.display_name ?? profile?.username ?? '?')[0]?.toUpperCase();
 
   async function handlePickAvatar() {
-    const ImagePicker = await import('expo-image-picker');
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
       setSnackbar("Permission d'accès à la galerie refusée.");
@@ -61,7 +61,7 @@ export default function ProfileScreen() {
       const asset = result.assets[0];
       const ext = asset.uri.split('.').pop()?.toLowerCase() ?? 'jpg';
       const fileName = `${user!.id}.${ext}`;
-      const base64 = await FileSystem.readAsStringAsync(asset.uri, { encoding: FileSystem.EncodingType.Base64 });
+      const base64 = await FileSystem.readAsStringAsync(asset.uri, { encoding: FileSystem.EncodingType?.Base64 ?? 'base64' });
       const byteCharacters = atob(base64);
       const byteArray = new Uint8Array(byteCharacters.length);
       for (let i = 0; i < byteCharacters.length; i++) {
