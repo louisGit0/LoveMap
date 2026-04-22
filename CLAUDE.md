@@ -58,11 +58,12 @@ eas update --branch main --message "description courte de la modification"
 | TypeScript | strict | Langage (pas de `any` sans justification) |
 | Expo Router | v6 (file-based) | Navigation |
 | Supabase JS | v2 | Backend, Auth, DB, Realtime |
-| react-native-maps | 1.20.1 | Carte interactive |
+| react-native-maps | 1.20.1 | Carte interactive (mobile uniquement) |
 | Zustand | v4 | State management |
-| React Native Paper | v5 | Composants UI |
+| React Native Paper | v5 | Composants UI (usage réduit — UI principale via theme.ts) |
 | expo-location | ~19.0.8 | Géolocalisation |
 | expo-notifications | ~0.32.16 | Push notifications |
+| react-dom + react-native-web | 19.1.0 / ^0.21.0 | Support web Expo |
 
 ---
 
@@ -74,26 +75,41 @@ lovemap/
 │   ├── _layout.tsx               # Root layout (PaperProvider + auth listener)
 │   ├── index.tsx                 # Redirect : age-gate → login → map
 │   ├── (auth)/                   # Routes non protégées
-│   │   ├── age-gate.tsx          # Vérification d'âge (18+)
-│   │   ├── login.tsx             # Connexion
-│   │   └── register.tsx          # Inscription
+│   │   ├── age-gate.tsx          # Vérification d'âge (18+) — design Bold
+│   │   ├── login.tsx             # Connexion — design Bold
+│   │   └── register.tsx          # Inscription — design Bold
 │   └── (app)/                    # Routes protégées (session requise)
-│       ├── _layout.tsx           # Bottom tab navigator
-│       ├── map/index.tsx         # Carte principale
+│       ├── _layout.tsx           # Bottom tab navigator (Carte, Cercle, Profil)
+│       ├── map/index.tsx         # Carte principale + FAB
 │       ├── point/new.tsx         # Création d'un point
 │       ├── point/[id].tsx        # Détail / consentement partenaire
-│       ├── friends/index.tsx     # Liste amis + recherche
+│       ├── friends/index.tsx     # "Cercle" — liste amis + recherche
 │       ├── friends/requests.tsx  # Demandes d'amitié
-│       ├── profile/index.tsx     # Profil + stats
+│       ├── profile/index.tsx     # Profil + stats (design Bold)
 │       └── profile/settings.tsx  # Paramètres + suppression compte
 ├── components/
-│   ├── map/                      # AppMapView, PointMarker, HeatmapLayer
-│   ├── point/                    # PointForm, PointCard
+│   ├── map/
+│   │   ├── AppMapView.tsx        # Carte mobile (react-native-maps)
+│   │   ├── AppMapView.web.tsx    # Placeholder web
+│   │   ├── PointMarker.tsx       # Marker mobile
+│   │   ├── PointMarker.web.tsx   # Stub web (null)
+│   │   ├── HeatmapLayer.tsx      # Heatmap mobile
+│   │   ├── HeatmapLayer.web.tsx  # Stub web (null)
+│   │   ├── MapHeader.tsx         # Toggle pins/heatmap
+│   │   └── FriendSelector.tsx    # Sélecteur d'ami pour filtre carte
+│   ├── point/                    # PointForm, PointListItem, PhotoPicker
 │   ├── friends/                  # FriendItem, FriendRequestItem
-│   └── ui/                       # Button, Input (wrappers React Native Paper)
+│   └── ui/
+│       ├── Button.tsx            # Pill button custom (primary/ghost)
+│       └── Input.tsx             # Input avec tokens Bold
+├── constants/
+│   ├── config.ts                 # MIN_AGE = 18
+│   └── theme.ts                  # Design tokens Bold (T.bg, T.primary, T.pill…)
 ├── lib/
 │   ├── supabase.ts               # Client Supabase initialisé + typé
-│   └── notifications.ts          # Helpers Expo Push
+│   ├── notifications.ts          # Helpers Expo Push
+│   └── react-native-maps.web.js  # Stub complet react-native-maps pour web
+├── metro.config.js               # Alias react-native-maps → stub sur platform=web
 ├── stores/                       # Zustand
 │   ├── authStore.ts              # session, user, profile, ageVerified
 │   ├── mapStore.ts               # points, viewMode (pins/heatmap)
@@ -105,9 +121,11 @@ lovemap/
 ├── types/
 │   ├── database.types.ts         # Types générés Supabase
 │   └── app.types.ts              # Types métier (MapPoint, FriendWithProfile…)
-├── constants/config.ts           # MIN_AGE = 18
 ├── supabase/migrations/
-│   └── 001_initial_schema.sql    # Schéma complet + RLS (déjà exécuté en base)
+│   ├── 001_initial_schema.sql    # Schéma complet + RLS
+│   ├── 002_partner_edit.sql
+│   ├── 003_point_photos.sql
+│   └── 004_point_address.sql
 └── CLAUDE.md                     # Ce fichier — à consulter et maintenir
 ```
 
@@ -146,21 +164,32 @@ lovemap/
 
 ---
 
-## Identité visuelle
+## Identité visuelle — Design Bold
 
-| Token | Valeur |
-|-------|--------|
-| Fond global | `#0f0f0f` |
-| Surface / cards | `#1a1a1a` |
-| Bordures | `#2a2a2a` |
-| Primaire | `#e91e8c` (rose/magenta) |
-| Secondaire | `#9c27b0` (violet) |
-| Texte principal | `#ffffff` |
-| Texte secondaire | `#888888` |
-| Danger | `#f44336` |
-| Succès | `#4caf50` |
-| Border radius cards | 12px |
-| Border radius inputs | 8px |
+Tous les tokens sont dans `constants/theme.ts` (objet `T`). **Ne pas hardcoder de couleurs.**
+
+| Token (`T.xxx`) | Valeur | Usage |
+|-----------------|--------|-------|
+| `T.bg` | `#0a0610` | Fond global |
+| `T.surface` | `#17131e` | Surface / cards |
+| `T.surface2` | `#221829` | Surface secondaire |
+| `T.border` | `#2d2040` | Bordures |
+| `T.text` | `#fff4f8` | Texte principal |
+| `T.textDim` | `#a090a8` | Texte secondaire |
+| `T.textFaint` | `#6a5a72` | Texte tertiaire / inactif |
+| `T.primary` | `#ec2d8c` | Couleur primaire (magenta) |
+| `T.secondary` | `#8b33cc` | Couleur secondaire (violet) |
+| `T.success` | `#4ade80` | Succès |
+| `T.danger` | `#f87171` | Erreur / danger |
+| `T.cardRadius` | `18` | Border radius cards |
+| `T.pill` | `999` | Border radius pill (boutons, badges) |
+
+**Conventions visuelles :**
+- Titres principaux : italic, fontWeight `300` (light), grande taille
+- Eyebrow labels : uppercase, letterSpacing 1.5, fontSize 11, couleur `T.textDim`
+- Boutons primaires : pill (borderRadius T.pill), backgroundColor T.primary
+- Boutons secondaires : ghost (transparent, borderColor T.border)
+- Tab "Amis" renommé **"Cercle"**
 
 ---
 
@@ -169,7 +198,8 @@ lovemap/
 | Phase | Statut | Contenu |
 |-------|--------|---------|
 | 0 | ✅ Terminé | Scaffold, stores, hooks, types, migration SQL |
-| 1 | 🔲 À faire | Auth (age-gate, login, register), layout tabs |
+| 1 | ✅ Terminé | Auth (age-gate, login, register), layout tabs — design Bold |
+| D | ✅ Terminé | Intégration design system Bold + support web Expo |
 | 2 | 🔲 À faire | Carte, création/affichage de points |
 | 3 | 🔲 À faire | Heatmap |
 | 4 | 🔲 À faire | Système d'amis |
