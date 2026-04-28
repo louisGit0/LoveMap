@@ -164,32 +164,49 @@ lovemap/
 
 ---
 
-## Identité visuelle — Design Bold
+## Identité visuelle — Design Éditorial Noir/Rose
 
 Tous les tokens sont dans `constants/theme.ts` (objet `T`). **Ne pas hardcoder de couleurs.**
+Les familles de polices sont dans `constants/fonts.ts` (objet `F`). **Ne pas hardcoder de fontFamily.**
 
 | Token (`T.xxx`) | Valeur | Usage |
 |-----------------|--------|-------|
-| `T.bg` | `#0a0610` | Fond global |
-| `T.surface` | `#17131e` | Surface / cards |
-| `T.surface2` | `#221829` | Surface secondaire |
-| `T.border` | `#2d2040` | Bordures |
-| `T.text` | `#fff4f8` | Texte principal |
-| `T.textDim` | `#a090a8` | Texte secondaire |
-| `T.textFaint` | `#6a5a72` | Texte tertiaire / inactif |
-| `T.primary` | `#ec2d8c` | Couleur primaire (magenta) |
-| `T.secondary` | `#8b33cc` | Couleur secondaire (violet) |
-| `T.success` | `#4ade80` | Succès |
-| `T.danger` | `#f87171` | Erreur / danger |
-| `T.cardRadius` | `18` | Border radius cards |
-| `T.pill` | `999` | Border radius pill (boutons, badges) |
+| `T.bg` | `#000000` | Fond global |
+| `T.surface` | `#0a0a0a` | Surface / cards |
+| `T.surface2` | `#141414` | Surface secondaire |
+| `T.border` | `#1f1f1f` | Bordures |
+| `T.text` | `#ffffff` | Texte principal |
+| `T.textDim` | `#d9d9d9` | Texte secondaire |
+| `T.textFaint` | `#8a8a8a` | Texte tertiaire / inactif |
+| `T.primary` | `#ff2d87` | Accent rose |
+| `T.danger` | `#a91860` | Danger/erreur |
+| `T.cardRadius` | `4` | Radius max (angles francs) |
+| `T.pill` | `4` | Pas de pill — angles francs partout |
 
-**Conventions visuelles :**
-- Titres principaux : italic, fontWeight `300` (light), grande taille
-- Eyebrow labels : uppercase, letterSpacing 1.5, fontSize 11, couleur `T.textDim`
-- Boutons primaires : pill (borderRadius T.pill), backgroundColor T.primary
-- Boutons secondaires : ghost (transparent, borderColor T.border)
-- Tab "Amis" renommé **"Cercle"**
+| Token (`F.xxx`) | Police | Usage |
+|-----------------|--------|-------|
+| `F.serif` | CormorantGaramond_400Regular_Italic | Titres, commentaires, labels éditoriaux |
+| `F.serifLight` | CormorantGaramond_300Light_Italic | Gros titres 38–64px |
+| `F.serifMedium` | CormorantGaramond_500Medium_Italic | Guillemets, accents |
+| `F.sans` | InterTight_400Regular | Corps de texte UI |
+| `F.sansLight` | InterTight_300Light | Texte secondaire |
+| `F.sansMedium` | InterTight_500Medium | Boutons, labels importants |
+| `F.sansSemi` | InterTight_600SemiBold | Emphase UI |
+| `F.mono` | JetBrainsMono_400Regular | Eyebrows, métadonnées, N°001 |
+| `F.monoMedium` | JetBrainsMono_500Medium | Mono emphasis |
+
+**Conventions visuelles obligatoires :**
+- **Aucun emoji** dans l'interface
+- **Aucun gradient** — couleurs plates uniquement
+- **Pas de violet** — palette noir + blanc + rose #ff2d87 uniquement
+- **Angles francs partout** — borderRadius 0 ou 4 maximum
+- **Boutons** : `solid` (blanc), `coral` (rose), `ghost` (transparent+border), `danger`, `underline`
+- **Inputs** : underline only — borderBottomWidth:1, borderBottomColor:T.border
+- **Avatars** : carrés (borderRadius:0), initial serif italic en rose
+- **Icônes** : SVG custom dans `components/icons.tsx` — PAS de @expo/vector-icons, PAS de MaterialCommunityIcons
+- **useSafeAreaInsets()** pour les insets — jamais SafeAreaView
+- **Copie éditoriale** : ton journal intime, "Sceller la page", "Page effacée", "le carnet", "le cercle", "Zone irréversible", EFFACER
+- **Eyebrows** : F.mono, fontSize 9–10, letterSpacing 2–2.5, textTransform:'uppercase', color T.textFaint/T.primary
 
 ---
 
@@ -198,14 +215,15 @@ Tous les tokens sont dans `constants/theme.ts` (objet `T`). **Ne pas hardcoder d
 | Phase | Statut | Contenu |
 |-------|--------|---------|
 | 0 | ✅ Terminé | Scaffold, stores, hooks, types, migration SQL |
-| 1 | ✅ Terminé | Auth (age-gate, login, register), layout tabs — design Bold |
-| D | ✅ Terminé | Intégration design system Bold + support web Expo |
-| 2 | 🔲 À faire | Carte, création/affichage de points |
-| 3 | 🔲 À faire | Heatmap |
-| 4 | 🔲 À faire | Système d'amis |
-| 5 | 🔲 À faire | Taguage partenaire + consentement |
-| 6 | 🔲 À faire | Notifications push |
-| 7 | 🔲 À faire | Profil & paramètres |
+| 1 | ✅ Terminé | Auth (age-gate, login, register), layout tabs |
+| D1 | ✅ Terminé | Design system Bold initial + support web Expo |
+| D2 | ✅ Terminé | Refonte UI complète : noir/rose, typo éditoriale (MAJ.zip) |
+| 2 | ✅ Terminé | Carte principale, FAB, création/affichage de points |
+| 3 | ✅ Terminé | Heatmap |
+| 4 | ✅ Terminé | Système d'amis + cercle |
+| 5 | ✅ Terminé | Taguage partenaire + consentement |
+| 6 | ✅ Terminé | Notifications push (expo push API) |
+| 7 | ✅ Terminé | Profil, paramètres, avatar upload |
 | 8 | 🔲 À faire | Audit sécurité |
 | 9 | 🔲 À faire | Déploiement EAS |
 
