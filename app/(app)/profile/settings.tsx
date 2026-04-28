@@ -10,13 +10,18 @@ import {
   Platform,
 } from 'react-native';
 import { router } from 'expo-router';
-import { Snackbar, TextInput as PaperInput } from 'react-native-paper';
+import { Snackbar } from 'react-native-paper';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
 import { useAuthStore } from '@/stores/authStore';
 import { Input } from '@/components/ui/Input';
+import { T } from '@/constants/theme';
+import { F } from '@/constants/fonts';
+import { IcoArrow } from '@/components/icons';
 
 export default function Settings() {
+  const insets = useSafeAreaInsets();
   const { user, signOut } = useAuth();
   const reset = useAuthStore((s) => s.reset);
 
@@ -30,20 +35,14 @@ export default function Settings() {
   const [snackbar, setSnackbar] = useState<string | null>(null);
 
   async function handleChangePassword() {
-    if (newPassword.length < 8) {
-      setSnackbar('Le mot de passe doit contenir au moins 8 caractères.');
-      return;
-    }
-    if (newPassword !== confirmPassword) {
-      setSnackbar('Les mots de passe ne correspondent pas.');
-      return;
-    }
+    if (newPassword.length < 8) { setSnackbar('Le mot de passe doit contenir au moins 8 caractères.'); return; }
+    if (newPassword !== confirmPassword) { setSnackbar('Les mots de passe ne correspondent pas.'); return; }
     setSavingPwd(true);
     const { error } = await supabase.auth.updateUser({ password: newPassword });
     if (error) {
       setSnackbar('Erreur : ' + error.message);
     } else {
-      setSnackbar('Mot de passe mis à jour !');
+      setSnackbar('Mot de passe mis à jour.');
       setNewPassword('');
       setConfirmPassword('');
     }
@@ -65,28 +64,24 @@ export default function Settings() {
   }
 
   async function handleDeleteAccount() {
-    if (deleteConfirmText !== 'SUPPRIMER') {
-      setSnackbar('Tapez exactement "SUPPRIMER" pour confirmer.');
+    if (deleteConfirmText !== 'EFFACER') {
+      setSnackbar('Tapez exactement "EFFACER" pour confirmer.');
       return;
     }
     if (!user) return;
-
     Alert.alert(
-      'Supprimer le compte',
-      'Cette action est irréversible. Toutes vos données seront supprimées.',
+      'Effacer le compte',
+      'Cette action est irréversible. Toutes vos données seront définitivement supprimées.',
       [
         { text: 'Annuler', style: 'cancel' },
         {
-          text: 'Supprimer définitivement',
+          text: 'Effacer définitivement',
           style: 'destructive',
           onPress: async () => {
             const { error } = await supabase.functions.invoke('delete-account', {
               body: { userId: user.id },
             });
-            if (error) {
-              setSnackbar('Erreur lors de la suppression.');
-              return;
-            }
+            if (error) { setSnackbar('Erreur lors de la suppression.'); return; }
             reset();
             router.replace('/(auth)/age-gate');
           },
@@ -100,94 +95,94 @@ export default function Settings() {
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <ScrollView keyboardShouldPersistTaps="handled">
-        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-          <Text style={styles.backText}>← Retour</Text>
+      <ScrollView
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingTop: insets.top + 16, paddingBottom: 60 }}
+      >
+        {/* Retour */}
+        <TouchableOpacity style={styles.backBtn} onPress={() => router.back()} activeOpacity={0.7}>
+          <IcoArrow size={16} color={T.primary} dir="left" />
+          <Text style={styles.backText}>Identité</Text>
         </TouchableOpacity>
 
-        <Text style={styles.title}>Paramètres</Text>
+        <Text style={styles.title}>Réglages</Text>
 
-        {/* Changer le mot de passe */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Changer le mot de passe</Text>
+        {/* Section — Identité (mot de passe) */}
+        <View style={styles.sectionBlock}>
+          <Text style={styles.sectionEyebrow}>Identité</Text>
+
           <Input
             label="Nouveau mot de passe"
             value={newPassword}
             onChangeText={setNewPassword}
             secureTextEntry={!showNew}
+            containerStyle={styles.inputWrap}
             right={
-              <PaperInput.Icon
-                icon={showNew ? 'eye-off' : 'eye'}
-                onPress={() => setShowNew(!showNew)}
-                color="#888888"
-              />
+              <TouchableOpacity onPress={() => setShowNew(!showNew)} style={styles.showToggle}>
+                <Text style={styles.showToggleText}>{showNew ? 'masquer' : 'voir'}</Text>
+              </TouchableOpacity>
             }
-            style={styles.input}
           />
+
           <Input
             label="Confirmer le mot de passe"
             value={confirmPassword}
             onChangeText={setConfirmPassword}
             secureTextEntry={!showConfirm}
+            containerStyle={styles.inputWrap}
             right={
-              <PaperInput.Icon
-                icon={showConfirm ? 'eye-off' : 'eye'}
-                onPress={() => setShowConfirm(!showConfirm)}
-                color="#888888"
-              />
+              <TouchableOpacity onPress={() => setShowConfirm(!showConfirm)} style={styles.showToggle}>
+                <Text style={styles.showToggleText}>{showConfirm ? 'masquer' : 'voir'}</Text>
+              </TouchableOpacity>
             }
-            style={styles.input}
           />
+
           <TouchableOpacity
-            style={[styles.primaryButton, savingPwd && styles.buttonDisabled]}
+            style={[styles.updateBtn, savingPwd && { opacity: 0.6 }]}
             onPress={handleChangePassword}
             disabled={savingPwd}
-            activeOpacity={0.8}
+            activeOpacity={0.88}
           >
-            <Text style={styles.primaryButtonText}>
-              {savingPwd ? 'Sauvegarde...' : 'Mettre à jour le mot de passe'}
+            <Text style={styles.updateBtnText}>
+              {savingPwd ? 'Mise à jour...' : 'Mettre à jour'}
             </Text>
           </TouchableOpacity>
         </View>
 
         {/* Déconnexion */}
-        <TouchableOpacity style={styles.signOutButton} onPress={handleSignOut} activeOpacity={0.8}>
-          <Text style={styles.signOutText}>Se déconnecter</Text>
+        <TouchableOpacity style={styles.signOutRow} onPress={handleSignOut} activeOpacity={0.7}>
+          <Text style={styles.signOutLabel}>Se déconnecter</Text>
+          <Text style={styles.signOutArrow}>›</Text>
         </TouchableOpacity>
 
-        {/* Suppression du compte */}
-        <View style={styles.dangerSection}>
-          <Text style={styles.dangerTitle}>Zone de danger</Text>
+        {/* Zone irréversible */}
+        <View style={styles.dangerBlock}>
+          <Text style={styles.dangerEyebrow}>Zone irréversible</Text>
           <Text style={styles.dangerDescription}>
-            Pour supprimer définitivement votre compte, tapez{' '}
-            <Text style={styles.dangerKeyword}>SUPPRIMER</Text> ci-dessous.
+            Pour effacer définitivement votre compte et toutes vos pages,
+            inscrivez{' '}
+            <Text style={styles.dangerKeyword}>EFFACER</Text>
+            {' '}ci-dessous.
           </Text>
           <Input
-            label="Confirmez avec SUPPRIMER"
+            label="Confirmation"
             value={deleteConfirmText}
             onChangeText={setDeleteConfirmText}
             autoCapitalize="characters"
-            style={styles.input}
+            containerStyle={styles.inputWrap}
           />
           <TouchableOpacity
-            style={[
-              styles.deleteButton,
-              deleteConfirmText !== 'SUPPRIMER' && styles.deleteButtonDisabled,
-            ]}
+            style={[styles.deleteBtn, deleteConfirmText !== 'EFFACER' && styles.deleteBtnDisabled]}
             onPress={handleDeleteAccount}
             activeOpacity={0.8}
           >
-            <Text style={styles.deleteButtonText}>Supprimer mon compte</Text>
+            <Text style={styles.deleteBtnText}>Effacer mon compte</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
 
-      <Snackbar
-        visible={!!snackbar}
-        onDismiss={() => setSnackbar(null)}
-        duration={3000}
-        style={styles.snackbar}
-      >
+      <Snackbar visible={!!snackbar} onDismiss={() => setSnackbar(null)} duration={3000} style={styles.snackbar}>
         {snackbar}
       </Snackbar>
     </KeyboardAvoidingView>
@@ -195,116 +190,132 @@ export default function Settings() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#0f0f0f',
-    paddingTop: 56,
-  },
-  backButton: {
-    paddingHorizontal: 16,
-    marginBottom: 8,
-  },
-  backText: {
-    color: '#e91e8c',
-    fontSize: 14,
-  },
-  title: {
-    color: '#ffffff',
-    fontSize: 24,
-    fontWeight: 'bold',
-    paddingHorizontal: 16,
-    marginBottom: 20,
-  },
-  section: {
-    backgroundColor: '#1a1a1a',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#2a2a2a',
-    padding: 16,
-    marginHorizontal: 16,
+  container: { flex: 1, backgroundColor: T.bg },
+  backBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 24,
     marginBottom: 16,
   },
-  sectionTitle: {
-    color: '#888888',
-    fontSize: 12,
+  backText: {
+    fontFamily: F.serif,
+    fontStyle: 'italic',
+    fontSize: 15,
+    color: T.primary,
+  },
+  title: {
+    fontFamily: F.serifLight,
+    fontStyle: 'italic',
+    fontSize: 44,
+    lineHeight: 42,
+    letterSpacing: -1.5,
+    color: T.text,
+    paddingHorizontal: 24,
+    marginBottom: 32,
+  },
+  sectionBlock: {
+    paddingHorizontal: 24,
+    paddingBottom: 24,
+    borderBottomWidth: 1,
+    borderBottomColor: T.border,
+    marginBottom: 0,
+  },
+  sectionEyebrow: {
+    fontFamily: F.mono,
+    fontSize: 9,
+    letterSpacing: 2.5,
     textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    marginBottom: 12,
+    color: T.textFaint,
+    marginBottom: 20,
   },
-  input: {
-    marginBottom: 8,
+  inputWrap: { marginBottom: 16 },
+  showToggle: {
+    paddingBottom: 4,
   },
-  primaryButton: {
-    backgroundColor: '#e91e8c',
-    borderRadius: 8,
-    paddingVertical: 14,
-    alignItems: 'center',
-    marginTop: 4,
+  showToggleText: {
+    fontFamily: F.mono,
+    fontSize: 9,
+    letterSpacing: 1.5,
+    textTransform: 'uppercase',
+    color: T.textFaint,
   },
-  buttonDisabled: {
-    opacity: 0.6,
-  },
-  primaryButtonText: {
-    color: '#ffffff',
-    fontWeight: '600',
-    fontSize: 14,
-  },
-  signOutButton: {
-    marginHorizontal: 16,
-    borderWidth: 1,
-    borderColor: '#2a2a2a',
-    borderRadius: 12,
+  updateBtn: {
+    backgroundColor: T.primary,
     paddingVertical: 16,
     alignItems: 'center',
-    marginBottom: 24,
+    marginTop: 8,
   },
-  signOutText: {
-    color: '#888888',
-    fontSize: 15,
-    fontWeight: '500',
-  },
-  dangerSection: {
-    backgroundColor: '#1a1a1a',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#f4433633',
-    padding: 16,
-    marginHorizontal: 16,
-    marginBottom: 40,
-  },
-  dangerTitle: {
-    color: '#f44336',
-    fontSize: 14,
-    fontWeight: 'bold',
-    marginBottom: 8,
-  },
-  dangerDescription: {
-    color: '#888888',
+  updateBtnText: {
+    fontFamily: F.sansMedium,
     fontSize: 13,
-    lineHeight: 20,
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+    color: T.text,
+  },
+  signOutRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 24,
+    paddingVertical: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: T.border,
+  },
+  signOutLabel: {
+    fontFamily: F.serif,
+    fontStyle: 'italic',
+    fontSize: 18,
+    color: T.textDim,
+  },
+  signOutArrow: {
+    fontFamily: F.sansLight,
+    fontSize: 22,
+    color: T.textFaint,
+  },
+  dangerBlock: {
+    paddingHorizontal: 24,
+    paddingTop: 32,
+    borderTopWidth: 1,
+    borderTopColor: T.primary + '33',
+    marginTop: 32,
+  },
+  dangerEyebrow: {
+    fontFamily: F.mono,
+    fontSize: 9,
+    letterSpacing: 2.5,
+    textTransform: 'uppercase',
+    color: T.primary,
     marginBottom: 12,
   },
+  dangerDescription: {
+    fontFamily: F.serif,
+    fontStyle: 'italic',
+    fontSize: 15,
+    lineHeight: 22,
+    color: T.textDim,
+    marginBottom: 20,
+  },
   dangerKeyword: {
-    color: '#f44336',
-    fontWeight: 'bold',
+    fontFamily: F.mono,
+    fontSize: 13,
+    color: T.primary,
+    fontStyle: 'normal',
   },
-  deleteButton: {
+  deleteBtn: {
     borderWidth: 1,
-    borderColor: '#f44336',
-    borderRadius: 8,
-    paddingVertical: 14,
+    borderColor: T.primary,
+    paddingVertical: 16,
     alignItems: 'center',
-    marginTop: 4,
+    marginTop: 8,
   },
-  deleteButtonDisabled: {
-    opacity: 0.4,
+  deleteBtnDisabled: { opacity: 0.3 },
+  deleteBtnText: {
+    fontFamily: F.sansMedium,
+    fontSize: 13,
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+    color: T.primary,
   },
-  deleteButtonText: {
-    color: '#f44336',
-    fontWeight: '600',
-    fontSize: 14,
-  },
-  snackbar: {
-    backgroundColor: '#1a1a1a',
-  },
+  snackbar: { backgroundColor: T.surface2 },
 });

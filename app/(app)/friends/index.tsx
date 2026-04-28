@@ -6,19 +6,23 @@ import {
   FlatList,
   TouchableOpacity,
   ActivityIndicator,
+  TextInput,
 } from 'react-native';
 import { router } from 'expo-router';
 import { Snackbar } from 'react-native-paper';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
 import { useFriends } from '@/hooks/useFriends';
 import { useFriendStore } from '@/stores/friendStore';
-import { Input } from '@/components/ui/Input';
 import { FriendItem } from '@/components/friends/FriendItem';
 import { T } from '@/constants/theme';
+import { F } from '@/constants/fonts';
+import { IcoSearch, IcoPlus } from '@/components/icons';
 import type { Profile } from '@/types/app.types';
 
 export default function FriendsScreen() {
+  const insets = useSafeAreaInsets();
   const { user } = useAuth();
   const { friends, fetchFriends, sendFriendRequest, unfriend, setPendingReceived } = useFriends();
   const pendingReceived = useFriendStore((s) => s.pendingReceived);
@@ -44,15 +48,10 @@ export default function FriendsScreen() {
     setLoading(false);
   }, [user, fetchFriends, setPendingReceived]);
 
-  useEffect(() => {
-    loadFriends();
-  }, [loadFriends]);
+  useEffect(() => { loadFriends(); }, [loadFriends]);
 
   useEffect(() => {
-    if (searchQuery.trim().length < 2) {
-      setSearchResults([]);
-      return;
-    }
+    if (searchQuery.trim().length < 2) { setSearchResults([]); return; }
     const timer = setTimeout(async () => {
       setSearchLoading(true);
       const { data } = await supabase.rpc('search_users', { query: searchQuery.trim() });
@@ -66,11 +65,11 @@ export default function FriendsScreen() {
     if (!user) return;
     const ok = await sendFriendRequest(user.id, profile.id);
     if (ok) {
-      setSnackbar(`Demande envoyée à ${profile.display_name ?? profile.username} !`);
+      setSnackbar(`Demande envoyée à ${profile.display_name ?? profile.username}.`);
       setSearchQuery('');
       setSearchResults([]);
     } else {
-      setSnackbar('Erreur lors de l\'envoi de la demande.');
+      setSnackbar("Erreur lors de l'envoi de la demande.");
     }
   }
 
@@ -82,74 +81,96 @@ export default function FriendsScreen() {
   const alreadyFriendIds = new Set(friends.map((f) => f.profile.id));
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Cercle</Text>
-      <Text style={styles.subtitle}>{friends.length} amis</Text>
+    <View style={[styles.container, { paddingTop: insets.top }]}>
+      {/* Header */}
+      <View style={styles.header}>
+        <View style={styles.innerBorder} pointerEvents="none" />
+        <Text style={styles.eyebrow}>N° 004 — Réseau</Text>
+        <Text style={styles.title}>le cercle</Text>
+        <Text style={styles.subtitle}>
+          {String(friends.length).padStart(2, '0')} membre{friends.length > 1 ? 's' : ''}
+        </Text>
+      </View>
 
-      <View style={styles.searchContainer}>
-        <Input
-          label=""
-          placeholder="Rechercher par @pseudo"
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-          autoCapitalize="none"
-          right={searchLoading ? <ActivityIndicator color={T.primary} size="small" /> : undefined}
-        />
+      <View style={styles.body}>
+        {/* Demandes */}
+        <TouchableOpacity
+          style={styles.requestsRow}
+          onPress={() => router.push('/(app)/friends/requests')}
+          activeOpacity={0.75}
+        >
+          <View style={styles.requestsLeft}>
+            <Text style={styles.requestsLabel}>Demandes</Text>
+            {pendingReceived.length > 0 && (
+              <View style={styles.badge}>
+                <Text style={styles.badgeText}>{pendingReceived.length}</Text>
+              </View>
+            )}
+          </View>
+          <Text style={styles.requestsArrow}>›</Text>
+        </TouchableOpacity>
+
+        {/* Recherche */}
+        <View style={styles.searchRow}>
+          <IcoSearch size={14} color={T.textFaint} />
+          <TextInput
+            style={styles.searchInput}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            placeholder="Rechercher par @pseudo"
+            placeholderTextColor={T.textFaint}
+            autoCapitalize="none"
+          />
+          {searchLoading && <ActivityIndicator color={T.primary} size="small" />}
+        </View>
+
+        {/* Résultats recherche */}
         {searchResults.length > 0 && (
           <View style={styles.searchResults}>
             {searchResults.map((u) => (
               <View key={u.id} style={styles.searchResultItem}>
-                <View style={styles.avatarCircle}>
-                  <Text style={styles.avatarText}>{(u.display_name ?? u.username)[0].toUpperCase()}</Text>
+                <View style={styles.avatar}>
+                  <Text style={styles.avatarInitial}>
+                    {(u.display_name ?? u.username)[0].toUpperCase()}
+                  </Text>
                 </View>
                 <View style={styles.searchResultInfo}>
                   <Text style={styles.resultName}>{u.display_name}</Text>
                   <Text style={styles.resultUsername}>@{u.username}</Text>
                 </View>
-                {!alreadyFriendIds.has(u.id) && (
-                  <TouchableOpacity style={styles.addButton} onPress={() => handleAdd(u)} activeOpacity={0.8}>
-                    <Text style={styles.addButtonText}>Ajouter</Text>
+                {alreadyFriendIds.has(u.id) ? (
+                  <Text style={styles.alreadyFriend}>Dans le cercle</Text>
+                ) : (
+                  <TouchableOpacity style={styles.addBtn} onPress={() => handleAdd(u)} activeOpacity={0.8}>
+                    <IcoPlus size={14} color={T.text} />
+                    <Text style={styles.addBtnText}>Inviter</Text>
                   </TouchableOpacity>
-                )}
-                {alreadyFriendIds.has(u.id) && (
-                  <Text style={styles.alreadyFriendText}>Ami ✓</Text>
                 )}
               </View>
             ))}
           </View>
         )}
-      </View>
 
-      <TouchableOpacity
-        style={styles.requestsButton}
-        onPress={() => router.push('/(app)/friends/requests')}
-        activeOpacity={0.8}
-      >
-        <Text style={styles.requestsButtonText}>
-          Demandes reçues{pendingReceived.length > 0 ? ` · ${pendingReceived.length}` : ''}
-        </Text>
-        {pendingReceived.length > 0 && (
-          <View style={styles.badge}>
-            <Text style={styles.badgeText}>{pendingReceived.length}</Text>
+        {/* Liste amis */}
+        {loading ? (
+          <ActivityIndicator color={T.primary} style={styles.loader} />
+        ) : friends.length === 0 ? (
+          <View style={styles.empty}>
+            <Text style={styles.emptyTitle}>Le cercle est vide.</Text>
+            <Text style={styles.emptySubtitle}>Recherchez vos partenaires par pseudo.</Text>
           </View>
+        ) : (
+          <FlatList
+            data={friends}
+            keyExtractor={(item) => item.id}
+            renderItem={({ item }) => (
+              <FriendItem friend={item} onUnfriend={() => handleUnfriend(item.id)} />
+            )}
+            contentContainerStyle={styles.listContent}
+            showsVerticalScrollIndicator={false}
+          />
         )}
-      </TouchableOpacity>
-
-      {loading ? (
-        <ActivityIndicator color={T.primary} style={styles.loader} />
-      ) : friends.length === 0 ? (
-        <Text style={styles.emptyText}>Pas encore d'amis. Recherchez par pseudo !</Text>
-      ) : (
-        <FlatList
-          data={friends}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
-            <FriendItem friend={item} onUnfriend={() => handleUnfriend(item.id)} />
-          )}
-          contentContainerStyle={styles.listContent}
-          showsVerticalScrollIndicator={false}
-        />
-      )}
+      </View>
 
       <Snackbar visible={!!snackbar} onDismiss={() => setSnackbar(null)} duration={3000} style={styles.snackbar}>
         {snackbar}
@@ -159,35 +180,103 @@ export default function FriendsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: T.bg,
-    paddingTop: 56,
-    paddingHorizontal: 24,
+  container: { flex: 1, backgroundColor: T.bg },
+  header: {
+    paddingBottom: 24,
+    paddingHorizontal: 36,
+    paddingTop: 24,
+    position: 'relative',
+  },
+  innerBorder: {
+    position: 'absolute',
+    top: 16, left: 16, right: 16, bottom: 0,
+    borderWidth: 1, borderColor: T.border, borderBottomWidth: 0,
+  },
+  eyebrow: {
+    fontFamily: F.mono,
+    fontSize: 10,
+    letterSpacing: 2.5,
+    textTransform: 'uppercase',
+    color: T.primary,
+    marginBottom: 8,
   },
   title: {
-    color: T.text,
-    fontSize: 40,
-    fontWeight: '300',
+    fontFamily: F.serifLight,
     fontStyle: 'italic',
-    letterSpacing: -1.5,
+    fontSize: 56,
+    lineHeight: 54,
+    letterSpacing: -2,
+    color: T.text,
+    marginBottom: 8,
   },
   subtitle: {
-    color: T.textDim,
-    fontSize: 13,
-    marginBottom: 20,
-    marginTop: 2,
+    fontFamily: F.mono,
+    fontSize: 10,
+    letterSpacing: 1.5,
+    textTransform: 'uppercase',
+    color: T.textFaint,
   },
-  searchContainer: {
-    marginBottom: 14,
+  body: { flex: 1, paddingHorizontal: 24 },
+  requestsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: T.border,
+    marginBottom: 16,
+  },
+  requestsLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  requestsLabel: {
+    fontFamily: F.mono,
+    fontSize: 10,
+    letterSpacing: 2,
+    textTransform: 'uppercase',
+    color: T.textDim,
+  },
+  badge: {
+    width: 18,
+    height: 18,
+    backgroundColor: T.primary,
+    borderRadius: 9,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  badgeText: {
+    fontFamily: F.mono,
+    fontSize: 9,
+    color: T.text,
+  },
+  requestsArrow: {
+    fontFamily: F.sansLight,
+    fontSize: 20,
+    color: T.textFaint,
+  },
+  searchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderBottomWidth: 1,
+    borderBottomColor: T.border,
+    paddingBottom: 8,
+    gap: 10,
+    marginBottom: 8,
+  },
+  searchInput: {
+    flex: 1,
+    fontFamily: F.serif,
+    fontStyle: 'italic',
+    fontSize: 18,
+    color: T.text,
+    paddingVertical: 6,
   },
   searchResults: {
-    backgroundColor: T.surface,
-    borderRadius: T.cardRadius,
     borderWidth: 1,
     borderColor: T.border,
-    marginTop: 6,
-    overflow: 'hidden',
+    marginBottom: 16,
   },
   searchResultItem: {
     flexDirection: 'row',
@@ -197,83 +286,70 @@ const styles = StyleSheet.create({
     borderBottomColor: T.border,
     gap: 12,
   },
-  avatarCircle: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: T.primary + '22',
+  avatar: {
+    width: 36,
+    height: 36,
+    backgroundColor: T.surface2,
+    borderWidth: 1,
+    borderColor: T.border,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  avatarText: {
-    color: T.primary,
-    fontWeight: '700',
+  avatarInitial: {
+    fontFamily: F.serif,
+    fontStyle: 'italic',
     fontSize: 16,
+    color: T.primary,
   },
   searchResultInfo: { flex: 1 },
   resultName: {
-    color: T.text,
+    fontFamily: F.sans,
     fontSize: 14,
-    fontWeight: '500',
+    color: T.text,
   },
   resultUsername: {
-    color: T.textDim,
-    fontSize: 12,
+    fontFamily: F.mono,
+    fontSize: 10,
+    letterSpacing: 1,
+    color: T.textFaint,
+    marginTop: 2,
   },
-  addButton: {
-    backgroundColor: T.primary,
-    borderRadius: T.pill,
-    paddingHorizontal: 14,
-    paddingVertical: 7,
+  alreadyFriend: {
+    fontFamily: F.mono,
+    fontSize: 9,
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+    color: T.textFaint,
   },
-  addButtonText: {
-    color: '#fff',
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  alreadyFriendText: {
-    color: T.success,
-    fontSize: 13,
-    fontWeight: '500',
-  },
-  requestsButton: {
-    backgroundColor: T.surface,
-    borderRadius: T.cardRadius,
-    borderWidth: 1,
-    borderColor: T.primary + '44',
-    paddingVertical: 14,
-    paddingHorizontal: 16,
+  addBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 18,
-  },
-  requestsButtonText: {
-    color: T.primary,
-    fontWeight: '600',
-    fontSize: 14,
-  },
-  badge: {
     backgroundColor: T.primary,
-    borderRadius: T.pill,
-    width: 22,
-    height: 22,
-    alignItems: 'center',
-    justifyContent: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    gap: 4,
   },
-  badgeText: {
-    color: '#fff',
+  addBtnText: {
+    fontFamily: F.sansMedium,
     fontSize: 11,
-    fontWeight: '700',
+    letterSpacing: 0.5,
+    color: T.text,
   },
   loader: { marginTop: 32 },
-  emptyText: {
-    color: T.textDim,
-    textAlign: 'center',
-    marginTop: 32,
-    fontSize: 14,
-    lineHeight: 22,
+  empty: { paddingTop: 40, alignItems: 'center' },
+  emptyTitle: {
+    fontFamily: F.serifLight,
+    fontStyle: 'italic',
+    fontSize: 28,
+    color: T.text,
+    marginBottom: 8,
   },
-  listContent: { paddingBottom: 24 },
+  emptySubtitle: {
+    fontFamily: F.serif,
+    fontStyle: 'italic',
+    fontSize: 15,
+    color: T.textFaint,
+  },
+  listContent: { paddingBottom: 100 },
   snackbar: { backgroundColor: T.surface2 },
 });

@@ -1,8 +1,9 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { T } from '@/constants/theme';
+import { F } from '@/constants/fonts';
+import { IcoPin, IcoHeat, IcoClose } from '@/components/icons';
 
 interface Props {
   viewMode: 'pins' | 'heatmap';
@@ -18,35 +19,49 @@ export function MapHeader({ viewMode, onViewModeChange, friendName, onFriendClea
   return (
     <View style={[styles.container, { paddingTop: insets.top + 8 }]}>
       <View style={styles.row}>
+        {/* Slot gauche (FriendSelector) */}
         {leftSlot ?? <View style={styles.spacer} />}
 
+        {/* Toggle bandes horizontales */}
         <View style={styles.toggle}>
-          <TouchableOpacity
-            style={[styles.pill, viewMode === 'pins' && styles.pillActive]}
-            onPress={() => onViewModeChange('pins')}
-            activeOpacity={0.7}
-          >
-            <MaterialCommunityIcons name="map-marker" size={16} color={viewMode === 'pins' ? '#fff' : T.textFaint} />
-            <Text style={[styles.pillText, viewMode === 'pins' && styles.pillTextActive]}>Pins</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.pill, viewMode === 'heatmap' && styles.pillActive]}
-            onPress={() => onViewModeChange('heatmap')}
-            activeOpacity={0.7}
-          >
-            <MaterialCommunityIcons name="fire" size={16} color={viewMode === 'heatmap' ? '#fff' : T.textFaint} />
-            <Text style={[styles.pillText, viewMode === 'heatmap' && styles.pillTextActive]}>Heatmap</Text>
-          </TouchableOpacity>
+          <Text style={styles.toggleEyebrow}>lovemap</Text>
+          <View style={styles.toggleBands}>
+            <TouchableOpacity
+              style={[styles.band, viewMode === 'pins' && styles.bandActive]}
+              onPress={() => onViewModeChange('pins')}
+              activeOpacity={0.8}
+            >
+              <IcoPin size={13} color={viewMode === 'pins' ? T.text : T.textFaint} />
+              <Text style={[styles.bandText, viewMode === 'pins' && styles.bandTextActive]}>
+                Atlas
+              </Text>
+            </TouchableOpacity>
+            <View style={styles.bandDivider} />
+            <TouchableOpacity
+              style={[styles.band, viewMode === 'heatmap' && styles.bandActive]}
+              onPress={() => onViewModeChange('heatmap')}
+              activeOpacity={0.8}
+            >
+              <IcoHeat size={13} color={viewMode === 'heatmap' ? T.text : T.textFaint} />
+              <Text style={[styles.bandText, viewMode === 'heatmap' && styles.bandTextActive]}>
+                Chaleur
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         <View style={styles.spacer} />
       </View>
 
+      {/* Bandeau ami */}
       {friendName && (
         <View style={styles.friendBanner}>
-          <Text style={styles.friendBannerText}>Carte de {friendName}</Text>
-          <TouchableOpacity onPress={onFriendClear}>
-            <Text style={styles.friendBannerClose}>✕</Text>
+          <Text style={styles.friendBannerLabel}>
+            <Text style={styles.friendBannerEyebrow}>Carte de </Text>
+            {friendName}
+          </Text>
+          <TouchableOpacity onPress={onFriendClear} style={styles.friendBannerClose} activeOpacity={0.7}>
+            <IcoClose size={12} color={T.textFaint} />
           </TouchableOpacity>
         </View>
       )}
@@ -72,57 +87,76 @@ const styles = StyleSheet.create({
   },
   spacer: { width: 44 },
   toggle: {
-    flexDirection: 'row',
-    backgroundColor: T.surface + 'ee',
-    borderRadius: T.pill,
+    backgroundColor: T.surface + 'f0',
     borderWidth: 1,
     borderColor: T.border,
-    padding: 3,
     elevation: 8,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.4,
-    shadowRadius: 8,
+    shadowOpacity: 0.5,
+    shadowRadius: 12,
   },
-  pill: {
+  toggleEyebrow: {
+    fontFamily: F.mono,
+    fontSize: 7,
+    letterSpacing: 2.5,
+    textTransform: 'uppercase',
+    color: T.textFaint,
+    textAlign: 'center',
+    paddingTop: 6,
+    paddingHorizontal: 16,
+  },
+  toggleBands: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  band: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: T.pill,
+    paddingHorizontal: 14,
     gap: 6,
   },
-  pillActive: {
+  bandActive: {
     backgroundColor: T.primary,
   },
-  pillText: {
-    color: T.textFaint,
-    fontSize: 13,
-    fontWeight: '600',
+  bandDivider: {
+    width: 1,
+    height: 20,
+    backgroundColor: T.border,
   },
-  pillTextActive: {
-    color: '#fff',
+  bandText: {
+    fontFamily: F.mono,
+    fontSize: 9,
+    letterSpacing: 1.5,
+    textTransform: 'uppercase',
+    color: T.textFaint,
+  },
+  bandTextActive: {
+    color: T.text,
   },
   friendBanner: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: T.surface + 'ee',
-    borderRadius: T.pill,
+    backgroundColor: T.surface + 'f0',
     borderWidth: 1,
     borderColor: T.border,
-    paddingVertical: 6,
+    paddingVertical: 8,
     paddingHorizontal: 14,
-    marginTop: 8,
-    gap: 8,
+    marginTop: 6,
+    gap: 10,
   },
-  friendBannerText: {
-    color: T.primary,
-    fontSize: 13,
-    fontWeight: '600',
+  friendBannerLabel: {
+    fontFamily: F.serif,
+    fontStyle: 'italic',
+    fontSize: 14,
+    color: T.text,
+    flex: 1,
+  },
+  friendBannerEyebrow: {
+    color: T.textFaint,
   },
   friendBannerClose: {
-    color: T.textFaint,
-    fontSize: 14,
-    fontWeight: 'bold',
+    padding: 4,
   },
 });

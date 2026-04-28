@@ -14,25 +14,22 @@ import {
 import { router, useLocalSearchParams } from 'expo-router';
 import { Snackbar } from 'react-native-paper';
 import { DatePickerModal } from 'react-native-paper-dates';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
 import { usePoints } from '@/hooks/usePoints';
+import { T } from '@/constants/theme';
+import { F } from '@/constants/fonts';
+import { IcoArrow, IcoTrash, IcoClose } from '@/components/icons';
 import type { MapPoint, Profile, PointPartner } from '@/types/app.types';
 
 const darkMapStyle = [
-  { elementType: 'geometry', stylers: [{ color: '#1a1a2e' }] },
-  { elementType: 'labels.text.fill', stylers: [{ color: '#8ec3b9' }] },
-  { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#304a7d' }] },
-  { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#0d2137' }] },
+  { elementType: 'geometry', stylers: [{ color: '#0a0a0a' }] },
+  { elementType: 'labels.text.fill', stylers: [{ color: '#8a8a8a' }] },
+  { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#1f1f1f' }] },
+  { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#050505' }] },
 ];
-
-function noteColor(note: number): string {
-  if (note <= 3) return '#f44336';
-  if (note <= 6) return '#ff9800';
-  if (note <= 8) return '#8bc34a';
-  return '#4caf50';
-}
 
 function formatDate(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString('fr-FR', {
@@ -51,13 +48,14 @@ function formatDuration(minutes: number | null): string {
 }
 
 function consentLabel(status: string): string {
-  if (status === 'pending') return '⏳ En attente';
-  if (status === 'accepted') return '✅ Accepté';
-  return '❌ Refusé';
+  if (status === 'pending') return 'En attente';
+  if (status === 'accepted') return 'Accepté';
+  return 'Refusé';
 }
 
 export default function PointDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const insets = useSafeAreaInsets();
   const { user } = useAuth();
   const { deletePoint, updatePointFields } = usePoints();
 
@@ -68,7 +66,6 @@ export default function PointDetail() {
   const [loading, setLoading] = useState(true);
   const [snackbar, setSnackbar] = useState<string | null>(null);
 
-  // Mode édition partenaire
   const [editing, setEditing] = useState(false);
   const [editNote, setEditNote] = useState(5);
   const [editDuration, setEditDuration] = useState('');
@@ -84,52 +81,30 @@ export default function PointDetail() {
 
   async function loadPoint() {
     setLoading(true);
-
-    const { data: raw } = await supabase
-      .from('points')
-      .select('*')
-      .eq('id', id)
-      .single();
-
+    const { data: raw } = await supabase.from('points').select('*').eq('id', id).single();
     if (raw) {
       const coords = (raw.location as any)?.coordinates ?? [0, 0];
       setPoint({ ...raw, longitude: coords[0], latitude: coords[1] });
     }
-
-    // Charger partenaire
-    const { data: pp } = await supabase
-      .from('point_partners')
-      .select('*')
-      .eq('point_id', id)
-      .maybeSingle();
-
+    const { data: pp } = await supabase.from('point_partners').select('*').eq('point_id', id).maybeSingle();
     if (pp) {
       setPartnerRecord(pp);
       const { data: profile } = await supabase
-        .from('profiles')
-        .select('id, username, display_name, avatar_url')
-        .eq('id', pp.partner_id)
-        .single();
+        .from('profiles').select('id, username, display_name, avatar_url').eq('id', pp.partner_id).single();
       setPartnerProfile(profile as Profile);
     }
-
-    // Charger photos
     const { data: photoData } = await supabase
-      .from('point_photos')
-      .select('id, photo_url, position')
-      .eq('point_id', id)
-      .order('position');
+      .from('point_photos').select('id, photo_url, position').eq('point_id', id).order('position');
     setPhotos(photoData ?? []);
-
     setLoading(false);
   }
 
   async function handleDelete() {
     if (!point) return;
-    Alert.alert('Supprimer', 'Voulez-vous vraiment supprimer ce point ?', [
+    Alert.alert('Effacer cette page', 'Cette action est irréversible.', [
       { text: 'Annuler', style: 'cancel' },
       {
-        text: 'Supprimer',
+        text: 'Effacer',
         style: 'destructive',
         onPress: async () => {
           const ok = await deletePoint(point.id);
@@ -158,11 +133,7 @@ export default function PointDetail() {
       duration_minutes: editDuration ? parseInt(editDuration, 10) : null,
       happened_at: new Date(editDate.getFullYear(), editDate.getMonth(), editDate.getDate(), 12, 0, 0).toISOString(),
     });
-    if (!ok) {
-      setSnackbar('Erreur lors de la sauvegarde.');
-      setSaving(false);
-      return;
-    }
+    if (!ok) { setSnackbar('Erreur lors de la sauvegarde.'); setSaving(false); return; }
     await handleConsent(true);
     setEditing(false);
     setSaving(false);
@@ -170,34 +141,27 @@ export default function PointDetail() {
 
   async function handleConsent(accept: boolean) {
     if (!partnerRecord) return;
-    const { error } = await supabase
-      .from('point_partners')
-      .update({
-        status: accept ? 'accepted' : 'rejected',
-        responded_at: new Date().toISOString(),
-      })
-      .eq('id', partnerRecord.id);
-
-    if (error) {
-      setSnackbar('Erreur lors de la réponse.');
-      return;
-    }
-    setSnackbar(accept ? 'Taguage accepté !' : 'Taguage refusé.');
+    const { error } = await supabase.from('point_partners').update({
+      status: accept ? 'accepted' : 'rejected',
+      responded_at: new Date().toISOString(),
+    }).eq('id', partnerRecord.id);
+    if (error) { setSnackbar('Erreur lors de la réponse.'); return; }
+    setSnackbar(accept ? 'Page scellée.' : 'Taguage refusé.');
     await loadPoint();
   }
 
   if (loading) {
     return (
-      <View style={styles.centered}>
-        <ActivityIndicator color="#e91e8c" size="large" />
+      <View style={[styles.centered, { paddingTop: insets.top }]}>
+        <ActivityIndicator color={T.primary} size="large" />
       </View>
     );
   }
 
   if (!point) {
     return (
-      <View style={styles.centered}>
-        <Text style={styles.errorText}>Point introuvable.</Text>
+      <View style={[styles.centered, { paddingTop: insets.top }]}>
+        <Text style={styles.errorText}>Page introuvable.</Text>
       </View>
     );
   }
@@ -205,186 +169,139 @@ export default function PointDetail() {
   const isOwner = point.creator_id === user?.id;
   const isPartner = partnerRecord?.partner_id === user?.id;
   const isPending = partnerRecord?.status === 'pending';
-  const color = noteColor(point.note);
 
   return (
     <View style={styles.container}>
-      <ScrollView>
+      <ScrollView showsVerticalScrollIndicator={false}>
         {/* Mini carte */}
         <View style={styles.miniMap}>
           <MapView
             style={StyleSheet.absoluteFillObject}
             provider={Platform.OS === 'android' ? PROVIDER_GOOGLE : undefined}
-            initialRegion={{
-              latitude: point.latitude,
-              longitude: point.longitude,
-              latitudeDelta: 0.005,
-              longitudeDelta: 0.005,
-            }}
+            initialRegion={{ latitude: point.latitude, longitude: point.longitude, latitudeDelta: 0.005, longitudeDelta: 0.005 }}
             scrollEnabled={false}
             zoomEnabled={false}
             customMapStyle={darkMapStyle}
             pointerEvents="none"
           >
-            <Marker
-              coordinate={{ latitude: point.latitude, longitude: point.longitude }}
-              pinColor={color}
-            />
+            <Marker coordinate={{ latitude: point.latitude, longitude: point.longitude }} pinColor={T.primary} />
           </MapView>
+
+          {/* Bouton retour flottant */}
+          <TouchableOpacity style={[styles.backBtn, { top: insets.top + 12 }]} onPress={() => router.back()} activeOpacity={0.8}>
+            <IcoArrow size={16} color={T.text} dir="left" />
+          </TouchableOpacity>
         </View>
 
         <View style={styles.content}>
-          {/* Partenaire badge */}
-          {partnerProfile && (
-            <View style={styles.partnerBadge}>
-              <Text style={styles.partnerBadgeText}>
-                avec @{partnerProfile.username}
-              </Text>
-            </View>
-          )}
-
-          {/* Note */}
-          <View style={styles.noteContainer}>
-            <Text style={[styles.noteValue, { color }]}>{point.note}/10</Text>
-            <Text style={styles.stars}>
-              {'★'.repeat(point.note)}{'☆'.repeat(10 - point.note)}
-            </Text>
+          {/* Note grande */}
+          <View style={styles.noteBlock}>
+            <Text style={styles.noteValue}>{point.note}</Text>
+            <Text style={styles.noteDenom}>/10</Text>
           </View>
+
+          {/* Barre segments note */}
+          <View style={styles.noteBar}>
+            {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => (
+              <View key={n} style={[styles.noteSegment, n <= point.note && styles.noteSegmentActive]} />
+            ))}
+          </View>
+
+          {/* Commentaire editorial */}
+          {point.comment ? (
+            <View style={styles.quoteBlock}>
+              <Text style={styles.quoteMark}>«</Text>
+              <Text style={styles.quoteText}>{point.comment}</Text>
+              <Text style={[styles.quoteMark, styles.quoteMarkRight]}>»</Text>
+            </View>
+          ) : null}
 
           {/* Photos */}
           {photos.length > 0 && (
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.photosRow}>
               {photos.map((photo) => (
-                <Image
-                  key={photo.id}
-                  source={{ uri: photo.photo_url }}
-                  style={styles.photoThumb}
-                />
+                <Image key={photo.id} source={{ uri: photo.photo_url }} style={styles.photoThumb} />
               ))}
             </ScrollView>
           )}
 
-          {/* Détails */}
-          <View style={styles.card}>
+          {/* Table métadonnées */}
+          <View style={styles.metaTable}>
             {(point as any).address && (
-              <>
-                <View style={styles.row}>
-                  <Text style={styles.rowLabel}>Adresse</Text>
-                  <Text style={[styles.rowValue, { flex: 1, textAlign: 'right' }]} numberOfLines={2}>
-                    {(point as any).address}
-                  </Text>
-                </View>
-                <View style={styles.separator} />
-              </>
+              <View style={styles.metaRow}>
+                <Text style={styles.metaKey}>Lieu</Text>
+                <Text style={styles.metaValue} numberOfLines={2}>{(point as any).address}</Text>
+              </View>
             )}
-            <View style={styles.row}>
-              <Text style={styles.rowLabel}>Date</Text>
-              <Text style={styles.rowValue}>{formatDate(point.happened_at ?? point.created_at)}</Text>
+            <View style={styles.metaRow}>
+              <Text style={styles.metaKey}>Date</Text>
+              <Text style={styles.metaValue}>{formatDate(point.happened_at ?? point.created_at)}</Text>
             </View>
-            <View style={styles.separator} />
-            <View style={styles.row}>
-              <Text style={styles.rowLabel}>Durée</Text>
-              <Text style={styles.rowValue}>{formatDuration(point.duration_minutes)}</Text>
+            <View style={styles.metaRow}>
+              <Text style={styles.metaKey}>Durée</Text>
+              <Text style={styles.metaValue}>{formatDuration(point.duration_minutes)}</Text>
             </View>
-            {point.comment && (
-              <>
-                <View style={styles.separator} />
-                <View style={styles.commentBlock}>
-                  <Text style={styles.rowLabel}>Commentaire</Text>
-                  <Text style={styles.commentText}>{point.comment}</Text>
+            {partnerProfile && partnerRecord && (
+              <View style={styles.metaRow}>
+                <Text style={styles.metaKey}>Avec</Text>
+                <View style={styles.metaPartner}>
+                  <Text style={styles.metaValue}>{partnerProfile.display_name ?? partnerProfile.username}</Text>
+                  <View style={[styles.consentBadge, partnerRecord.status === 'accepted' && styles.consentBadgeOk, partnerRecord.status === 'rejected' && styles.consentBadgeNo]}>
+                    <Text style={styles.consentBadgeText}>{consentLabel(partnerRecord.status)}</Text>
+                  </View>
                 </View>
-              </>
+              </View>
             )}
           </View>
 
-          {/* Partenaire */}
-          {partnerProfile && (
-            <View style={styles.card}>
-              <Text style={styles.sectionTitle}>Partenaire tagué</Text>
-              <View style={styles.partnerRow}>
-                <View style={styles.avatarCircle}>
-                  <Text style={styles.avatarText}>
-                    {(partnerProfile.display_name ?? partnerProfile.username)[0].toUpperCase()}
-                  </Text>
-                </View>
-                <View style={styles.partnerInfo}>
-                  <Text style={styles.partnerName}>{partnerProfile.display_name}</Text>
-                  <Text style={styles.partnerUsername}>@{partnerProfile.username}</Text>
-                </View>
-                {partnerRecord && (
-                  <Text style={styles.consentStatus}>
-                    {consentLabel(partnerRecord.status)}
-                  </Text>
-                )}
+          {/* Consentement partenaire */}
+          {isPartner && isPending && !editing && (
+            <View style={styles.consentBlock}>
+              <Text style={styles.consentQuestion}>Ce moment vous concerne.{'\n'}Acceptez-vous d'y figurer ?</Text>
+              <View style={styles.consentActions}>
+                <TouchableOpacity style={styles.consentEditBtn} onPress={enterEditMode} activeOpacity={0.8}>
+                  <Text style={styles.consentEditText}>Modifier</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.consentAcceptBtn} onPress={() => handleConsent(true)} activeOpacity={0.88}>
+                  <Text style={styles.consentAcceptText}>Sceller</Text>
+                </TouchableOpacity>
               </View>
-
-              {/* Boutons consentement — visible uniquement pour le partenaire en attente */}
-              {isPartner && isPending && !editing && (
-                <View style={styles.consentActions}>
-                  <TouchableOpacity
-                    style={styles.editButton}
-                    onPress={enterEditMode}
-                    activeOpacity={0.8}
-                  >
-                    <Text style={styles.editButtonText}>Modifier</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={styles.acceptButton}
-                    onPress={() => handleConsent(true)}
-                    activeOpacity={0.8}
-                  >
-                    <Text style={styles.acceptButtonText}>Accepter</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={styles.rejectButton}
-                    onPress={() => handleConsent(false)}
-                    activeOpacity={0.8}
-                  >
-                    <Text style={styles.rejectButtonText}>Refuser</Text>
-                  </TouchableOpacity>
-                </View>
-              )}
+              <TouchableOpacity style={styles.consentRejectBtn} onPress={() => handleConsent(false)} activeOpacity={0.7}>
+                <Text style={styles.consentRejectText}>Refuser ce taguage</Text>
+              </TouchableOpacity>
             </View>
           )}
 
-          {/* Formulaire d'édition partenaire */}
+          {/* Formulaire édition partenaire */}
           {editing && (
-            <View style={styles.card}>
-              <Text style={styles.sectionTitle}>Modifier le point</Text>
+            <View style={styles.editBlock}>
+              <Text style={styles.editEyebrow}>Modifier le moment</Text>
 
-              {/* Note */}
               <Text style={styles.editLabel}>Note</Text>
               <View style={styles.editNoteRow}>
-                <Text style={[styles.editNoteValue, { color: noteColor(editNote) }]}>{editNote}/10</Text>
+                <Text style={styles.editNoteValue}>{editNote}</Text>
+                <Text style={styles.editNoteDenom}>/10</Text>
               </View>
-              <View style={styles.editStarsRow}>
+              <View style={styles.noteSegments}>
                 {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => (
-                  <TouchableOpacity key={n} onPress={() => setEditNote(n)} style={styles.editStarButton}>
-                    <Text style={[styles.editStar, { color: n <= editNote ? noteColor(editNote) : '#333' }]}>★</Text>
-                  </TouchableOpacity>
+                  <TouchableOpacity key={n} onPress={() => setEditNote(n)} style={[styles.noteSegment, n <= editNote && styles.noteSegmentActive]} />
                 ))}
               </View>
 
-              {/* Durée */}
-              <Text style={styles.editLabel}>Durée (minutes)</Text>
+              <Text style={[styles.editLabel, { marginTop: 20 }]}>Durée (minutes)</Text>
               <TextInput
-                style={styles.editInput}
+                style={styles.editLineInput}
                 value={editDuration}
                 onChangeText={(v) => setEditDuration(v.replace(/[^0-9]/g, ''))}
                 keyboardType="numeric"
-                placeholder="Durée en minutes"
-                placeholderTextColor="#555"
+                placeholder="—"
+                placeholderTextColor={T.textFaint}
               />
 
-              {/* Date */}
-              <Text style={styles.editLabel}>Date</Text>
-              <TouchableOpacity
-                style={styles.editDateButton}
-                onPress={() => setShowDatePicker(true)}
-                activeOpacity={0.7}
-              >
+              <Text style={[styles.editLabel, { marginTop: 20 }]}>Date</Text>
+              <TouchableOpacity style={styles.editDateBtn} onPress={() => setShowDatePicker(true)} activeOpacity={0.7}>
                 <Text style={styles.editDateText}>
-                  📅 {editDate.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
+                  {editDate.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
                 </Text>
               </TouchableOpacity>
               <DatePickerModal
@@ -393,17 +310,13 @@ export default function PointDetail() {
                 visible={showDatePicker}
                 onDismiss={() => setShowDatePicker(false)}
                 date={editDate}
-                onConfirm={({ date: picked }) => {
-                  setShowDatePicker(false);
-                  if (picked) setEditDate(picked);
-                }}
+                onConfirm={({ date: picked }) => { setShowDatePicker(false); if (picked) setEditDate(picked); }}
                 validRange={{ endDate: new Date() }}
                 label="Choisir une date"
                 saveLabel="Confirmer"
               />
 
-              {/* Commentaire */}
-              <Text style={styles.editLabel}>Commentaire</Text>
+              <Text style={[styles.editLabel, { marginTop: 20 }]}>Commentaire</Text>
               <TextInput
                 style={styles.editCommentInput}
                 value={editComment}
@@ -411,62 +324,42 @@ export default function PointDetail() {
                 multiline
                 numberOfLines={3}
                 placeholder="Commentaire..."
-                placeholderTextColor="#555"
+                placeholderTextColor={T.textFaint}
                 maxLength={500}
               />
-              <Text style={styles.editCharCount}>{editComment.length}/500</Text>
-
-              {/* Actions édition */}
-              <View style={styles.consentActions}>
-                <TouchableOpacity
-                  style={styles.cancelEditButton}
-                  onPress={() => setEditing(false)}
-                  activeOpacity={0.8}
-                >
-                  <Text style={styles.cancelEditText}>Annuler</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.saveAcceptButton, saving && styles.buttonDisabled]}
-                  onPress={handleSaveAndAccept}
-                  disabled={saving}
-                  activeOpacity={0.8}
-                >
-                  <Text style={styles.saveAcceptText}>
-                    {saving ? 'Sauvegarde...' : 'Sauvegarder et accepter'}
-                  </Text>
-                </TouchableOpacity>
-              </View>
+              <Text style={styles.charCount}>{editComment.length}/500</Text>
 
               <TouchableOpacity
-                style={styles.rejectButton}
-                onPress={() => { setEditing(false); handleConsent(false); }}
-                activeOpacity={0.8}
+                style={[styles.saveBtn, saving && { opacity: 0.6 }]}
+                onPress={handleSaveAndAccept}
+                disabled={saving}
+                activeOpacity={0.88}
               >
-                <Text style={styles.rejectButtonText}>Refuser</Text>
+                <View style={styles.saveBtnLeft}>
+                  <Text style={styles.saveBtnLabel}>{saving ? 'Scellement...' : 'Sauvegarder et sceller'}</Text>
+                </View>
+                <View style={styles.saveBtnArrow}>
+                  <IcoArrow size={18} color={T.primary} dir="right" />
+                </View>
+              </TouchableOpacity>
+
+              <TouchableOpacity style={styles.cancelEditBtn} onPress={() => setEditing(false)} activeOpacity={0.7}>
+                <Text style={styles.cancelEditText}>Annuler</Text>
               </TouchableOpacity>
             </View>
           )}
 
-          {/* Actions propriétaire */}
+          {/* Action propriétaire */}
           {isOwner && (
-            <TouchableOpacity style={styles.deleteButton} onPress={handleDelete} activeOpacity={0.8}>
-              <Text style={styles.deleteButtonText}>Supprimer ce point</Text>
+            <TouchableOpacity style={styles.deleteBtn} onPress={handleDelete} activeOpacity={0.8}>
+              <IcoTrash size={16} color={T.primary} />
+              <Text style={styles.deleteBtnText}>Effacer cette page</Text>
             </TouchableOpacity>
           )}
         </View>
       </ScrollView>
 
-      {/* Bouton retour */}
-      <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-        <Text style={styles.backButtonText}>← Retour</Text>
-      </TouchableOpacity>
-
-      <Snackbar
-        visible={!!snackbar}
-        onDismiss={() => setSnackbar(null)}
-        duration={3000}
-        style={styles.snackbar}
-      >
+      <Snackbar visible={!!snackbar} onDismiss={() => setSnackbar(null)} duration={3000} style={styles.snackbar}>
         {snackbar}
       </Snackbar>
     </View>
@@ -474,309 +367,331 @@ export default function PointDetail() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#0f0f0f',
-  },
-  centered: {
-    flex: 1,
-    backgroundColor: '#0f0f0f',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  errorText: {
-    color: '#f44336',
-    fontSize: 16,
-  },
-  miniMap: {
-    height: 200,
-    backgroundColor: '#1a1a2e',
-  },
-  content: {
-    padding: 16,
-  },
-  partnerBadge: {
-    alignSelf: 'center',
-    backgroundColor: '#e91e8c22',
+  container: { flex: 1, backgroundColor: T.bg },
+  centered: { flex: 1, backgroundColor: T.bg, justifyContent: 'center', alignItems: 'center' },
+  errorText: { fontFamily: F.serif, fontStyle: 'italic', fontSize: 16, color: T.primary },
+  miniMap: { height: 220, backgroundColor: T.surface },
+  backBtn: {
+    position: 'absolute',
+    left: 16,
+    width: 40,
+    height: 40,
+    backgroundColor: T.bg + 'cc',
     borderWidth: 1,
-    borderColor: '#e91e8c44',
-    borderRadius: 16,
-    paddingHorizontal: 14,
-    paddingVertical: 6,
+    borderColor: T.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  content: { padding: 24 },
+  noteBlock: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
     marginBottom: 12,
   },
-  partnerBadgeText: {
-    color: '#e91e8c',
-    fontSize: 13,
-    fontWeight: '600',
+  noteValue: {
+    fontFamily: F.serifLight,
+    fontStyle: 'italic',
+    fontSize: 80,
+    lineHeight: 80,
+    color: T.primary,
+    letterSpacing: -3,
   },
-  photosRow: {
-    marginBottom: 12,
+  noteDenom: {
+    fontFamily: F.mono,
+    fontSize: 18,
+    color: T.textFaint,
+    marginLeft: 4,
+    marginBottom: 10,
   },
+  noteBar: {
+    flexDirection: 'row',
+    gap: 3,
+    marginBottom: 28,
+  },
+  noteSegment: {
+    flex: 1,
+    height: 4,
+    backgroundColor: T.surface2,
+  },
+  noteSegmentActive: {
+    backgroundColor: T.primary,
+  },
+  quoteBlock: {
+    marginBottom: 28,
+    paddingHorizontal: 8,
+  },
+  quoteMark: {
+    fontFamily: F.serifMedium,
+    fontSize: 32,
+    color: T.primary,
+    lineHeight: 28,
+  },
+  quoteMarkRight: {
+    textAlign: 'right',
+  },
+  quoteText: {
+    fontFamily: F.serif,
+    fontStyle: 'italic',
+    fontSize: 22,
+    lineHeight: 30,
+    color: T.text,
+    marginVertical: 4,
+  },
+  photosRow: { marginBottom: 24 },
   photoThumb: {
     width: 120,
     height: 120,
-    borderRadius: 8,
     marginRight: 8,
-    backgroundColor: '#1a1a1a',
+    backgroundColor: T.surface,
   },
-  noteContainer: {
-    alignItems: 'center',
-    marginBottom: 16,
+  metaTable: {
+    borderTopWidth: 1,
+    borderTopColor: T.border,
+    marginBottom: 28,
   },
-  noteValue: {
-    fontSize: 40,
-    fontWeight: 'bold',
-    marginBottom: 4,
-  },
-  stars: {
-    fontSize: 20,
-    color: '#e91e8c',
-    letterSpacing: 2,
-  },
-  card: {
-    backgroundColor: '#1a1a1a',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#2a2a2a',
-    padding: 16,
-    marginBottom: 12,
-  },
-  row: {
+  metaRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 4,
-  },
-  rowLabel: {
-    color: '#888888',
-    fontSize: 13,
-  },
-  rowValue: {
-    color: '#ffffff',
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  separator: {
-    height: 1,
-    backgroundColor: '#2a2a2a',
-    marginVertical: 8,
-  },
-  commentBlock: {
-    paddingVertical: 4,
-  },
-  commentText: {
-    color: '#ffffff',
-    fontSize: 14,
-    lineHeight: 22,
-    marginTop: 6,
-  },
-  sectionTitle: {
-    color: '#888888',
-    fontSize: 12,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    marginBottom: 12,
-  },
-  partnerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: T.border,
     gap: 12,
   },
-  avatarCircle: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#e91e8c33',
-    alignItems: 'center',
-    justifyContent: 'center',
+  metaKey: {
+    fontFamily: F.mono,
+    fontSize: 9,
+    letterSpacing: 1.5,
+    textTransform: 'uppercase',
+    color: T.textFaint,
+    paddingTop: 2,
+    width: 48,
   },
-  avatarText: {
-    color: '#e91e8c',
-    fontWeight: 'bold',
-    fontSize: 18,
-  },
-  partnerInfo: {
+  metaValue: {
+    fontFamily: F.serif,
+    fontStyle: 'italic',
+    fontSize: 16,
+    color: T.text,
     flex: 1,
+    textAlign: 'right',
   },
-  partnerName: {
-    color: '#ffffff',
-    fontSize: 15,
-    fontWeight: '500',
+  metaPartner: {
+    flex: 1,
+    alignItems: 'flex-end',
+    gap: 6,
   },
-  partnerUsername: {
-    color: '#888888',
-    fontSize: 12,
+  consentBadge: {
+    borderWidth: 1,
+    borderColor: T.border,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
   },
-  consentStatus: {
-    color: '#888888',
-    fontSize: 12,
+  consentBadgeOk: {
+    borderColor: T.primary,
+  },
+  consentBadgeNo: {
+    borderColor: T.textFaint,
+    opacity: 0.6,
+  },
+  consentBadgeText: {
+    fontFamily: F.mono,
+    fontSize: 8,
+    letterSpacing: 1.5,
+    textTransform: 'uppercase',
+    color: T.textFaint,
+  },
+  consentBlock: {
+    borderTopWidth: 1,
+    borderTopColor: T.border,
+    paddingTop: 24,
+    marginBottom: 24,
+  },
+  consentQuestion: {
+    fontFamily: F.serifLight,
+    fontStyle: 'italic',
+    fontSize: 22,
+    lineHeight: 28,
+    color: T.text,
+    marginBottom: 20,
   },
   consentActions: {
     flexDirection: 'row',
-    gap: 12,
-    marginTop: 16,
+    gap: 8,
+    marginBottom: 12,
   },
-  acceptButton: {
-    flex: 1,
-    backgroundColor: '#4caf50',
-    borderRadius: 12,
-    paddingVertical: 12,
-    alignItems: 'center',
-  },
-  acceptButtonText: {
-    color: '#ffffff',
-    fontWeight: '600',
-    fontSize: 14,
-  },
-  rejectButton: {
+  consentEditBtn: {
     flex: 1,
     borderWidth: 1,
-    borderColor: '#f44336',
-    borderRadius: 12,
-    paddingVertical: 12,
-    alignItems: 'center',
-  },
-  rejectButtonText: {
-    color: '#f44336',
-    fontWeight: '600',
-    fontSize: 14,
-  },
-  editButton: {
-    flex: 1,
-    borderWidth: 1,
-    borderColor: '#e91e8c',
-    borderRadius: 12,
-    paddingVertical: 12,
-    alignItems: 'center',
-  },
-  editButtonText: {
-    color: '#e91e8c',
-    fontWeight: '600',
-    fontSize: 14,
-  },
-  editLabel: {
-    color: '#888888',
-    fontSize: 12,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    marginBottom: 6,
-    marginTop: 12,
-  },
-  editNoteRow: {
-    alignItems: 'center',
-    marginBottom: 4,
-  },
-  editNoteValue: {
-    fontSize: 28,
-    fontWeight: 'bold',
-  },
-  editStarsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 8,
-  },
-  editStarButton: {
-    padding: 2,
-  },
-  editStar: {
-    fontSize: 22,
-  },
-  editInput: {
-    backgroundColor: '#0f0f0f',
-    color: '#ffffff',
-    borderWidth: 1,
-    borderColor: '#333',
-    borderRadius: 8,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    fontSize: 14,
-  },
-  editDateButton: {
-    backgroundColor: '#0f0f0f',
-    borderWidth: 1,
-    borderColor: '#333',
-    borderRadius: 8,
-    paddingVertical: 12,
-    paddingHorizontal: 12,
-  },
-  editDateText: {
-    color: '#ffffff',
-    fontSize: 14,
-  },
-  editCommentInput: {
-    backgroundColor: '#0f0f0f',
-    color: '#ffffff',
-    borderWidth: 1,
-    borderColor: '#333',
-    borderRadius: 8,
-    padding: 12,
-    minHeight: 80,
-    textAlignVertical: 'top',
-    fontSize: 14,
-  },
-  editCharCount: {
-    color: '#555',
-    fontSize: 11,
-    textAlign: 'right',
-    marginTop: 4,
-    marginBottom: 8,
-  },
-  cancelEditButton: {
-    flex: 1,
-    borderWidth: 1,
-    borderColor: '#2a2a2a',
-    borderRadius: 12,
-    paddingVertical: 12,
-    alignItems: 'center',
-  },
-  cancelEditText: {
-    color: '#888888',
-    fontWeight: '500',
-    fontSize: 14,
-  },
-  saveAcceptButton: {
-    flex: 2,
-    backgroundColor: '#4caf50',
-    borderRadius: 12,
-    paddingVertical: 12,
-    alignItems: 'center',
-  },
-  saveAcceptText: {
-    color: '#ffffff',
-    fontWeight: '600',
-    fontSize: 14,
-  },
-  buttonDisabled: {
-    opacity: 0.6,
-  },
-  deleteButton: {
-    borderWidth: 1,
-    borderColor: '#f44336',
-    borderRadius: 12,
+    borderColor: T.border,
     paddingVertical: 14,
     alignItems: 'center',
-    marginTop: 8,
   },
-  deleteButtonText: {
-    color: '#f44336',
-    fontWeight: '600',
-    fontSize: 15,
+  consentEditText: {
+    fontFamily: F.sansMedium,
+    fontSize: 13,
+    letterSpacing: 0.5,
+    color: T.textDim,
   },
-  backButton: {
-    position: 'absolute',
-    top: 52,
-    left: 16,
-    backgroundColor: '#1a1a1acc',
-    borderRadius: 8,
-    paddingHorizontal: 12,
+  consentAcceptBtn: {
+    flex: 2,
+    backgroundColor: T.primary,
+    paddingVertical: 14,
+    alignItems: 'center',
+  },
+  consentAcceptText: {
+    fontFamily: F.sansMedium,
+    fontSize: 14,
+    letterSpacing: 0.5,
+    color: T.text,
+  },
+  consentRejectBtn: {
+    alignSelf: 'center',
     paddingVertical: 8,
   },
-  backButtonText: {
-    color: '#ffffff',
+  consentRejectText: {
+    fontFamily: F.serif,
+    fontStyle: 'italic',
     fontSize: 14,
+    color: T.textFaint,
+    textDecorationLine: 'underline',
   },
-  snackbar: {
-    backgroundColor: '#1a1a1a',
+  editBlock: {
+    borderTopWidth: 1,
+    borderTopColor: T.border,
+    paddingTop: 24,
+    marginBottom: 24,
   },
+  editEyebrow: {
+    fontFamily: F.mono,
+    fontSize: 9,
+    letterSpacing: 2,
+    textTransform: 'uppercase',
+    color: T.primary,
+    marginBottom: 16,
+  },
+  editLabel: {
+    fontFamily: F.mono,
+    fontSize: 9,
+    letterSpacing: 2,
+    textTransform: 'uppercase',
+    color: T.textFaint,
+    marginBottom: 8,
+  },
+  editNoteRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    marginBottom: 12,
+  },
+  editNoteValue: {
+    fontFamily: F.serifLight,
+    fontStyle: 'italic',
+    fontSize: 48,
+    lineHeight: 48,
+    color: T.primary,
+  },
+  editNoteDenom: {
+    fontFamily: F.mono,
+    fontSize: 14,
+    color: T.textFaint,
+    marginLeft: 4,
+  },
+  noteSegments: {
+    flexDirection: 'row',
+    gap: 3,
+    marginBottom: 8,
+  },
+  editLineInput: {
+    fontFamily: F.serif,
+    fontStyle: 'italic',
+    fontSize: 20,
+    color: T.text,
+    borderBottomWidth: 1,
+    borderBottomColor: T.border,
+    paddingVertical: 8,
+  },
+  editDateBtn: {
+    borderBottomWidth: 1,
+    borderBottomColor: T.border,
+    paddingVertical: 8,
+  },
+  editDateText: {
+    fontFamily: F.serif,
+    fontStyle: 'italic',
+    fontSize: 18,
+    color: T.text,
+  },
+  editCommentInput: {
+    fontFamily: F.serif,
+    fontStyle: 'italic',
+    fontSize: 17,
+    color: T.text,
+    minHeight: 80,
+    textAlignVertical: 'top',
+    paddingTop: 0,
+    lineHeight: 24,
+  },
+  charCount: {
+    fontFamily: F.mono,
+    fontSize: 9,
+    color: T.textFaint,
+    textAlign: 'right',
+    marginTop: 4,
+    marginBottom: 16,
+    letterSpacing: 1,
+  },
+  saveBtn: {
+    flexDirection: 'row',
+    height: 56,
+    marginTop: 8,
+  },
+  saveBtnLeft: {
+    flex: 1,
+    backgroundColor: T.primary,
+    justifyContent: 'center',
+    paddingHorizontal: 20,
+  },
+  saveBtnLabel: {
+    fontFamily: F.sansMedium,
+    fontSize: 13,
+    letterSpacing: 0.5,
+    color: T.text,
+  },
+  saveBtnArrow: {
+    width: 56,
+    backgroundColor: T.bg,
+    borderWidth: 1,
+    borderLeftWidth: 0,
+    borderColor: T.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cancelEditBtn: {
+    alignSelf: 'center',
+    paddingVertical: 12,
+    marginTop: 4,
+  },
+  cancelEditText: {
+    fontFamily: F.serif,
+    fontStyle: 'italic',
+    fontSize: 14,
+    color: T.textFaint,
+    textDecorationLine: 'underline',
+  },
+  deleteBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    borderTopWidth: 1,
+    borderTopColor: T.border,
+    paddingTop: 20,
+    marginTop: 8,
+  },
+  deleteBtnText: {
+    fontFamily: F.serif,
+    fontStyle: 'italic',
+    fontSize: 15,
+    color: T.primary,
+    textDecorationLine: 'underline',
+  },
+  snackbar: { backgroundColor: T.surface2 },
 });

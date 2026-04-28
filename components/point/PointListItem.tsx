@@ -1,53 +1,50 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { router } from 'expo-router';
+import { T } from '@/constants/theme';
+import { F } from '@/constants/fonts';
 import type { MapPoint } from '@/types/app.types';
 
 interface Props {
   point: MapPoint;
+  index: number;
 }
 
-function noteColor(note: number): string {
-  if (note <= 3) return '#f44336';
-  if (note <= 6) return '#ff9800';
-  if (note <= 8) return '#8bc34a';
-  return '#4caf50';
-}
-
-export function PointListItem({ point }: Props) {
-  const color = noteColor(point.note);
+export function PointListItem({ point, index }: Props) {
   const dateStr = new Date(point.happened_at ?? point.created_at).toLocaleDateString('fr-FR', {
     day: 'numeric',
     month: 'long',
-    year: 'numeric',
   });
 
   return (
     <TouchableOpacity
       style={styles.container}
       onPress={() => router.push(`/(app)/point/${point.id}`)}
-      activeOpacity={0.7}
+      activeOpacity={0.75}
     >
-      <View style={[styles.noteBadge, { backgroundColor: color + '22', borderColor: color + '44' }]}>
-        <Text style={[styles.noteText, { color }]}>{point.note}</Text>
-      </View>
+      {/* Numéro */}
+      <Text style={styles.number}>N°{String(index + 1).padStart(3, '0')}</Text>
 
-      <View style={styles.info}>
-        <View style={styles.topRow}>
-          <Text style={styles.date}>{dateStr}</Text>
-          {point.partnerUsername && (
-            <Text style={styles.partner}>@{point.partnerUsername}</Text>
-          )}
-        </View>
+      {/* Note grande */}
+      <Text style={[styles.note, { color: T.primary }]}>{point.note}</Text>
+
+      {/* Commentaire */}
+      <View style={styles.body}>
         {point.comment ? (
-          <Text style={styles.comment} numberOfLines={1}>{point.comment}</Text>
-        ) : null}
-        {(point as any).address ? (
-          <Text style={styles.address} numberOfLines={1}>📍 {(point as any).address}</Text>
-        ) : null}
+          <Text style={styles.comment} numberOfLines={1}>
+            {point.comment}
+          </Text>
+        ) : (
+          <Text style={styles.commentEmpty}>Sans commentaire</Text>
+        )}
+        <Text style={styles.meta}>
+          {dateStr}
+          {point.partnerUsername ? `  ·  @${point.partnerUsername}` : ''}
+          {(point as any).address ? `  ·  ${(point as any).address}` : ''}
+        </Text>
       </View>
 
-      <Text style={styles.chevron}>›</Text>
+      <Text style={styles.arrow}>›</Text>
     </TouchableOpacity>
   );
 }
@@ -56,57 +53,57 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#1a1a1a',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#2a2a2a',
-    padding: 14,
-    marginBottom: 8,
-    gap: 12,
+    paddingVertical: 16,
+    paddingHorizontal: 0,
+    borderBottomWidth: 1,
+    borderBottomColor: T.border,
+    gap: 14,
   },
-  noteBadge: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
+  number: {
+    fontFamily: F.mono,
+    fontSize: 9,
+    letterSpacing: 1.5,
+    color: T.textFaint,
+    width: 38,
+    textTransform: 'uppercase',
   },
-  noteText: {
-    fontSize: 18,
-    fontWeight: 'bold',
+  note: {
+    fontFamily: F.serifLight,
+    fontStyle: 'italic',
+    fontSize: 36,
+    lineHeight: 36,
+    color: T.primary,
+    minWidth: 28,
+    textAlign: 'center',
   },
-  info: {
+  body: {
     flex: 1,
   },
-  topRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  date: {
-    color: '#ffffff',
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  partner: {
-    color: '#e91e8c',
-    fontSize: 12,
-    fontWeight: '600',
-  },
   comment: {
-    color: '#888888',
-    fontSize: 13,
-    marginTop: 2,
+    fontFamily: F.serif,
+    fontStyle: 'italic',
+    fontSize: 17,
+    color: T.text,
+    lineHeight: 22,
   },
-  address: {
-    color: '#666666',
-    fontSize: 11,
-    marginTop: 2,
+  commentEmpty: {
+    fontFamily: F.serif,
+    fontStyle: 'italic',
+    fontSize: 17,
+    color: T.textFaint,
+    lineHeight: 22,
   },
-  chevron: {
-    color: '#555',
-    fontSize: 22,
-    fontWeight: '300',
+  meta: {
+    fontFamily: F.mono,
+    fontSize: 9,
+    letterSpacing: 1,
+    color: T.textFaint,
+    textTransform: 'uppercase',
+    marginTop: 4,
+  },
+  arrow: {
+    fontFamily: F.sansLight,
+    color: T.textFaint,
+    fontSize: 20,
   },
 });

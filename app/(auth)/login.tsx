@@ -5,223 +5,180 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  KeyboardAvoidingView,
-  Platform,
+  Alert,
 } from 'react-native';
 import { router } from 'expo-router';
-import { Snackbar } from 'react-native-paper';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { supabase } from '@/lib/supabase';
-import { useAuth } from '@/hooks/useAuth';
-import { useAuthStore } from '@/stores/authStore';
-import { TextInput as PaperInput } from 'react-native-paper';
-import { Input } from '@/components/ui/Input';
 import { T } from '@/constants/theme';
+import { F } from '@/constants/fonts';
+import { Input } from '@/components/ui/Input';
+import { Button } from '@/components/ui/Button';
+import { IcoHeartDashed } from '@/components/icons';
 
 export default function Login() {
-  const { fetchProfile } = useAuth();
-  const { setSession } = useAuthStore();
-
+  const insets = useSafeAreaInsets();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
+  const [showPwd, setShowPwd] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [snackbar, setSnackbar] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   async function handleLogin() {
-    if (!email.trim() || !password) {
-      setSnackbar('Veuillez remplir tous les champs.');
-      return;
-    }
+    if (!email.trim() || !password) { setError('Champs requis manquants.'); return; }
     setLoading(true);
-    const { data, error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
-    if (error) {
-      setSnackbar('Email ou mot de passe incorrect.');
-      setLoading(false);
-      return;
-    }
-    if (data.session) {
-      setSession(data.session);
-    }
-    if (data.user) {
-      await fetchProfile(data.user.id);
-    }
+    setError(null);
+    const { error: e } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
     setLoading(false);
+    if (e) { setError(e.message); return; }
     router.replace('/(app)/map');
   }
 
-  async function handleForgotPassword() {
-    if (!email.trim()) {
-      setSnackbar('Entrez votre email pour réinitialiser le mot de passe.');
-      return;
-    }
-    const { error } = await supabase.auth.resetPasswordForEmail(email.trim());
-    if (error) {
-      setSnackbar('Erreur lors de l\'envoi. Vérifiez votre email.');
-    } else {
-      setSnackbar('Email de réinitialisation envoyé !');
-    }
+  async function handleForgot() {
+    if (!email.trim()) { Alert.alert('Entrez votre adresse email d\'abord.'); return; }
+    await supabase.auth.resetPasswordForEmail(email.trim());
+    Alert.alert('Email de réinitialisation envoyé.');
   }
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
-      <ScrollView contentContainerStyle={styles.inner} keyboardShouldPersistTaps="handled">
-        <View style={styles.logoContainer}>
-          <Text style={styles.logoEyebrow}>Bienvenue sur</Text>
-          <Text style={styles.logoText}>LoveMap</Text>
+    <View style={[styles.container, { paddingTop: insets.top + 56 }]}>
+      <View style={styles.innerBorder} pointerEvents="none" />
+
+      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+        {/* Wordmark */}
+        <Text style={styles.tagline}>De retour, voyageur.</Text>
+        <View style={styles.wordmark}>
+          <Text style={styles.wordmarkText}>love</Text>
+          <IcoHeartDashed size={16} color={T.primary} />
+          <Text style={styles.wordmarkText}>map</Text>
         </View>
 
-        <Text style={styles.eyebrow}>Email</Text>
-        <Input
-          label=""
-          value={email}
-          onChangeText={setEmail}
-          keyboardType="email-address"
-          autoCapitalize="none"
-          style={styles.input}
-        />
+        {/* Formulaire */}
+        <View style={styles.form}>
+          <Input
+            label="Adresse"
+            value={email}
+            onChangeText={setEmail}
+            keyboardType="email-address"
+            autoCapitalize="none"
+            containerStyle={styles.inputWrap}
+          />
 
-        <Text style={styles.eyebrow}>Mot de passe</Text>
-        <Input
-          label=""
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry={!showPassword}
-          right={
-            <PaperInput.Icon
-              icon={showPassword ? 'eye-off' : 'eye'}
-              onPress={() => setShowPassword(!showPassword)}
-              color={T.textFaint}
+          <View>
+            <Input
+              label="Mot de passe"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry={!showPwd}
+              containerStyle={styles.inputWrap}
             />
-          }
-          style={styles.input}
-        />
+            <TouchableOpacity onPress={() => setShowPwd(!showPwd)} style={styles.showPwdBtn}>
+              <Text style={styles.showPwdText}>{showPwd ? 'masquer' : 'voir'}</Text>
+            </TouchableOpacity>
+          </View>
 
-        <TouchableOpacity onPress={handleForgotPassword} style={styles.forgotLink}>
-          <Text style={styles.linkText}>Mot de passe oublié ?</Text>
-        </TouchableOpacity>
+          <TouchableOpacity onPress={handleForgot} style={{ marginTop: 12, alignSelf: 'flex-start' }}>
+            <Text style={styles.forgotText}>oublié ?</Text>
+          </TouchableOpacity>
 
-        <TouchableOpacity
-          style={[styles.button, loading && styles.buttonDisabled]}
-          onPress={handleLogin}
-          disabled={loading}
-          activeOpacity={0.8}
-        >
-          <Text style={styles.buttonText}>{loading ? 'Connexion...' : 'Se connecter'}</Text>
-        </TouchableOpacity>
+          {error ? <Text style={styles.errorText}>↳ {error}</Text> : null}
+        </View>
 
-        <TouchableOpacity onPress={() => router.push('/(auth)/register')} style={styles.registerLink}>
-          <Text style={styles.registerText}>
-            Pas encore de compte ?{' '}
-            <Text style={styles.registerTextBold}>S'inscrire</Text>
-          </Text>
-        </TouchableOpacity>
+        {/* Actions */}
+        <View style={styles.actions}>
+          <Button onPress={handleLogin} loading={loading} variant="solid">
+            Se connecter
+          </Button>
 
-        <View style={styles.privacyRow}>
-          <Text style={styles.privacyText}>Chiffré · Privé par défaut · RGPD</Text>
+          <View style={styles.separator}>
+            <View style={styles.sepLine} />
+            <Text style={styles.sepText}>ou</Text>
+            <View style={styles.sepLine} />
+          </View>
+
+          <Button onPress={() => router.push('/(auth)/register')} variant="ghost">
+            Créer un compte
+          </Button>
         </View>
       </ScrollView>
-
-      <Snackbar
-        visible={!!snackbar}
-        onDismiss={() => setSnackbar(null)}
-        duration={3000}
-        style={styles.snackbar}
-      >
-        {snackbar}
-      </Snackbar>
-    </KeyboardAvoidingView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: T.bg,
+  container: { flex: 1, backgroundColor: T.bg },
+  innerBorder: {
+    position: 'absolute',
+    top: 16, left: 16, right: 16, bottom: 16,
+    borderWidth: 1, borderColor: T.border,
   },
-  inner: {
+  scroll: {
+    paddingHorizontal: 36,
+    paddingBottom: 48,
     flexGrow: 1,
-    justifyContent: 'center',
-    paddingHorizontal: 28,
-    paddingVertical: 72,
   },
-  logoContainer: {
-    marginBottom: 40,
-  },
-  logoEyebrow: {
-    fontSize: 14,
-    color: T.textDim,
-    marginBottom: 4,
-  },
-  logoText: {
-    fontSize: 52,
-    fontWeight: '300',
-    color: T.primary,
-    letterSpacing: -1.5,
+  tagline: {
+    fontFamily: F.serif,
     fontStyle: 'italic',
+    fontSize: 17,
+    color: T.textDim,
+    marginBottom: 8,
   },
-  eyebrow: {
-    fontSize: 11,
+  wordmark: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: 4,
+    marginBottom: 44,
+  },
+  wordmarkText: {
+    fontFamily: F.serif,
+    fontStyle: 'italic',
+    fontSize: 48,
+    color: T.text,
+    letterSpacing: -1,
+    lineHeight: 52,
+  },
+  form: { gap: 0 },
+  inputWrap: { marginBottom: 22 },
+  showPwdBtn: {
+    position: 'absolute',
+    right: 0,
+    bottom: 12,
+  },
+  showPwdText: {
+    fontFamily: F.mono,
+    fontSize: 10,
     letterSpacing: 1.5,
     textTransform: 'uppercase',
     color: T.textFaint,
-    fontWeight: '500',
-    marginBottom: 8,
   },
-  input: {
-    marginBottom: 16,
-  },
-  forgotLink: {
-    alignSelf: 'flex-end',
-    marginBottom: 28,
-  },
-  linkText: {
-    color: T.primary,
-    fontSize: 12,
-  },
-  button: {
-    backgroundColor: T.primary,
-    borderRadius: T.pill,
-    paddingVertical: 15,
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  buttonDisabled: {
-    opacity: 0.5,
-  },
-  buttonText: {
-    color: '#fff',
-    fontSize: 15,
-    fontWeight: '600',
-    letterSpacing: -0.2,
-  },
-  registerLink: {
-    alignItems: 'center',
-    marginTop: 8,
-    paddingVertical: 14,
-    borderRadius: T.pill,
-    borderWidth: 1,
-    borderColor: T.border,
-  },
-  registerText: {
-    color: T.textDim,
+  forgotText: {
+    fontFamily: F.serif,
+    fontStyle: 'italic',
     fontSize: 14,
+    color: T.textDim,
+    textDecorationLine: 'underline',
   },
-  registerTextBold: {
-    color: T.text,
-    fontWeight: '600',
+  errorText: {
+    fontFamily: F.serif,
+    fontStyle: 'italic',
+    fontSize: 13,
+    color: T.primary,
+    marginTop: 8,
   },
-  privacyRow: {
+  actions: { marginTop: 40, gap: 0 },
+  separator: {
+    flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 32,
+    gap: 12,
+    marginVertical: 20,
   },
-  privacyText: {
+  sepLine: { flex: 1, height: 1, backgroundColor: T.border },
+  sepText: {
+    fontFamily: F.mono,
+    fontSize: 9,
+    letterSpacing: 2,
+    textTransform: 'uppercase',
     color: T.textFaint,
-    fontSize: 11,
-  },
-  snackbar: {
-    backgroundColor: T.surface2,
   },
 });

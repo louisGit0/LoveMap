@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { router } from 'expo-router';
 import { Snackbar } from 'react-native-paper';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as FileSystem from 'expo-file-system';
 import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '@/hooks/useAuth';
@@ -17,8 +18,11 @@ import { usePoints } from '@/hooks/usePoints';
 import { useFriends } from '@/hooks/useFriends';
 import { supabase } from '@/lib/supabase';
 import { T } from '@/constants/theme';
+import { F } from '@/constants/fonts';
+import { IcoCog } from '@/components/icons';
 
 export default function ProfileScreen() {
+  const insets = useSafeAreaInsets();
   const { user, profile, fetchProfile } = useAuth();
   const { points, fetchMyPoints } = usePoints();
   const { friends, fetchFriends } = useFriends();
@@ -45,10 +49,7 @@ export default function ProfileScreen() {
 
   async function handlePickAvatar() {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== 'granted') {
-      setSnackbar("Permission d'accès à la galerie refusée.");
-      return;
-    }
+    if (status !== 'granted') { setSnackbar("Permission galerie refusée."); return; }
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ['images'],
       allowsEditing: true,
@@ -61,7 +62,9 @@ export default function ProfileScreen() {
       const asset = result.assets[0];
       const ext = asset.uri.split('.').pop()?.toLowerCase() ?? 'jpg';
       const fileName = `${user!.id}.${ext}`;
-      const base64 = await FileSystem.readAsStringAsync(asset.uri, { encoding: FileSystem.EncodingType?.Base64 ?? 'base64' });
+      const base64 = await FileSystem.readAsStringAsync(asset.uri, {
+        encoding: FileSystem.EncodingType?.Base64 ?? 'base64',
+      });
       const byteCharacters = atob(base64);
       const byteArray = new Uint8Array(byteCharacters.length);
       for (let i = 0; i < byteCharacters.length; i++) {
@@ -71,14 +74,15 @@ export default function ProfileScreen() {
         .from('avatars')
         .upload(fileName, byteArray.buffer, { contentType: `image/${ext}`, upsert: true });
       if (uploadError) {
-        setSnackbar(uploadError.message.includes('bucket') ? "Bucket avatars manquant." : "Erreur upload : " + uploadError.message);
+        setSnackbar(uploadError.message.includes('bucket') ? "Bucket avatars manquant." : "Erreur : " + uploadError.message);
         return;
       }
       const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(fileName);
-      const { error: updateError } = await supabase.from('profiles').update({ avatar_url: urlData.publicUrl }).eq('id', user!.id);
+      const { error: updateError } = await supabase.from('profiles')
+        .update({ avatar_url: urlData.publicUrl }).eq('id', user!.id);
       if (updateError) { setSnackbar('Erreur mise à jour du profil.'); return; }
       await fetchProfile(user!.id);
-      setSnackbar('Photo de profil mise à jour !');
+      setSnackbar('Portrait mis à jour.');
     } catch (e: unknown) {
       setSnackbar("Erreur : " + (e instanceof Error ? e.message : 'Inconnue'));
     } finally {
@@ -88,76 +92,102 @@ export default function ProfileScreen() {
 
   if (loading) {
     return (
-      <View style={styles.centered}>
+      <View style={[styles.centered, { paddingTop: insets.top }]}>
         <ActivityIndicator color={T.primary} size="large" />
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingTop: insets.top }]}>
       <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Header */}
+        {/* Header identité */}
         <View style={styles.header}>
-          <TouchableOpacity style={styles.avatarWrapper} onPress={handlePickAvatar} activeOpacity={0.8} disabled={uploadingAvatar}>
-            {profile?.avatar_url ? (
-              <Image source={{ uri: profile.avatar_url }} style={styles.avatarImage} />
-            ) : (
-              <View style={styles.avatarCircle}>
-                <Text style={styles.avatarText}>{initials}</Text>
+          <View style={styles.innerBorder} pointerEvents="none" />
+
+          <View style={styles.headerTop}>
+            {/* Avatar carré */}
+            <TouchableOpacity
+              style={styles.avatarWrapper}
+              onPress={handlePickAvatar}
+              activeOpacity={0.8}
+              disabled={uploadingAvatar}
+            >
+              {profile?.avatar_url ? (
+                <Image source={{ uri: profile.avatar_url }} style={styles.avatarImage} />
+              ) : (
+                <View style={styles.avatarBox}>
+                  <Text style={styles.avatarInitial}>{initials}</Text>
+                </View>
+              )}
+              {/* Indicateur d'édition : carré rose en coin */}
+              <View style={styles.avatarCorner}>
+                {uploadingAvatar ? (
+                  <ActivityIndicator size="small" color={T.text} />
+                ) : null}
               </View>
-            )}
-            <View style={styles.avatarEditBadge}>
-              {uploadingAvatar
-                ? <ActivityIndicator size="small" color="#fff" />
-                : <Text style={styles.avatarEditIcon}>📷</Text>
-              }
+            </TouchableOpacity>
+
+            <View style={styles.identity}>
+              <Text style={styles.displayName}>{profile?.display_name ?? profile?.username}</Text>
+              <Text style={styles.username}>@{profile?.username}</Text>
             </View>
-          </TouchableOpacity>
 
-          <Text style={styles.displayName}>{profile?.display_name ?? profile?.username}</Text>
-          <Text style={styles.username}>@{profile?.username}</Text>
-
-          <TouchableOpacity style={styles.settingsButton} onPress={() => router.push('/(app)/profile/settings')}>
-            <Text style={styles.settingsButtonText}>Paramètres</Text>
-          </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.settingsBtn}
+              onPress={() => router.push('/(app)/profile/settings')}
+              activeOpacity={0.7}
+            >
+              <IcoCog size={18} color={T.textFaint} />
+            </TouchableOpacity>
+          </View>
         </View>
 
-        {/* Stats */}
+        {/* Statistiques */}
         <View style={styles.statsRow}>
           {[
-            { label: 'Points', value: String(points.length) },
-            { label: 'Moyenne', value: avgNote },
-            { label: 'Amis', value: String(friends.length) },
+            { value: String(points.length), label: 'Entrées' },
+            { value: String(friends.length), label: 'Cercle' },
+            { value: avgNote, label: 'Moyenne' },
           ].map((s, i) => (
-            <View key={s.label} style={[styles.statCard, i > 0 && styles.statCardBorder]}>
+            <View key={s.label} style={[styles.statItem, i > 0 && styles.statItemBorder]}>
               <Text style={styles.statValue}>{s.value}</Text>
               <Text style={styles.statLabel}>{s.label}</Text>
             </View>
           ))}
         </View>
 
-        {/* Derniers points */}
+        {/* Anthologie */}
         {points.length > 0 && (
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Meilleurs moments</Text>
-              <TouchableOpacity onPress={() => router.push('/(app)/point/list')}>
-                <Text style={styles.seeAllLink}>Voir tout ›</Text>
+              <Text style={styles.sectionEyebrow}>Anthologie</Text>
+              <TouchableOpacity onPress={() => router.push('/(app)/point/list')} activeOpacity={0.7}>
+                <Text style={styles.seeAllLink}>Voir tout →</Text>
               </TouchableOpacity>
             </View>
-            {points.slice(0, 5).map((p) => (
-              <TouchableOpacity
-                key={p.id}
-                style={styles.pointRow}
-                onPress={() => router.push(`/(app)/point/${p.id}`)}
-                activeOpacity={0.8}
-              >
-                <Text style={[styles.pointNote, { color: noteColor(p.note) }]}>{p.note}</Text>
-                <Text style={styles.pointComment} numberOfLines={1}>{p.comment ?? 'Aucun commentaire'}</Text>
-                <Text style={styles.pointDate}>{new Date(p.created_at).toLocaleDateString('fr-FR')}</Text>
-              </TouchableOpacity>
-            ))}
+
+            {points
+              .slice()
+              .sort((a, b) => b.note - a.note)
+              .slice(0, 5)
+              .map((p, i) => (
+                <TouchableOpacity
+                  key={p.id}
+                  style={styles.pointRow}
+                  onPress={() => router.push(`/(app)/point/${p.id}`)}
+                  activeOpacity={0.75}
+                >
+                  <Text style={styles.pointIndex}>{String(i + 1).padStart(2, '0')}</Text>
+                  <Text style={styles.pointNote}>{p.note}</Text>
+                  <Text style={styles.pointComment} numberOfLines={1}>
+                    {p.comment ?? 'Sans commentaire'}
+                  </Text>
+                  <Text style={styles.pointDate}>
+                    {new Date(p.created_at).toLocaleDateString('fr-FR')}
+                  </Text>
+                </TouchableOpacity>
+              ))}
           </View>
         )}
       </ScrollView>
@@ -169,176 +199,176 @@ export default function ProfileScreen() {
   );
 }
 
-function noteColor(note: number): string {
-  if (note <= 3) return T.danger;
-  if (note <= 6) return '#fb923c';
-  if (note <= 8) return '#a3e635';
-  return T.success;
-}
-
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: T.bg,
-    paddingTop: 56,
-  },
-  centered: {
-    flex: 1,
-    backgroundColor: T.bg,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
+  container: { flex: 1, backgroundColor: T.bg },
+  centered: { flex: 1, backgroundColor: T.bg, justifyContent: 'center', alignItems: 'center' },
   header: {
-    alignItems: 'center',
-    paddingHorizontal: 24,
+    paddingTop: 24,
     paddingBottom: 24,
-  },
-  avatarWrapper: {
-    marginBottom: 14,
+    paddingHorizontal: 24,
     position: 'relative',
   },
-  avatarCircle: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
-    backgroundColor: T.primary + '30',
+  innerBorder: {
+    position: 'absolute',
+    top: 16, left: 16, right: 16, bottom: 0,
+    borderWidth: 1, borderColor: T.border, borderBottomWidth: 0,
+  },
+  headerTop: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+  },
+  avatarWrapper: {
+    position: 'relative',
+  },
+  avatarBox: {
+    width: 72,
+    height: 72,
+    backgroundColor: T.surface2,
+    borderWidth: 1,
+    borderColor: T.border,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: T.primary,
   },
   avatarImage: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
-    borderWidth: 2,
-    borderColor: T.primary,
+    width: 72,
+    height: 72,
   },
-  avatarText: {
+  avatarInitial: {
+    fontFamily: F.serif,
+    fontStyle: 'italic',
+    fontSize: 32,
     color: T.primary,
-    fontWeight: '700',
-    fontSize: 38,
   },
-  avatarEditBadge: {
+  avatarCorner: {
     position: 'absolute',
     bottom: 0,
     right: 0,
-    width: 30,
-    height: 30,
-    borderRadius: 15,
+    width: 16,
+    height: 16,
     backgroundColor: T.primary,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: T.bg,
   },
-  avatarEditIcon: { fontSize: 13 },
+  identity: { flex: 1 },
   displayName: {
-    color: T.text,
-    fontSize: 24,
-    fontWeight: '300',
+    fontFamily: F.serifLight,
     fontStyle: 'italic',
+    fontSize: 28,
+    lineHeight: 30,
     letterSpacing: -0.5,
+    color: T.text,
   },
   username: {
-    color: T.textDim,
-    fontSize: 13,
-    marginTop: 2,
-    marginBottom: 14,
+    fontFamily: F.mono,
+    fontSize: 10,
+    letterSpacing: 1.5,
+    color: T.textFaint,
+    marginTop: 4,
   },
-  settingsButton: {
+  settingsBtn: {
+    width: 40,
+    height: 40,
     borderWidth: 1,
     borderColor: T.border,
-    borderRadius: T.pill,
-    paddingHorizontal: 20,
-    paddingVertical: 9,
-  },
-  settingsButtonText: {
-    color: T.textDim,
-    fontSize: 13,
-    fontWeight: '500',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   statsRow: {
     flexDirection: 'row',
-    marginHorizontal: 16,
-    backgroundColor: T.surface,
-    borderRadius: T.cardRadius,
-    borderWidth: 1,
+    borderTopWidth: 1,
+    borderBottomWidth: 1,
     borderColor: T.border,
-    marginBottom: 16,
-    overflow: 'hidden',
+    marginBottom: 0,
   },
-  statCard: {
+  statItem: {
     flex: 1,
     paddingVertical: 20,
     alignItems: 'center',
+    gap: 4,
   },
-  statCardBorder: {
+  statItemBorder: {
     borderLeftWidth: 1,
     borderLeftColor: T.border,
   },
   statValue: {
-    color: T.primary,
-    fontSize: 32,
-    fontWeight: '300',
+    fontFamily: F.serifLight,
     fontStyle: 'italic',
+    fontSize: 36,
     lineHeight: 36,
+    color: T.primary,
+    letterSpacing: -1,
   },
   statLabel: {
-    color: T.textFaint,
-    fontSize: 10,
+    fontFamily: F.mono,
+    fontSize: 9,
+    letterSpacing: 2,
     textTransform: 'uppercase',
-    letterSpacing: 1,
-    marginTop: 6,
+    color: T.textFaint,
   },
   section: {
-    marginHorizontal: 16,
-    marginBottom: 24,
+    paddingHorizontal: 24,
+    paddingTop: 24,
+    paddingBottom: 100,
   },
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
+    alignItems: 'baseline',
+    borderBottomWidth: 1,
+    borderBottomColor: T.border,
+    paddingBottom: 8,
+    marginBottom: 0,
   },
-  sectionTitle: {
-    color: T.textFaint,
-    fontSize: 11,
+  sectionEyebrow: {
+    fontFamily: F.mono,
+    fontSize: 10,
+    letterSpacing: 2.5,
     textTransform: 'uppercase',
-    letterSpacing: 1.2,
-    fontWeight: '500',
+    color: T.textFaint,
   },
   seeAllLink: {
+    fontFamily: F.serif,
+    fontStyle: 'italic',
+    fontSize: 14,
     color: T.primary,
-    fontSize: 13,
-    fontWeight: '600',
+    textDecorationLine: 'underline',
   },
   pointRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: T.surface,
-    borderRadius: T.cardRadius,
-    padding: 14,
-    marginBottom: 6,
-    borderWidth: 1,
-    borderColor: T.border,
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: T.border,
     gap: 12,
   },
+  pointIndex: {
+    fontFamily: F.mono,
+    fontSize: 9,
+    letterSpacing: 1.5,
+    color: T.textFaint,
+    width: 24,
+  },
   pointNote: {
-    fontWeight: '300',
+    fontFamily: F.serifLight,
     fontStyle: 'italic',
-    fontSize: 26,
+    fontSize: 28,
     lineHeight: 28,
-    minWidth: 30,
+    color: T.primary,
+    minWidth: 22,
   },
   pointComment: {
     flex: 1,
+    fontFamily: F.serif,
+    fontStyle: 'italic',
+    fontSize: 15,
     color: T.text,
-    fontSize: 13,
   },
   pointDate: {
+    fontFamily: F.mono,
+    fontSize: 9,
+    letterSpacing: 1,
     color: T.textFaint,
-    fontSize: 11,
   },
   snackbar: { backgroundColor: T.surface2 },
 });

@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import { T } from '@/constants/theme';
+import { F } from '@/constants/fonts';
 import type { FriendWithProfile } from '@/types/app.types';
 
 interface Props {
@@ -13,8 +15,8 @@ export function FriendItem({ friend, onUnfriend }: Props) {
 
   function handleUnfriend() {
     Alert.alert(
-      'Retirer l\'ami',
-      `Voulez-vous retirer ${profile.display_name ?? profile.username} de vos amis ?`,
+      'Retirer du cercle',
+      `Voulez-vous retirer ${profile.display_name ?? profile.username} de votre cercle ?`,
       [
         { text: 'Annuler', style: 'cancel' },
         { text: 'Retirer', style: 'destructive', onPress: onUnfriend },
@@ -24,15 +26,15 @@ export function FriendItem({ friend, onUnfriend }: Props) {
 
   return (
     <View style={styles.container}>
-      <View style={styles.avatarCircle}>
-        <Text style={styles.avatarText}>{initials}</Text>
+      <View style={styles.avatar}>
+        <Text style={styles.avatarInitial}>{initials}</Text>
       </View>
       <View style={styles.info}>
         <Text style={styles.displayName}>{profile.display_name ?? profile.username}</Text>
         <Text style={styles.username}>@{profile.username}</Text>
       </View>
-      <TouchableOpacity style={styles.removeButton} onPress={handleUnfriend} activeOpacity={0.8}>
-        <Text style={styles.removeButtonText}>Retirer</Text>
+      <TouchableOpacity style={styles.removeBtn} onPress={handleUnfriend} activeOpacity={0.7}>
+        <Text style={styles.removeBtnText}>Retirer</Text>
       </TouchableOpacity>
     </View>
   );
@@ -42,50 +44,50 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#1a1a1a',
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 8,
-    borderWidth: 1,
-    borderColor: '#2a2a2a',
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: T.border,
     gap: 12,
   },
-  avatarCircle: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: '#e91e8c33',
+  avatar: {
+    width: 36,
+    height: 36,
+    backgroundColor: T.surface2,
+    borderWidth: 1,
+    borderColor: T.border,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  avatarText: {
-    color: '#e91e8c',
-    fontWeight: 'bold',
-    fontSize: 18,
+  avatarInitial: {
+    fontFamily: F.serif,
+    fontStyle: 'italic',
+    fontSize: 16,
+    color: T.primary,
   },
-  info: {
-    flex: 1,
-  },
+  info: { flex: 1 },
   displayName: {
-    color: '#ffffff',
-    fontSize: 15,
-    fontWeight: '500',
+    fontFamily: F.sans,
+    fontSize: 14,
+    color: T.text,
   },
   username: {
-    color: '#888888',
-    fontSize: 12,
+    fontFamily: F.mono,
+    fontSize: 10,
+    letterSpacing: 1,
+    color: T.textFaint,
     marginTop: 2,
   },
-  removeButton: {
+  removeBtn: {
     borderWidth: 1,
-    borderColor: '#f44336',
-    borderRadius: 8,
-    paddingHorizontal: 12,
+    borderColor: T.border,
+    paddingHorizontal: 10,
     paddingVertical: 6,
   },
-  removeButtonText: {
-    color: '#f44336',
-    fontSize: 13,
-    fontWeight: '500',
+  removeBtnText: {
+    fontFamily: F.mono,
+    fontSize: 9,
+    letterSpacing: 1.5,
+    textTransform: 'uppercase',
+    color: T.textFaint,
   },
 });

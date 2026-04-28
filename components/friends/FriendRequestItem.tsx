@@ -1,5 +1,8 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { T } from '@/constants/theme';
+import { F } from '@/constants/fonts';
+import { IcoCheck, IcoClose } from '@/components/icons';
 import type { FriendWithProfile } from '@/types/app.types';
 
 interface Props {
@@ -14,19 +17,19 @@ export function FriendRequestItem({ request, onAccept, onReject }: Props) {
 
   return (
     <View style={styles.container}>
-      <View style={styles.avatarCircle}>
-        <Text style={styles.avatarText}>{initials}</Text>
+      <View style={styles.avatar}>
+        <Text style={styles.avatarInitial}>{initials}</Text>
       </View>
       <View style={styles.info}>
         <Text style={styles.displayName}>{profile.display_name ?? profile.username}</Text>
         <Text style={styles.username}>@{profile.username}</Text>
       </View>
       <View style={styles.actions}>
-        <TouchableOpacity style={styles.acceptButton} onPress={onAccept} activeOpacity={0.8}>
-          <Text style={styles.acceptText}>✓</Text>
+        <TouchableOpacity style={styles.acceptBtn} onPress={onAccept} activeOpacity={0.88}>
+          <IcoCheck size={16} color={T.text} />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.rejectButton} onPress={onReject} activeOpacity={0.8}>
-          <Text style={styles.rejectText}>✕</Text>
+        <TouchableOpacity style={styles.rejectBtn} onPress={onReject} activeOpacity={0.7}>
+          <IcoClose size={14} color={T.textFaint} />
         </TouchableOpacity>
       </View>
     </View>
@@ -37,69 +40,56 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#1a1a1a',
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 8,
-    borderWidth: 1,
-    borderColor: '#2a2a2a',
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: T.border,
     gap: 12,
   },
-  avatarCircle: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: '#9c27b033',
+  avatar: {
+    width: 36,
+    height: 36,
+    backgroundColor: T.surface2,
+    borderWidth: 1,
+    borderColor: T.border,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  avatarText: {
-    color: '#9c27b0',
-    fontWeight: 'bold',
-    fontSize: 18,
+  avatarInitial: {
+    fontFamily: F.serif,
+    fontStyle: 'italic',
+    fontSize: 16,
+    color: T.primary,
   },
-  info: {
-    flex: 1,
-  },
+  info: { flex: 1 },
   displayName: {
-    color: '#ffffff',
-    fontSize: 15,
-    fontWeight: '500',
+    fontFamily: F.sans,
+    fontSize: 14,
+    color: T.text,
   },
   username: {
-    color: '#888888',
-    fontSize: 12,
+    fontFamily: F.mono,
+    fontSize: 10,
+    letterSpacing: 1,
+    color: T.textFaint,
     marginTop: 2,
   },
   actions: {
     flexDirection: 'row',
-    gap: 8,
+    gap: 6,
   },
-  acceptButton: {
+  acceptBtn: {
     width: 36,
     height: 36,
-    borderRadius: 18,
-    backgroundColor: '#4caf50',
+    backgroundColor: T.primary,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  acceptText: {
-    color: '#ffffff',
-    fontWeight: 'bold',
-    fontSize: 16,
-  },
-  rejectButton: {
+  rejectBtn: {
     width: 36,
     height: 36,
-    borderRadius: 18,
     borderWidth: 1,
-    borderColor: '#f44336',
+    borderColor: T.border,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  rejectText: {
-    color: '#f44336',
-    fontWeight: 'bold',
-    fontSize: 16,
   },
 });

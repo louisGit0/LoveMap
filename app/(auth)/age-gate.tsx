@@ -1,130 +1,147 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
   StyleSheet,
-  Animated,
   ScrollView,
   TouchableOpacity,
-  Platform,
+  FlatList,
 } from 'react-native';
 import { router } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuthStore } from '@/stores/authStore';
-import { APP_CONFIG } from '@/constants/config';
 import { T } from '@/constants/theme';
+import { F } from '@/constants/fonts';
+import { IcoArrow } from '@/components/icons';
+import { MIN_AGE } from '@/constants/config';
 
-const MIN_AGE = APP_CONFIG.MIN_AGE;
+const MOIS = ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'];
 
-const MONTHS = [
-  'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
-  'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre',
-];
-
-const currentYear = new Date().getFullYear();
-const YEARS = Array.from({ length: 100 }, (_, i) => currentYear - i);
-const DAYS = Array.from({ length: 31 }, (_, i) => i + 1);
-
-function Picker({
+function PickerCol({
   items,
   selected,
   onSelect,
   label,
+  format = (x: number) => String(x),
 }: {
-  items: (string | number)[];
-  selected: string | number;
-  onSelect: (v: string | number) => void;
+  items: number[];
+  selected: number;
+  onSelect: (v: number) => void;
   label: string;
+  format?: (v: number) => string;
 }) {
   return (
-    <View style={styles.pickerContainer}>
+    <View style={{ flex: 1 }}>
       <Text style={styles.pickerLabel}>{label}</Text>
-      <ScrollView
-        style={styles.pickerScroll}
-        showsVerticalScrollIndicator={false}
-      >
-        {items.map((item) => (
-          <TouchableOpacity
-            key={item}
-            style={[styles.pickerItem, selected === item && styles.pickerItemSelected]}
-            onPress={() => onSelect(item)}
-          >
-            <Text style={[styles.pickerItemText, selected === item && styles.pickerItemTextSelected]}>
-              {item}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
+      <View style={styles.pickerBox}>
+        <FlatList
+          data={items}
+          keyExtractor={(item) => String(item)}
+          showsVerticalScrollIndicator={false}
+          initialScrollIndex={Math.max(0, items.indexOf(selected))}
+          getItemLayout={(_, index) => ({ length: 36, offset: 36 * index, index })}
+          renderItem={({ item }) => {
+            const sel = item === selected;
+            return (
+              <TouchableOpacity
+                onPress={() => onSelect(item)}
+                style={[styles.pickerItem, sel && styles.pickerItemSel]}
+                activeOpacity={0.8}
+              >
+                <Text style={[styles.pickerItemText, sel && styles.pickerItemTextSel]}>
+                  {format(item)}
+                </Text>
+              </TouchableOpacity>
+            );
+          }}
+        />
+      </View>
     </View>
   );
 }
 
 export default function AgeGate() {
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-  const setAgeVerified = useAuthStore((s) => s.setAgeVerified);
-
-  const [day, setDay] = useState<number>(1);
-  const [month, setMonth] = useState<number>(1);
-  const [year, setYear] = useState<number>(currentYear - 20);
+  const insets = useSafeAreaInsets();
+  const { setAgeVerified } = useAuthStore();
+  const [day, setDay] = useState(12);
+  const [month, setMonth] = useState(5);
+  const [year, setYear] = useState(1998);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    Animated.timing(fadeAnim, {
-      toValue: 1,
-      duration: 600,
-      useNativeDriver: true,
-    }).start();
-  }, []);
+  const cy = new Date().getFullYear();
+  const days = Array.from({ length: 31 }, (_, i) => i + 1);
+  const months = Array.from({ length: 12 }, (_, i) => i + 1);
+  const years = Array.from({ length: 100 }, (_, i) => cy - i);
 
-  function calculateAge(): number {
+  function calcAge() {
     const today = new Date();
-    const birthDate = new Date(year, month - 1, day);
-    let age = today.getFullYear() - birthDate.getFullYear();
-    const m = today.getMonth() - birthDate.getMonth();
-    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
-      age -= 1;
-    }
+    const bd = new Date(year, month - 1, day);
+    let age = today.getFullYear() - bd.getFullYear();
+    const mm = today.getMonth() - bd.getMonth();
+    if (mm < 0 || (mm === 0 && today.getDate() < bd.getDate())) age -= 1;
     return age;
   }
 
-  function handleConfirm() {
-    const age = calculateAge();
-    if (age < MIN_AGE) {
-      setError('Vous devez avoir 18 ans pour accéder à LoveMap.');
+  function confirm() {
+    if (calcAge() < MIN_AGE) {
+      setError('Accès interdit aux mineur·e·s.');
       return;
     }
-    setError(null);
-    const dateOfBirth = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-    setAgeVerified(true, dateOfBirth);
+    setAgeVerified(true);
     router.replace('/(auth)/login');
   }
 
   return (
-    <Animated.View style={[styles.container, { opacity: fadeAnim }]}>
-      <View style={styles.inner}>
-        <Text style={styles.eyebrow}>━━  18 +</Text>
-        <Text style={styles.title}>Réservé{'\n'}<Text style={styles.titleAccent}>aux adultes</Text>.</Text>
-        <Text style={styles.subtitle}>
-          LoveMap cartographie des moments intimes. L'accès est strictement limité aux personnes majeures.
-        </Text>
+    <View style={[styles.container, { paddingTop: insets.top + 48 }]}>
+      {/* Bordure intérieure effet carnet */}
+      <View style={styles.innerBorder} pointerEvents="none" />
 
-        <Text style={styles.sectionLabel}>Date de naissance</Text>
-        <View style={styles.pickersRow}>
-          <Picker label="JJ" items={DAYS} selected={day} onSelect={(v) => setDay(v as number)} />
-          <Picker label="MM" items={MONTHS} selected={MONTHS[month - 1]} onSelect={(v) => setMonth(MONTHS.indexOf(v as string) + 1)} />
-          <Picker label="AAAA" items={YEARS} selected={year} onSelect={(v) => setYear(v as number)} />
+      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+        {/* Titre */}
+        <View style={styles.titleBlock}>
+          <Text style={styles.titleLine1}>Réservé</Text>
+          <Text style={styles.titleLine2}>aux adultes.</Text>
         </View>
 
-        <View style={styles.privacyCard}>
-          <Text style={styles.privacyText}>Vérifié côté serveur. Jamais partagé avec d'autres utilisateurs.</Text>
+        {/* Sous-titre */}
+        <View style={styles.subtitleRow}>
+          <View style={styles.trait} />
+          <Text style={styles.subtitle}>
+            LoveMap cartographie vos moments intimes.{'\n'}
+            <Text style={styles.subtitleItalic}>L'accès est strictement limité aux personnes majeures.</Text>
+          </Text>
         </View>
 
-        {error && <Text style={styles.errorText}>{error}</Text>}
+        {/* Pickers */}
+        <Text style={styles.pickerEyebrow}>↳ Date de naissance</Text>
+        <View style={styles.pickers}>
+          <PickerCol label="Jour" items={days} selected={day} onSelect={setDay} format={(x) => String(x).padStart(2, '0')} />
+          <PickerCol label="Mois" items={months} selected={month} onSelect={setMonth} format={(x) => MOIS[x - 1]} />
+          <PickerCol label="Année" items={years} selected={year} onSelect={setYear} />
+        </View>
 
-        <TouchableOpacity style={styles.button} onPress={handleConfirm} activeOpacity={0.8}>
-          <Text style={styles.buttonText}>Entrer dans LoveMap</Text>
+        {error ? (
+          <View style={styles.errorBlock}>
+            <Text style={styles.errorText}>{error}</Text>
+          </View>
+        ) : null}
+
+        <View style={{ flex: 1, minHeight: 32 }} />
+
+        {/* Bouton "Entrer" */}
+        <TouchableOpacity onPress={confirm} style={styles.enterBtn} activeOpacity={0.88}>
+          <View style={styles.enterLeft}>
+            <Text style={styles.enterEyebrow}>Accès majeur</Text>
+            <Text style={styles.enterLabel}>Entrer</Text>
+          </View>
+          <View style={styles.enterArrow}>
+            <IcoArrow size={20} color={T.primary} dir="right" />
+          </View>
         </TouchableOpacity>
-      </View>
-    </Animated.View>
+
+        <Text style={styles.footer}>✦ Vérifié côté serveur ✦ Jamais partagé ✦</Text>
+      </ScrollView>
+    </View>
   );
 }
 
@@ -132,117 +149,167 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: T.bg,
-    justifyContent: 'center',
-    paddingHorizontal: 28,
-    paddingVertical: 72,
   },
-  inner: {
-    flex: 1,
-    justifyContent: 'space-between',
+  innerBorder: {
+    position: 'absolute',
+    top: 16, left: 16, right: 16, bottom: 16,
+    borderWidth: 1,
+    borderColor: T.border,
   },
-  eyebrow: {
-    fontSize: 11,
-    letterSpacing: 1.5,
-    textTransform: 'uppercase',
-    color: T.textFaint,
-    fontWeight: '500',
-    marginBottom: 16,
+  scroll: {
+    paddingHorizontal: 36,
+    paddingBottom: 36,
+    flexGrow: 1,
   },
-  title: {
-    fontSize: 52,
-    fontWeight: '300',
-    fontStyle: 'italic',
+  titleBlock: { marginBottom: 24 },
+  titleLine1: {
+    fontFamily: F.serifLight,
+    fontSize: 64,
+    lineHeight: 60,
+    letterSpacing: -2,
     color: T.text,
-    lineHeight: 52,
-    letterSpacing: -1.5,
-    marginBottom: 18,
+    fontStyle: 'italic',
   },
-  titleAccent: {
+  titleLine2: {
+    fontFamily: F.serifLight,
+    fontSize: 64,
+    lineHeight: 60,
+    letterSpacing: -2,
     color: T.primary,
+    fontStyle: 'italic',
+    marginLeft: 38,
   },
-  subtitle: {
-    fontSize: 15,
-    color: T.textDim,
-    lineHeight: 24,
+  subtitleRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 14,
     marginBottom: 32,
   },
-  sectionLabel: {
-    fontSize: 11,
-    letterSpacing: 1.5,
-    textTransform: 'uppercase',
-    color: T.textFaint,
-    fontWeight: '500',
-    marginBottom: 12,
+  trait: {
+    width: 24,
+    height: 1,
+    backgroundColor: T.primary,
+    marginTop: 10,
+    flexShrink: 0,
   },
-  pickersRow: {
-    flexDirection: 'row',
-    gap: 8,
-    marginBottom: 16,
-  },
-  pickerContainer: {
+  subtitle: {
+    fontFamily: F.sansLight,
+    fontSize: 13,
+    lineHeight: 20,
+    color: T.textDim,
     flex: 1,
-    alignItems: 'center',
   },
-  pickerLabel: {
-    color: T.textFaint,
-    fontSize: 10,
-    letterSpacing: 1,
-    marginBottom: 6,
-    textTransform: 'uppercase',
-  },
-  pickerScroll: {
-    height: 150,
-    width: '100%',
-    backgroundColor: T.surface,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: T.border,
-  },
-  pickerItem: {
-    paddingVertical: 8,
-    paddingHorizontal: 4,
-    alignItems: 'center',
-  },
-  pickerItemSelected: {
-    backgroundColor: T.primary + '22',
-  },
-  pickerItemText: {
-    color: T.textFaint,
+  subtitleItalic: {
+    fontFamily: F.serif,
     fontSize: 14,
+    color: T.textFaint,
+    fontStyle: 'italic',
   },
-  pickerItemTextSelected: {
-    color: T.primary,
-    fontWeight: '600',
-  },
-  privacyCard: {
-    backgroundColor: T.surface,
-    borderRadius: T.cardRadius,
-    borderWidth: 1,
-    borderColor: T.border,
-    padding: 14,
+  pickerEyebrow: {
+    fontFamily: F.mono,
+    fontSize: 10,
+    letterSpacing: 2.5,
+    textTransform: 'uppercase',
+    color: T.textFaint,
     marginBottom: 14,
   },
-  privacyText: {
-    fontSize: 12,
+  pickers: {
+    flexDirection: 'row',
+    gap: 10,
+    marginBottom: 24,
+  },
+  pickerLabel: {
+    fontFamily: F.mono,
+    fontSize: 9,
+    letterSpacing: 2,
+    textTransform: 'uppercase',
+    color: T.textFaint,
+    marginBottom: 8,
+  },
+  pickerBox: {
+    height: 156,
+    backgroundColor: T.surface,
+    borderWidth: 1,
+    borderColor: T.border,
+    overflow: 'hidden',
+  },
+  pickerItem: {
+    height: 36,
+    paddingHorizontal: 10,
+    justifyContent: 'center',
+  },
+  pickerItemSel: { backgroundColor: T.primary },
+  pickerItemText: {
+    fontFamily: F.sans,
+    fontSize: 13,
     color: T.textDim,
-    lineHeight: 18,
+  },
+  pickerItemTextSel: {
+    fontFamily: F.serif,
+    fontStyle: 'italic',
+    fontSize: 18,
+    color: T.text,
+  },
+  errorBlock: {
+    borderLeftWidth: 2,
+    borderLeftColor: T.primary,
+    paddingLeft: 12,
+    marginBottom: 18,
   },
   errorText: {
-    color: T.danger,
-    fontSize: 13,
-    textAlign: 'center',
-    marginBottom: 16,
+    fontFamily: F.serif,
+    fontStyle: 'italic',
+    fontSize: 14,
+    color: T.primary,
   },
-  button: {
+  enterBtn: {
+    flexDirection: 'row',
+    height: 64,
+    shadowColor: T.primary,
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.25,
+    shadowRadius: 32,
+    elevation: 8,
+  },
+  enterLeft: {
+    flex: 1,
     backgroundColor: T.primary,
-    borderRadius: T.pill,
-    paddingVertical: 15,
-    alignItems: 'center',
+    paddingHorizontal: 24,
+    justifyContent: 'center',
+    gap: 2,
   },
-  buttonText: {
-    color: '#fff',
-    fontSize: 15,
-    fontWeight: '600',
-    letterSpacing: -0.2,
+  enterEyebrow: {
+    fontFamily: F.mono,
+    fontSize: 9,
+    letterSpacing: 2.5,
+    textTransform: 'uppercase',
+    color: T.text,
+    opacity: 0.7,
+  },
+  enterLabel: {
+    fontFamily: F.serif,
+    fontStyle: 'italic',
+    fontSize: 26,
+    letterSpacing: -0.5,
+    color: T.text,
+    lineHeight: 28,
+  },
+  enterArrow: {
+    width: 64,
+    backgroundColor: T.bg,
+    borderWidth: 1,
+    borderLeftWidth: 0,
+    borderColor: T.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  footer: {
+    fontFamily: F.mono,
+    fontSize: 9,
+    letterSpacing: 1.5,
+    color: T.textFaint,
+    textTransform: 'uppercase',
+    textAlign: 'center',
+    marginTop: 16,
   },
 });

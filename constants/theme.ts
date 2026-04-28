@@ -1,15 +1,24 @@
 export const T = {
-  bg: '#0a0610',
-  surface: '#17131e',
-  surface2: '#221829',
-  border: '#2d2040',
-  text: '#fff4f8',
-  textDim: '#a090a8',
-  textFaint: '#6a5a72',
-  primary: '#ec2d8c',
-  secondary: '#8b33cc',
-  success: '#4ade80',
-  danger: '#f87171',
-  cardRadius: 18,
-  pill: 999,
+  // Fonds — noir profond
+  bg: '#000000',
+  surface: '#0a0a0a',
+  surface2: '#141414',
+  border: '#1f1f1f',
+
+  // Texte — blanc / gris
+  text: '#ffffff',
+  textDim: '#d9d9d9',
+  textFaint: '#8a8a8a',
+
+  // Accent — rose vif (unique)
+  primary: '#ff2d87',
+  secondary: '#ff6aa8',
+
+  // Statuts — monochromes, direction éditoriale
+  success: '#ff2d87',
+  danger: '#a91860',
+
+  // Forme — angles francs, jamais pill
+  cardRadius: 4,
+  pill: 4,
 } as const;
