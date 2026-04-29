@@ -224,6 +224,7 @@ Les familles de polices sont dans `constants/fonts.ts` (objet `F`). **Ne pas har
 | 5 | ✅ Terminé | Taguage partenaire + consentement |
 | 6 | ✅ Terminé | Notifications push (expo push API) |
 | 7 | ✅ Terminé | Profil, paramètres, avatar upload |
+| iOS-fix | ✅ Terminé | Hardening iOS TestFlight : `lib/supabase.ts` ne throw plus au module-load, polyfill URL ajouté, env vars wired via EAS Secrets dans `eas.json`, `app.json` ajout NSCameraUsageDescription / NSPhotoLibraryUsageDescription / `ios.config.googleMapsApiKey` / plugin `expo-image-picker`, dedupe permissions Android, `expo-notifications` handler migré vers `shouldShowBanner`/`shouldShowList` (deprecation 0.32+), `MIN_AGE` exporté en named const dans `constants/config.ts`, icône App Store mise à jour (`logo-lovemap.png`) |
 | 8 | 🔲 À faire | Audit sécurité |
 | 9 | 🔲 À faire | Déploiement EAS |
 
@@ -249,7 +250,17 @@ EXPO_PUBLIC_SUPABASE_ANON_KEY=eyJhbGc...
 EXPO_PUBLIC_GOOGLE_MAPS_API_KEY=AIzaSy...
 ```
 
-Fichier : `.env.local` à la racine (jamais commité — présent dans `.gitignore`)
+**En local** : `.env.local` à la racine (jamais commité — présent dans `.gitignore`)
+
+**Pour `eas build`** : ces trois variables doivent être déclarées en **EAS Secrets** (référencées dans `eas.json` via `$VAR_NAME`). Sans cela le bundle iOS contient `undefined` → crash silencieux au lancement TestFlight.
+
+```bash
+eas secret:create --scope project --name EXPO_PUBLIC_SUPABASE_URL --value <url>
+eas secret:create --scope project --name EXPO_PUBLIC_SUPABASE_ANON_KEY --value <key>
+eas secret:create --scope project --name EXPO_PUBLIC_GOOGLE_MAPS_API_KEY --value <key>
+```
+
+Vérifier : `eas secret:list`. Le client Supabase (`lib/supabase.ts`) a un fallback gracieux : il log l'erreur mais ne throw pas au load, donc l'app boote même si une variable manque (les appels Supabase échoueront).
 
 ---
 

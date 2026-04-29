@@ -4,7 +4,7 @@
     "slug": "lovemap",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/images/logo-lovemap.png",
     "scheme": "lovemap",
     "userInterfaceStyle": "automatic",
     "splash": {
@@ -15,9 +15,14 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.lovemap.app",
+      "config": {
+        "googleMapsApiKey": "$EXPO_PUBLIC_GOOGLE_MAPS_API_KEY"
+      },
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "LoveMap utilise votre position pour placer des points sur la carte.",
-        "NSLocationAlwaysAndWhenInUseUsageDescription": "LoveMap utilise votre position pour placer des points sur la carte."
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "LoveMap utilise votre position pour placer des points sur la carte.",
+        "NSCameraUsageDescription": "LoveMap utilise la caméra pour ajouter des photos à un point.",
+        "NSPhotoLibraryUsageDescription": "LoveMap accède à votre galerie pour ajouter des photos à un point."
       }
     },
     "android": {
@@ -27,12 +32,6 @@
       },
       "package": "com.lovemap.app",
       "permissions": [
-        "ACCESS_FINE_LOCATION",
-        "ACCESS_COARSE_LOCATION",
-        "android.permission.ACCESS_COARSE_LOCATION",
-        "android.permission.ACCESS_FINE_LOCATION",
-        "ACCESS_FINE_LOCATION",
-        "ACCESS_COARSE_LOCATION",
         "android.permission.ACCESS_COARSE_LOCATION",
         "android.permission.ACCESS_FINE_LOCATION"
       ]
@@ -52,7 +51,14 @@
           "color": "#e91e8c"
         }
       ],
-      "expo-font"
+      "expo-font",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "LoveMap accède à votre galerie pour ajouter des photos à un point.",
+          "cameraPermission": "LoveMap utilise la caméra pour ajouter des photos à un point."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true
