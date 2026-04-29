@@ -11,7 +11,6 @@ import {
 import { router } from 'expo-router';
 import { Snackbar } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import * as FileSystem from 'expo-file-system/legacy';
 import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '@/hooks/useAuth';
 import { usePoints } from '@/hooks/usePoints';
@@ -32,7 +31,10 @@ export default function ProfileScreen() {
   const [snackbar, setSnackbar] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user) {
+      setLoading(false);
+      return;
+    }
     let cancelled = false;
     (async () => {
       setLoading(true);
@@ -72,17 +74,11 @@ export default function ProfileScreen() {
       const asset = result.assets[0];
       const ext = asset.uri.split('.').pop()?.toLowerCase() ?? 'jpg';
       const fileName = `${user!.id}.${ext}`;
-      const base64 = await FileSystem.readAsStringAsync(asset.uri, {
-        encoding: FileSystem.EncodingType?.Base64 ?? 'base64',
-      });
-      const byteCharacters = atob(base64);
-      const byteArray = new Uint8Array(byteCharacters.length);
-      for (let i = 0; i < byteCharacters.length; i++) {
-        byteArray[i] = byteCharacters.charCodeAt(i);
-      }
+      const response = await fetch(asset.uri);
+      const arrayBuffer = await response.arrayBuffer();
       const { error: uploadError } = await supabase.storage
         .from('avatars')
-        .upload(fileName, byteArray.buffer, { contentType: `image/${ext}`, upsert: true });
+        .upload(fileName, arrayBuffer, { contentType: `image/${ext}`, upsert: true });
       if (uploadError) {
         setSnackbar(uploadError.message.includes('bucket') ? "Bucket avatars manquant." : "Erreur : " + uploadError.message);
         return;
@@ -124,7 +120,11 @@ export default function ProfileScreen() {
               disabled={uploadingAvatar}
             >
               {profile?.avatar_url ? (
-                <Image source={{ uri: profile.avatar_url }} style={styles.avatarImage} />
+                <Image
+                  source={{ uri: profile.avatar_url }}
+                  style={styles.avatarImage}
+                  onError={() => { /* swallow bad URLs */ }}
+                />
               ) : (
                 <View style={styles.avatarBox}>
                   <Text style={styles.avatarInitial}>{initials}</Text>
