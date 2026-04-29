@@ -18,7 +18,7 @@ export const T = {
   success: '#ff2d87',
   danger: '#a91860',
 
-  // Forme — angles francs, jamais pill
-  cardRadius: 4,
-  pill: 4,
+  // Forme — coins arrondis 12px, style iOS moderne
+  cardRadius: 12,
+  pill: 12,
 } as const;

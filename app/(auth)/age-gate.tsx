@@ -87,7 +87,8 @@ export default function AgeGate() {
       setError('Accès interdit aux mineur·e·s.');
       return;
     }
-    setAgeVerified(true);
+    const dob = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    setAgeVerified(true, dob);
     router.replace('/(auth)/login');
   }
 

@@ -8,6 +8,7 @@ import {
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { supabase } from '@/lib/supabase';
+import { useAuthStore } from '@/stores/authStore';
 import { T } from '@/constants/theme';
 import { F } from '@/constants/fonts';
 import { Input } from '@/components/ui/Input';
@@ -15,6 +16,7 @@ import { Button } from '@/components/ui/Button';
 
 export default function Register() {
   const insets = useSafeAreaInsets();
+  const dateOfBirth = useAuthStore((s) => s.dateOfBirth);
   const [form, setForm] = useState({ email: '', pwd: '', pwd2: '', name: '', username: '' });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
@@ -28,6 +30,7 @@ export default function Register() {
     if (form.pwd !== form.pwd2) e.pwd2 = 'Les mots de passe diffèrent.';
     if (form.name.trim().length < 2) e.name = 'Requis.';
     if (!/^[a-zA-Z0-9_]{3,20}$/.test(form.username)) e.username = '3 à 20 caractères alphanumériques.';
+    if (!dateOfBirth) e.email = 'Date de naissance manquante. Recommencez depuis l\'écran d\'âge.';
     setErrors(e);
     return Object.keys(e).length === 0;
   }
@@ -35,7 +38,6 @@ export default function Register() {
   async function handleRegister() {
     if (!validate()) return;
     setLoading(true);
-    const dob = new Date().toISOString().slice(0, 10);
     const { error } = await supabase.auth.signUp({
       email: form.email.trim(),
       password: form.pwd,
@@ -43,7 +45,7 @@ export default function Register() {
         data: {
           display_name: form.name.trim(),
           username: form.username.trim(),
-          date_of_birth: dob,
+          date_of_birth: dateOfBirth,
         },
       },
     });

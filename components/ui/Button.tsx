@@ -85,7 +85,7 @@ const styles = StyleSheet.create({
     height: 56,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 0,
+    borderRadius: T.pill,
     paddingHorizontal: 22,
   },
   fullWidth: { width: '100%' },

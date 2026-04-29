@@ -33,7 +33,7 @@ export function MapHeader({ viewMode, onViewModeChange, friendName, onFriendClea
             >
               <IcoPin size={13} color={viewMode === 'pins' ? T.text : T.textFaint} />
               <Text style={[styles.bandText, viewMode === 'pins' && styles.bandTextActive]}>
-                Atlas
+                Map
               </Text>
             </TouchableOpacity>
             <View style={styles.bandDivider} />
@@ -44,7 +44,7 @@ export function MapHeader({ viewMode, onViewModeChange, friendName, onFriendClea
             >
               <IcoHeat size={13} color={viewMode === 'heatmap' ? T.text : T.textFaint} />
               <Text style={[styles.bandText, viewMode === 'heatmap' && styles.bandTextActive]}>
-                Chaleur
+                Heatmap
               </Text>
             </TouchableOpacity>
           </View>
@@ -88,8 +88,10 @@ const styles = StyleSheet.create({
   spacer: { width: 44 },
   toggle: {
     backgroundColor: T.surface + 'f0',
+    borderRadius: T.cardRadius,
     borderWidth: 1,
     borderColor: T.border,
+    overflow: 'hidden',
     elevation: 8,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },

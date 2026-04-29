@@ -62,7 +62,7 @@ export function FriendSelector({ onSelectFriend, onSelectSelf, isViewingFriend }
             </View>
             <View style={styles.itemInfo}>
               <Text style={styles.itemName}>Ma carte</Text>
-              <Text style={styles.itemUsername}>Retour à votre atlas</Text>
+              <Text style={styles.itemUsername}>Retour à votre carte</Text>
             </View>
           </TouchableOpacity>
 
@@ -101,6 +101,7 @@ const styles = StyleSheet.create({
   trigger: {
     width: 44,
     height: 44,
+    borderRadius: 22,
     backgroundColor: T.surface + 'f0',
     borderWidth: 1,
     borderColor: T.border,

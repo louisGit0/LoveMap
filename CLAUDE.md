@@ -180,8 +180,8 @@ Les familles de polices sont dans `constants/fonts.ts` (objet `F`). **Ne pas har
 | `T.textFaint` | `#8a8a8a` | Texte tertiaire / inactif |
 | `T.primary` | `#ff2d87` | Accent rose |
 | `T.danger` | `#a91860` | Danger/erreur |
-| `T.cardRadius` | `4` | Radius max (angles francs) |
-| `T.pill` | `4` | Pas de pill — angles francs partout |
+| `T.cardRadius` | `12` | Coins arrondis cartes / surfaces |
+| `T.pill` | `12` | Coins arrondis boutons (12px medium-rounded) |
 
 | Token (`F.xxx`) | Police | Usage |
 |-----------------|--------|-------|
@@ -199,8 +199,8 @@ Les familles de polices sont dans `constants/fonts.ts` (objet `F`). **Ne pas har
 - **Aucun emoji** dans l'interface
 - **Aucun gradient** — couleurs plates uniquement
 - **Pas de violet** — palette noir + blanc + rose #ff2d87 uniquement
-- **Angles francs partout** — borderRadius 0 ou 4 maximum
-- **Boutons** : `solid` (blanc), `coral` (rose), `ghost` (transparent+border), `danger`, `underline`
+- **Coins arrondis 12px** — `T.cardRadius` / `T.pill` partout sur boutons et surfaces interactives. Avatars carrés et inputs underline-only restent intacts (design éditorial conservé sur ces éléments).
+- **Boutons** : `solid` (blanc), `coral` (rose), `ghost` (transparent+border), `danger`, `underline` — tous arrondis 12px
 - **Inputs** : underline only — borderBottomWidth:1, borderBottomColor:T.border
 - **Avatars** : carrés (borderRadius:0), initial serif italic en rose
 - **Icônes** : SVG custom dans `components/icons.tsx` — PAS de @expo/vector-icons, PAS de MaterialCommunityIcons

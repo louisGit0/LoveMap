@@ -11,7 +11,7 @@ import {
 import { router } from 'expo-router';
 import { Snackbar } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '@/hooks/useAuth';
 import { usePoints } from '@/hooks/usePoints';
@@ -33,11 +33,21 @@ export default function ProfileScreen() {
 
   useEffect(() => {
     if (!user) return;
+    let cancelled = false;
     (async () => {
       setLoading(true);
-      await Promise.all([fetchMyPoints(user.id), fetchFriends(user.id)]);
-      setLoading(false);
+      try {
+        await Promise.all([fetchMyPoints(user.id), fetchFriends(user.id)]);
+      } catch (e: unknown) {
+        if (!cancelled) {
+          setSnackbar('Erreur de chargement du profil.');
+          console.error('[Profile] load error:', e);
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
     })();
+    return () => { cancelled = true; };
   }, [user]);
 
   const avgNote =
@@ -269,6 +279,7 @@ const styles = StyleSheet.create({
   settingsBtn: {
     width: 40,
     height: 40,
+    borderRadius: 20,
     borderWidth: 1,
     borderColor: T.border,
     alignItems: 'center',

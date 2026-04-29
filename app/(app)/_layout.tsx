@@ -50,7 +50,7 @@ export default function AppLayout() {
       <Tabs.Screen
         name="map/index"
         options={{
-          title: 'Atlas',
+          title: 'Map',
           tabBarIcon: ({ focused }) => <TabIcon Icon={IcoPin} focused={focused} />,
         }}
       />
