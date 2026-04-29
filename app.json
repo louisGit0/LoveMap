@@ -14,7 +14,7 @@
     },
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.lovemap.app",
+      "bundleIdentifier": "app.lovemap.ios",
       "config": {
         "googleMapsApiKey": "$EXPO_PUBLIC_GOOGLE_MAPS_API_KEY"
       },
@@ -22,7 +22,8 @@
         "NSLocationWhenInUseUsageDescription": "LoveMap utilise votre position pour placer des points sur la carte.",
         "NSLocationAlwaysAndWhenInUseUsageDescription": "LoveMap utilise votre position pour placer des points sur la carte.",
         "NSCameraUsageDescription": "LoveMap utilise la caméra pour ajouter des photos à un point.",
-        "NSPhotoLibraryUsageDescription": "LoveMap accède à votre galerie pour ajouter des photos à un point."
+        "NSPhotoLibraryUsageDescription": "LoveMap accède à votre galerie pour ajouter des photos à un point.",
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
@@ -33,7 +34,8 @@
       "package": "com.lovemap.app",
       "permissions": [
         "android.permission.ACCESS_COARSE_LOCATION",
-        "android.permission.ACCESS_FINE_LOCATION"
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.RECORD_AUDIO"
       ]
     },
     "web": {
