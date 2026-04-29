@@ -14,6 +14,7 @@ import { Snackbar } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import * as Location from 'expo-location';
+import { DatePickerModal } from 'react-native-paper-dates';
 import { useAuth } from '@/hooks/useAuth';
 import { usePoints } from '@/hooks/usePoints';
 import { useFriendStore } from '@/stores/friendStore';
@@ -21,6 +22,10 @@ import { supabase } from '@/lib/supabase';
 import { T } from '@/constants/theme';
 import { F } from '@/constants/fonts';
 import { IcoArrow, IcoSearch, IcoClose } from '@/components/icons';
+
+function formatDateFR(d: Date): string {
+  return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
+}
 
 const darkMapStyle = [
   { elementType: 'geometry', stylers: [{ color: '#0a0a0a' }] },
@@ -48,6 +53,8 @@ export default function NewPoint() {
   const [comment, setComment] = useState('');
   const [durationMinutes, setDurationMinutes] = useState('');
   const [selectedPartnerId, setSelectedPartnerId] = useState<string | null>(null);
+  const [happenedAt, setHappenedAt] = useState<Date>(new Date());
+  const [showDatePicker, setShowDatePicker] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [snackbar, setSnackbar] = useState<string | null>(null);
 
@@ -112,7 +119,15 @@ export default function NewPoint() {
 
   async function handleSubmit() {
     if (!user) return;
+    if (!selectedPartnerId) {
+      setSnackbar('Un partenaire est obligatoire pour publier un moment.');
+      return;
+    }
     setSubmitting(true);
+
+    const happenedAtIso = new Date(
+      happenedAt.getFullYear(), happenedAt.getMonth(), happenedAt.getDate(), 12, 0, 0
+    ).toISOString();
 
     const point = await createPoint({
       userId: user.id,
@@ -121,7 +136,7 @@ export default function NewPoint() {
       note,
       comment: comment.trim() || undefined,
       durationMinutes: durationMinutes ? parseInt(durationMinutes, 10) : undefined,
-      happenedAt: new Date().toISOString(),
+      happenedAt: happenedAtIso,
       address: address || undefined,
     });
 
@@ -131,34 +146,32 @@ export default function NewPoint() {
       return;
     }
 
-    if (selectedPartnerId) {
-      const { error } = await supabase.from('point_partners').insert({
-        point_id: point.id,
-        partner_id: selectedPartnerId,
-        status: 'pending',
-        notified_at: new Date().toISOString(),
-      });
+    const { error } = await supabase.from('point_partners').insert({
+      point_id: point.id,
+      partner_id: selectedPartnerId,
+      status: 'pending',
+      notified_at: new Date().toISOString(),
+    });
 
-      if (!error) {
-        const { data: partnerProfile } = await supabase
-          .from('profiles')
-          .select('push_token, display_name')
-          .eq('id', selectedPartnerId)
-          .single();
+    if (!error) {
+      const { data: partnerProfile } = await supabase
+        .from('profiles')
+        .select('push_token, display_name')
+        .eq('id', selectedPartnerId)
+        .single();
 
-        if (partnerProfile?.push_token) {
-          const senderName = user.user_metadata?.display_name ?? 'Quelqu\'un';
-          await fetch('https://exp.host/--/api/v2/push/send', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              to: partnerProfile.push_token,
-              title: 'LoveMap — Vous avez été tagué',
-              body: `${senderName} vous a tagué sur un moment. Acceptez-vous ?`,
-              data: { pointId: point.id, type: 'partner_tag' },
-            }),
-          });
-        }
+      if (partnerProfile?.push_token) {
+        const senderName = user.user_metadata?.display_name ?? 'Quelqu\'un';
+        await fetch('https://exp.host/--/api/v2/push/send', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            to: partnerProfile.push_token,
+            title: 'LoveMap — Vous avez été tagué',
+            body: `${senderName} vous a tagué sur un moment. Acceptez-vous ?`,
+            data: { pointId: point.id, type: 'partner_tag' },
+          }),
+        });
       }
     }
 
@@ -230,7 +243,7 @@ export default function NewPoint() {
           <View style={styles.divider} />
 
           {/* Note */}
-          <Text style={styles.fieldEyebrow}>Note d'intensité</Text>
+          <Text style={styles.fieldEyebrow}>Note</Text>
           <View style={styles.noteDisplay}>
             <Text style={styles.noteValue}>{note}</Text>
             <Text style={styles.noteDenom}>/10</Text>
@@ -249,7 +262,7 @@ export default function NewPoint() {
           <View style={styles.divider} />
 
           {/* Commentaire */}
-          <Text style={styles.fieldEyebrow}>Note libre</Text>
+          <Text style={styles.fieldEyebrow}>Commentaire</Text>
           <TextInput
             style={styles.commentInput}
             value={comment}
@@ -277,8 +290,20 @@ export default function NewPoint() {
 
           <View style={styles.divider} />
 
+          {/* Date */}
+          <Text style={styles.fieldEyebrow}>Date</Text>
+          <TouchableOpacity
+            onPress={() => setShowDatePicker(true)}
+            style={styles.dateField}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.dateText}>{formatDateFR(happenedAt)}</Text>
+          </TouchableOpacity>
+
+          <View style={styles.divider} />
+
           {/* Partenaire */}
-          <Text style={styles.fieldEyebrow}>Taguer un partenaire</Text>
+          <Text style={styles.fieldEyebrow}>Taguer un partenaire (obligatoire)</Text>
           {friends.length === 0 ? (
             <Text style={styles.noFriends}>Aucun ami dans votre cercle.</Text>
           ) : (
@@ -312,8 +337,8 @@ export default function NewPoint() {
           {/* CTA */}
           <TouchableOpacity
             onPress={handleSubmit}
-            disabled={submitting}
-            style={[styles.cta, submitting && { opacity: 0.6 }]}
+            disabled={submitting || !selectedPartnerId}
+            style={[styles.cta, (submitting || !selectedPartnerId) && { opacity: 0.5 }]}
             activeOpacity={0.88}
           >
             <View style={styles.ctaLeft}>
@@ -334,6 +359,21 @@ export default function NewPoint() {
       <Snackbar visible={!!snackbar} onDismiss={() => setSnackbar(null)} duration={3000} style={styles.snackbar}>
         {snackbar}
       </Snackbar>
+
+      <DatePickerModal
+        locale="fr"
+        mode="single"
+        visible={showDatePicker}
+        onDismiss={() => setShowDatePicker(false)}
+        date={happenedAt}
+        validRange={{ endDate: new Date() }}
+        onConfirm={({ date: picked }) => {
+          setShowDatePicker(false);
+          if (picked) setHappenedAt(picked);
+        }}
+        label="Choisir une date"
+        saveLabel="Confirmer"
+      />
     </KeyboardAvoidingView>
   );
 }
@@ -479,6 +519,17 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: T.border,
     paddingVertical: 8,
+  },
+  dateField: {
+    borderBottomWidth: 1,
+    borderBottomColor: T.border,
+    paddingVertical: 8,
+  },
+  dateText: {
+    fontFamily: F.serif,
+    fontStyle: 'italic',
+    fontSize: 22,
+    color: T.text,
   },
   noFriends: {
     fontFamily: F.serif,
