@@ -14,10 +14,11 @@
     },
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.lovemap.app",
+      "bundleIdentifier": "com.louisgit0.lovemap",
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "LoveMap utilise votre position pour placer des points sur la carte.",
-        "NSLocationAlwaysAndWhenInUseUsageDescription": "LoveMap utilise votre position pour placer des points sur la carte."
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "LoveMap utilise votre position pour placer des points sur la carte.",
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
@@ -25,12 +26,8 @@
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#0f0f0f"
       },
-      "package": "com.lovemap.app",
+      "package": "com.louisgit0.lovemap",
       "permissions": [
-        "ACCESS_FINE_LOCATION",
-        "ACCESS_COARSE_LOCATION",
-        "android.permission.ACCESS_COARSE_LOCATION",
-        "android.permission.ACCESS_FINE_LOCATION",
         "ACCESS_FINE_LOCATION",
         "ACCESS_COARSE_LOCATION",
         "android.permission.ACCESS_COARSE_LOCATION",
