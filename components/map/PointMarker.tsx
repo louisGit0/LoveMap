@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -10,9 +10,10 @@ import {
 import { Marker } from 'react-native-maps';
 import { router } from 'expo-router';
 import Svg, { Circle, Line } from 'react-native-svg';
-import { T } from '@/constants/theme';
+import { useTheme } from '@/hooks/useTheme';
 import { F } from '@/constants/fonts';
 import { IcoTrash } from '@/components/icons';
+import type { Theme } from '@/constants/theme';
 import type { MapPoint } from '@/types/app.types';
 
 interface Props {
@@ -41,7 +42,7 @@ function formatDateRelative(dateStr: string): string {
 }
 
 /** Pin SVG : cercle extérieur + cercle intérieur + tige + point bas */
-function PinIcon({ note }: { note: number }) {
+function PinIcon({ T }: { T: Theme }) {
   const size = 40;
   const cx = size / 2;
   const stemTop = size * 0.72;
@@ -62,6 +63,8 @@ function PinIcon({ note }: { note: number }) {
 }
 
 export function PointMarker({ point, isOwner = false, onDelete }: Props) {
+  const T = useTheme();
+  const styles = useMemo(() => makeStyles(T), [T]);
   const [modalVisible, setModalVisible] = useState(false);
 
   return (
@@ -71,7 +74,7 @@ export function PointMarker({ point, isOwner = false, onDelete }: Props) {
         onPress={() => setModalVisible(true)}
         anchor={{ x: 0.5, y: 1 }}
       >
-        <PinIcon note={point.note} />
+        <PinIcon T={T} />
       </Marker>
 
       <Modal
@@ -163,7 +166,7 @@ export function PointMarker({ point, isOwner = false, onDelete }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (T: Theme) => StyleSheet.create({
   overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)' },
   sheet: {
     backgroundColor: T.surface,

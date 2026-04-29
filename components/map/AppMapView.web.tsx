@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { T } from '@/constants/theme';
+import { useTheme } from '@/hooks/useTheme';
+import type { Theme } from '@/constants/theme';
 
 interface Props {
   children?: React.ReactNode;
@@ -10,6 +11,9 @@ interface Props {
 }
 
 export function AppMapView({ children }: Props) {
+  const T = useTheme();
+  const styles = useMemo(() => makeStyles(T), [T]);
+
   return (
     <View style={styles.container}>
       <View style={styles.placeholder}>
@@ -22,7 +26,7 @@ export function AppMapView({ children }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (T: Theme) => StyleSheet.create({
   container: {
     ...StyleSheet.absoluteFillObject as any,
     backgroundColor: '#0d1a2e',

@@ -16,7 +16,7 @@ function toMapPoint(raw: any): MapPoint {
 export function usePoints() {
   const { points, setPoints, addPoint, updatePoint, removePoint } = useMapStore();
 
-  const fetchMyPoints = useCallback(async (userId: string) => {
+  const fetchMyPoints = useCallback(async (userId: string): Promise<boolean> => {
     const { data, error } = await supabase
       .from('points')
       .select('*, point_partners(partner_id, status, profiles:partner_id(username, display_name))')
@@ -25,7 +25,7 @@ export function usePoints() {
 
     if (error) {
       console.error('[usePoints] fetchMyPoints error:', error.message);
-      return;
+      return false;
     }
 
     setPoints((data ?? []).map((raw: any) => {
@@ -37,6 +37,7 @@ export function usePoints() {
       }
       return mapped;
     }));
+    return true;
   }, [setPoints]);
 
   const createPoint = useCallback(async (params: {
@@ -90,7 +91,7 @@ export function usePoints() {
     return true;
   }, [removePoint]);
 
-  const fetchFriendPoints = useCallback(async (friendId: string) => {
+  const fetchFriendPoints = useCallback(async (friendId: string): Promise<boolean> => {
     const { data, error } = await supabase
       .from('points')
       .select('*, point_partners(partner_id, status, profiles:partner_id(username, display_name))')
@@ -100,7 +101,7 @@ export function usePoints() {
 
     if (error) {
       console.error('[usePoints] fetchFriendPoints error:', error.message);
-      return;
+      return false;
     }
 
     setPoints((data ?? []).map((raw: any) => {
@@ -112,6 +113,7 @@ export function usePoints() {
       }
       return mapped;
     }));
+    return true;
   }, [setPoints]);
 
   const updatePointFields = useCallback(async (pointId: string, fields: {

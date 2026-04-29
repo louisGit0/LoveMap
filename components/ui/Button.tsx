@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   TouchableOpacity,
   Text,
@@ -7,8 +7,9 @@ import {
   StyleProp,
   ViewStyle,
 } from 'react-native';
-import { T } from '@/constants/theme';
+import { useTheme } from '@/hooks/useTheme';
 import { F } from '@/constants/fonts';
+import type { Theme } from '@/constants/theme';
 
 type Variant = 'solid' | 'coral' | 'ghost' | 'danger' | 'underline';
 
@@ -31,6 +32,9 @@ export function Button({
   style,
   fullWidth = true,
 }: Props) {
+  const T = useTheme();
+  const styles = useMemo(() => makeStyles(T), [T]);
+
   if (variant === 'underline') {
     return (
       <TouchableOpacity
@@ -80,7 +84,7 @@ export function Button({
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (T: Theme) => StyleSheet.create({
   base: {
     height: 56,
     alignItems: 'center',

@@ -83,10 +83,11 @@ lovemap/
 │       ├── map/index.tsx         # Carte principale + FAB
 │       ├── point/new.tsx         # Création d'un point
 │       ├── point/[id].tsx        # Détail / consentement partenaire
+│       ├── point/list.tsx        # Liste chronologique des moments
 │       ├── friends/index.tsx     # "Cercle" — liste amis + recherche
 │       ├── friends/requests.tsx  # Demandes d'amitié
-│       ├── profile/index.tsx     # Profil + stats (design Bold)
-│       └── profile/settings.tsx  # Paramètres + suppression compte
+│       ├── profile/index.tsx     # Profil + stats
+│       └── profile/settings.tsx  # Paramètres + toggle dark/light + suppression compte
 ├── components/
 │   ├── map/
 │   │   ├── AppMapView.tsx        # Carte mobile (react-native-maps)
@@ -101,7 +102,8 @@ lovemap/
 │   ├── friends/                  # FriendItem, FriendRequestItem
 │   └── ui/
 │       ├── Button.tsx            # Pill button custom (primary/ghost)
-│       └── Input.tsx             # Input avec tokens Bold
+│       ├── Input.tsx             # Input avec tokens Bold
+│       └── SkeletonItem.tsx      # Skeleton loader animé (SkeletonItem + SkeletonRow)
 ├── constants/
 │   ├── config.ts                 # MIN_AGE = 18
 │   └── theme.ts                  # Design tokens Bold (T.bg, T.primary, T.pill…)
@@ -113,11 +115,13 @@ lovemap/
 ├── stores/                       # Zustand
 │   ├── authStore.ts              # session, user, profile, ageVerified
 │   ├── mapStore.ts               # points, viewMode (pins/heatmap)
-│   └── friendStore.ts            # friends, pendingReceived, pendingSent
+│   ├── friendStore.ts            # friends, pendingReceived, pendingSent
+│   └── themeStore.ts             # isDark, toggleTheme
 ├── hooks/
 │   ├── useAuth.ts                # fetchProfile, signOut
 │   ├── usePoints.ts              # CRUD points + conversion PostGIS→MapPoint
-│   └── useFriends.ts             # CRUD amitiés + demandes
+│   ├── useFriends.ts             # CRUD amitiés + demandes
+│   └── useTheme.ts               # retourne darkTheme ou lightTheme selon store
 ├── types/
 │   ├── database.types.ts         # Types générés Supabase
 │   └── app.types.ts              # Types métier (MapPoint, FriendWithProfile…)
@@ -161,27 +165,35 @@ lovemap/
 4. **Pas d'appels Supabase dans les composants** — tout passe par les hooks (`useAuth`, `usePoints`, `useFriends`)
 5. **Pas de logique métier dans les composants UI** — uniquement dans les hooks ou stores
 6. **Tous les textes de l'interface sont en français**
+7. **Partenaire obligatoire sur un point** — `handleSubmit` dans `point/new.tsx` bloque si aucun partenaire n'est sélectionné ; le CTA est désactivé si `friends.length === 0`
+8. **`happened_at` saisi par l'utilisateur** — ne jamais utiliser `new Date()` pour `happened_at` ; la date est saisie via les champs JJ/MM/AAAA dans `point/new.tsx`
 
 ---
 
-## Identité visuelle — Design Éditorial Noir/Rose
+## Identité visuelle — Design Éditorial Noir/Rose + Light Mode
 
-Tous les tokens sont dans `constants/theme.ts` (objet `T`). **Ne pas hardcoder de couleurs.**
+Les tokens sont dans `constants/theme.ts` (`darkTheme` / `lightTheme`). **Ne pas hardcoder de couleurs.**
 Les familles de polices sont dans `constants/fonts.ts` (objet `F`). **Ne pas hardcoder de fontFamily.**
 
-| Token (`T.xxx`) | Valeur | Usage |
-|-----------------|--------|-------|
-| `T.bg` | `#000000` | Fond global |
-| `T.surface` | `#0a0a0a` | Surface / cards |
-| `T.surface2` | `#141414` | Surface secondaire |
-| `T.border` | `#1f1f1f` | Bordures |
-| `T.text` | `#ffffff` | Texte principal |
-| `T.textDim` | `#d9d9d9` | Texte secondaire |
-| `T.textFaint` | `#8a8a8a` | Texte tertiaire / inactif |
-| `T.primary` | `#ff2d87` | Accent rose |
-| `T.danger` | `#a91860` | Danger/erreur |
-| `T.cardRadius` | `4` | Radius max (angles francs) |
-| `T.pill` | `4` | Pas de pill — angles francs partout |
+**Système de thème** : `useTheme()` retourne le thème actif. Chaque composant utilise le pattern :
+```tsx
+const T = useTheme();
+const styles = useMemo(() => makeStyles(T), [T]);
+```
+Le toggle dark/light est dans `app/(app)/profile/settings.tsx` via `useThemeStore`.
+
+| Token | Dark | Light | Usage |
+|-------|------|-------|-------|
+| `T.bg` | `#000000` | `#ffffff` | Fond global |
+| `T.surface` | `#0a0a0a` | `#f7f7f7` | Surface / cards |
+| `T.surface2` | `#141414` | `#efefef` | Surface secondaire |
+| `T.border` | `#1f1f1f` | `#e2e2e2` | Bordures |
+| `T.text` | `#ffffff` | `#0a0a0a` | Texte principal |
+| `T.textDim` | `#d9d9d9` | `#2a2a2a` | Texte secondaire |
+| `T.textFaint` | `#8a8a8a` | `#7a7a7a` | Texte tertiaire / inactif |
+| `T.primary` | `#ff2d87` | `#ff2d87` | Accent rose (identique) |
+| `T.danger` | `#a91860` | `#c41960` | Danger/erreur |
+| `T.cardRadius` | `4` | `4` | Radius max (angles francs) |
 
 | Token (`F.xxx`) | Police | Usage |
 |-----------------|--------|-------|
@@ -197,9 +209,6 @@ Les familles de polices sont dans `constants/fonts.ts` (objet `F`). **Ne pas har
 
 **Conventions visuelles obligatoires :**
 - **Aucun emoji** dans l'interface
-- **Aucun gradient** — couleurs plates uniquement
-- **Pas de violet** — palette noir + blanc + rose #ff2d87 uniquement
-- **Angles francs partout** — borderRadius 0 ou 4 maximum
 - **Boutons** : `solid` (blanc), `coral` (rose), `ghost` (transparent+border), `danger`, `underline`
 - **Inputs** : underline only — borderBottomWidth:1, borderBottomColor:T.border
 - **Avatars** : carrés (borderRadius:0), initial serif italic en rose
@@ -224,10 +233,38 @@ Les familles de polices sont dans `constants/fonts.ts` (objet `F`). **Ne pas har
 | 5 | ✅ Terminé | Taguage partenaire + consentement |
 | 6 | ✅ Terminé | Notifications push (expo push API) |
 | 7 | ✅ Terminé | Profil, paramètres, avatar upload |
+| D3 | ✅ Terminé | Système dark/light mode — themeStore, useTheme, makeStyles pattern sur tous les composants |
+| MAJ | ✅ Terminé | Grosse mise à jour finale — Blocs A+C+D+E (voir détail ci-dessous) |
 | 8 | 🔲 À faire | Audit sécurité |
 | 9 | 🔲 À faire | Déploiement EAS |
 
 > Mettre à jour ce tableau à chaque phase complétée.
+
+### Détail phase MAJ
+
+**Bloc A — Corrections critiques**
+- A1 : `register.tsx` transmet la vraie date de naissance depuis `authStore` (fix `date_of_birth`)
+- A2 : `themeStore` persisté via `zustand/middleware` + AsyncStorage — thème survit au redémarrage
+- A3 : `database.types.ts` resynchronisé (ajout `address`, `point_photos`) ; `app.types.ts` ajout `PointPhoto`
+
+**Bloc C — Filtres & pull-to-refresh**
+- `point/list.tsx` : filtres par note minimale (0/5/7/9+), tri date/note, pull-to-refresh, skeleton loaders, snackbar erreur réseau
+- `friends/index.tsx` : pull-to-refresh, skeleton loaders
+
+**Bloc D — Profil enrichi**
+- D2 : section "Analyse" dans `profile/index.tsx` — distribution des notes (barres), top 3 mois, durée totale
+- D3 : bouton "Carte" sur chaque `FriendItem` → navigue vers Map en mode vue ami
+
+**Bloc E — Polish & solidité**
+- E1 : section "Email" dans `settings.tsx` — changement d'email via `supabase.auth.updateUser`
+- E2 : `SkeletonItem.tsx` — composant skeleton réutilisable (pulse Animated.loop), remplace ActivityIndicator dans list + friends
+- E3 : `usePoints` et `useFriends` retournent `Promise<boolean>` — erreurs propagées jusqu'aux screens via Snackbar
+
+**Formulaire point/new.tsx**
+- Partenaire **obligatoire** — `handleSubmit` bloque si `selectedPartnerId === null`
+- CTA désactivé si `friends.length === 0`
+- Section Date ajoutée (JJ/MM/AAAA, pré-remplie à aujourd'hui), `happened_at` alimenté par l'utilisateur
+- Labels renommés : "Note d'intensité" → "Note", "Note libre" → "Commentaire"
 
 ---
 

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -19,9 +19,10 @@ import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
 import { usePoints } from '@/hooks/usePoints';
-import { T } from '@/constants/theme';
+import { useTheme } from '@/hooks/useTheme';
 import { F } from '@/constants/fonts';
-import { IcoArrow, IcoTrash, IcoClose } from '@/components/icons';
+import type { Theme } from '@/constants/theme';
+import { IcoArrow, IcoTrash } from '@/components/icons';
 import type { MapPoint, Profile, PointPartner } from '@/types/app.types';
 
 const darkMapStyle = [
@@ -58,6 +59,8 @@ export default function PointDetail() {
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
   const { deletePoint, updatePointFields } = usePoints();
+  const T = useTheme();
+  const styles = useMemo(() => makeStyles(T), [T]);
 
   const [point, setPoint] = useState<MapPoint | null>(null);
   const [partnerRecord, setPartnerRecord] = useState<PointPartner | null>(null);
@@ -366,7 +369,7 @@ export default function PointDetail() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (T: Theme) => StyleSheet.create({
   container: { flex: 1, backgroundColor: T.bg },
   centered: { flex: 1, backgroundColor: T.bg, justifyContent: 'center', alignItems: 'center' },
   errorText: { fontFamily: F.serif, fontStyle: 'italic', fontSize: 16, color: T.primary },

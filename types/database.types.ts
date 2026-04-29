@@ -49,6 +49,7 @@ export interface Database {
           duration_minutes: number | null;
           happened_at: string;
           is_visible: boolean;
+          address: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -61,6 +62,7 @@ export interface Database {
           duration_minutes?: number | null;
           happened_at?: string;
           is_visible?: boolean;
+          address?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -103,6 +105,23 @@ export interface Database {
           updated_at?: string;
         };
         Update: Partial<Database['public']['Tables']['friendships']['Insert']>;
+      };
+      point_photos: {
+        Row: {
+          id: string;
+          point_id: string;
+          photo_url: string;
+          position: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          point_id: string;
+          photo_url: string;
+          position?: number;
+          created_at?: string;
+        };
+        Update: Partial<Database['public']['Tables']['point_photos']['Insert']>;
       };
     };
   };

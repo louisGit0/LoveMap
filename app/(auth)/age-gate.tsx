@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -10,10 +10,11 @@ import {
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuthStore } from '@/stores/authStore';
-import { T } from '@/constants/theme';
+import { useTheme } from '@/hooks/useTheme';
 import { F } from '@/constants/fonts';
 import { IcoArrow } from '@/components/icons';
 import { MIN_AGE } from '@/constants/config';
+import type { Theme } from '@/constants/theme';
 
 const MOIS = ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'];
 
@@ -23,12 +24,14 @@ function PickerCol({
   onSelect,
   label,
   format = (x: number) => String(x),
+  styles,
 }: {
   items: number[];
   selected: number;
   onSelect: (v: number) => void;
   label: string;
   format?: (v: number) => string;
+  styles: ReturnType<typeof makeStyles>;
 }) {
   return (
     <View style={{ flex: 1 }}>
@@ -63,6 +66,9 @@ function PickerCol({
 export default function AgeGate() {
   const insets = useSafeAreaInsets();
   const { setAgeVerified } = useAuthStore();
+  const T = useTheme();
+  const styles = useMemo(() => makeStyles(T), [T]);
+
   const [day, setDay] = useState(12);
   const [month, setMonth] = useState(5);
   const [year, setYear] = useState(1998);
@@ -87,7 +93,7 @@ export default function AgeGate() {
       setError('Accès interdit aux mineur·e·s.');
       return;
     }
-    setAgeVerified(true);
+    setAgeVerified(true, new Date(year, month - 1, day).toISOString().slice(0, 10));
     router.replace('/(auth)/login');
   }
 
@@ -115,9 +121,9 @@ export default function AgeGate() {
         {/* Pickers */}
         <Text style={styles.pickerEyebrow}>↳ Date de naissance</Text>
         <View style={styles.pickers}>
-          <PickerCol label="Jour" items={days} selected={day} onSelect={setDay} format={(x) => String(x).padStart(2, '0')} />
-          <PickerCol label="Mois" items={months} selected={month} onSelect={setMonth} format={(x) => MOIS[x - 1]} />
-          <PickerCol label="Année" items={years} selected={year} onSelect={setYear} />
+          <PickerCol label="Jour" items={days} selected={day} onSelect={setDay} format={(x) => String(x).padStart(2, '0')} styles={styles} />
+          <PickerCol label="Mois" items={months} selected={month} onSelect={setMonth} format={(x) => MOIS[x - 1]} styles={styles} />
+          <PickerCol label="Année" items={years} selected={year} onSelect={setYear} styles={styles} />
         </View>
 
         {error ? (
@@ -145,7 +151,7 @@ export default function AgeGate() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (T: Theme) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: T.bg,

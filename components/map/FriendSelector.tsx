@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -10,9 +10,10 @@ import {
   Image,
 } from 'react-native';
 import { useFriendStore } from '@/stores/friendStore';
-import { T } from '@/constants/theme';
+import { useTheme } from '@/hooks/useTheme';
 import { F } from '@/constants/fonts';
-import { IcoCircle } from '@/components/icons';
+import { IcoUser } from '@/components/icons';
+import type { Theme } from '@/constants/theme';
 import type { FriendWithProfile } from '@/types/app.types';
 
 interface Props {
@@ -22,6 +23,9 @@ interface Props {
 }
 
 export function FriendSelector({ onSelectFriend, onSelectSelf, isViewingFriend }: Props) {
+  const T = useTheme();
+  const styles = useMemo(() => makeStyles(T), [T]);
+
   const [visible, setVisible] = useState(false);
   const friends = useFriendStore((s) => s.friends);
 
@@ -37,7 +41,8 @@ export function FriendSelector({ onSelectFriend, onSelectSelf, isViewingFriend }
         onPress={() => setVisible(true)}
         activeOpacity={0.7}
       >
-        <IcoCircle size={18} color={isViewingFriend ? T.primary : T.textFaint} />
+        <IcoUser size={14} color={isViewingFriend ? T.primary : T.textFaint} />
+        <Text style={[styles.triggerText, isViewingFriend && styles.triggerTextActive]}>Maps</Text>
       </TouchableOpacity>
 
       <Modal visible={visible} transparent animationType="slide" onRequestClose={() => setVisible(false)}>
@@ -97,23 +102,29 @@ export function FriendSelector({ onSelectFriend, onSelectSelf, isViewingFriend }
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (T: Theme) => StyleSheet.create({
   trigger: {
-    width: 44,
-    height: 44,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
     backgroundColor: T.surface + 'f0',
     borderWidth: 1,
     borderColor: T.border,
-    alignItems: 'center',
-    justifyContent: 'center',
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
   },
   triggerActive: {
     borderColor: T.primary,
+  },
+  triggerText: {
+    fontFamily: F.mono,
+    fontSize: 9,
+    letterSpacing: 1.5,
+    textTransform: 'uppercase',
+    color: T.textFaint,
+  },
+  triggerTextActive: {
+    color: T.primary,
   },
   overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)' },
   sheet: {

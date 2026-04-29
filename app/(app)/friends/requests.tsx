@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -13,9 +13,10 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
 import { useFriends } from '@/hooks/useFriends';
+import { useTheme } from '@/hooks/useTheme';
 import { FriendRequestItem } from '@/components/friends/FriendRequestItem';
-import { T } from '@/constants/theme';
 import { F } from '@/constants/fonts';
+import type { Theme } from '@/constants/theme';
 import { IcoArrow, IcoClose } from '@/components/icons';
 import type { FriendWithProfile } from '@/types/app.types';
 
@@ -23,6 +24,8 @@ export default function FriendRequests() {
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
   const { respondToRequest, setPendingReceived, setPendingSent } = useFriends();
+  const T = useTheme();
+  const styles = useMemo(() => makeStyles(T), [T]);
 
   const [received, setReceived] = useState<FriendWithProfile[]>([]);
   const [sent, setSent] = useState<FriendWithProfile[]>([]);
@@ -156,7 +159,7 @@ export default function FriendRequests() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (T: Theme) => StyleSheet.create({
   container: { flex: 1, backgroundColor: T.bg, paddingHorizontal: 24 },
   backBtn: {
     flexDirection: 'row',

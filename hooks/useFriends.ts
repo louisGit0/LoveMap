@@ -7,8 +7,7 @@ export function useFriends() {
   const { friends, pendingReceived, pendingSent, setFriends, setPendingReceived, setPendingSent, removeFriend } =
     useFriendStore();
 
-  const fetchFriends = useCallback(async (userId: string) => {
-    // Récupère les amitiés acceptées avec le profil de l'autre partie
+  const fetchFriends = useCallback(async (userId: string): Promise<boolean> => {
     const { data, error } = await supabase
       .from('friendships')
       .select(`
@@ -21,7 +20,7 @@ export function useFriends() {
 
     if (error) {
       console.error('[useFriends] fetchFriends error:', error.message);
-      return;
+      return false;
     }
 
     const enriched: FriendWithProfile[] = (data ?? []).map((f: any) => ({
@@ -30,6 +29,7 @@ export function useFriends() {
     }));
 
     setFriends(enriched);
+    return true;
   }, [setFriends]);
 
   const sendFriendRequest = useCallback(async (requesterId: string, addresseeId: string) => {

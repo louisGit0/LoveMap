@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { router } from 'expo-router';
-import { T } from '@/constants/theme';
+import { useTheme } from '@/hooks/useTheme';
 import { F } from '@/constants/fonts';
+import type { Theme } from '@/constants/theme';
 import type { MapPoint } from '@/types/app.types';
 
 interface Props {
@@ -11,6 +12,9 @@ interface Props {
 }
 
 export function PointListItem({ point, index }: Props) {
+  const T = useTheme();
+  const styles = useMemo(() => makeStyles(T), [T]);
+
   const dateStr = new Date(point.happened_at ?? point.created_at).toLocaleDateString('fr-FR', {
     day: 'numeric',
     month: 'long',
@@ -26,7 +30,7 @@ export function PointListItem({ point, index }: Props) {
       <Text style={styles.number}>N°{String(index + 1).padStart(3, '0')}</Text>
 
       {/* Note grande */}
-      <Text style={[styles.note, { color: T.primary }]}>{point.note}</Text>
+      <Text style={styles.note}>{point.note}</Text>
 
       {/* Commentaire */}
       <View style={styles.body}>
@@ -49,7 +53,7 @@ export function PointListItem({ point, index }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (T: Theme) => StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',

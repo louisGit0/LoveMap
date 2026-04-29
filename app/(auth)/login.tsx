@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -10,14 +10,18 @@ import {
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { supabase } from '@/lib/supabase';
-import { T } from '@/constants/theme';
+import { useTheme } from '@/hooks/useTheme';
 import { F } from '@/constants/fonts';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { IcoHeartDashed } from '@/components/icons';
+import type { Theme } from '@/constants/theme';
 
 export default function Login() {
   const insets = useSafeAreaInsets();
+  const T = useTheme();
+  const styles = useMemo(() => makeStyles(T), [T]);
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPwd, setShowPwd] = useState(false);
@@ -105,7 +109,7 @@ export default function Login() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (T: Theme) => StyleSheet.create({
   container: { flex: 1, backgroundColor: T.bg },
   innerBorder: {
     position: 'absolute',

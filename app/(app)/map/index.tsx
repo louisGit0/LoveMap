@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity, Alert } from 'react-native';
 import { router } from 'expo-router';
 import { Snackbar } from 'react-native-paper';
@@ -7,13 +7,14 @@ import { useAuth } from '@/hooks/useAuth';
 import { usePoints } from '@/hooks/usePoints';
 import { useFriends } from '@/hooks/useFriends';
 import { useMapStore } from '@/stores/mapStore';
+import { useTheme } from '@/hooks/useTheme';
 import { AppMapView } from '@/components/map/AppMapView';
 import { MapHeader } from '@/components/map/MapHeader';
 import { FriendSelector } from '@/components/map/FriendSelector';
 import { PointMarker } from '@/components/map/PointMarker';
 import { HeatmapLayer } from '@/components/map/HeatmapLayer';
-import { T } from '@/constants/theme';
 import { F } from '@/constants/fonts';
+import type { Theme } from '@/constants/theme';
 import { IcoPlus } from '@/components/icons';
 
 export default function MapScreen() {
@@ -22,6 +23,8 @@ export default function MapScreen() {
   const { points, fetchMyPoints, fetchFriendPoints, deletePoint } = usePoints();
   const { fetchFriends } = useFriends();
   const { viewMode, setViewMode, viewingFriendId, viewingFriendName, setViewingFriend } = useMapStore();
+  const T = useTheme();
+  const styles = useMemo(() => makeStyles(T), [T]);
 
   const [loading, setLoading] = useState(true);
   const [snackbar, setSnackbar] = useState<string | null>(null);
@@ -32,9 +35,11 @@ export default function MapScreen() {
   const loadPoints = useCallback(async () => {
     if (!user) return;
     setLoading(true);
-    if (viewingFriendId) await fetchFriendPoints(viewingFriendId);
-    else await fetchMyPoints(user.id);
+    const ok = viewingFriendId
+      ? await fetchFriendPoints(viewingFriendId)
+      : await fetchMyPoints(user.id);
     setLoading(false);
+    if (!ok) setSnackbar('Erreur de chargement. Vérifiez votre connexion.');
   }, [user, viewingFriendId]);
 
   useEffect(() => { loadPoints(); }, [loadPoints]);
@@ -57,7 +62,28 @@ export default function MapScreen() {
     ]);
   }
 
-  const isEmpty = !loading && points.length === 0 && !viewingFriendId;
+  if (!loading && points.length === 0 && !viewingFriendId) {
+    return (
+      <View style={[styles.emptyScreen, { paddingTop: insets.top }]}>
+        <View style={styles.emptyTopBar}>
+          <FriendSelector
+            isViewingFriend={false}
+            onSelectFriend={(id, name) => setViewingFriend(id, name)}
+            onSelectSelf={() => setViewingFriend(null)}
+          />
+        </View>
+        <View style={styles.emptyContent}>
+          <Text style={styles.emptyTitle}>La page{'\n'}n'attend que vous.</Text>
+          <Text style={styles.emptyDesc}>
+            Marquez un moment, attribuez-lui une note, et tagguez la personne avec qui vous l'avez vécu — son consentement scellera le souvenir.
+          </Text>
+          <TouchableOpacity onPress={handleFabPress} activeOpacity={0.75}>
+            <Text style={styles.emptyLink}>Inscrire mon premier moment {'>'}</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -73,6 +99,7 @@ export default function MapScreen() {
         onViewModeChange={setViewMode}
         friendName={viewingFriendName}
         onFriendClear={() => setViewingFriend(null)}
+        pointCount={points.length}
         leftSlot={
           <FriendSelector
             isViewingFriend={!!viewingFriendId}
@@ -81,16 +108,6 @@ export default function MapScreen() {
           />
         }
       />
-
-      {/* Empty state */}
-      {isEmpty && (
-        <View style={styles.emptyState} pointerEvents="none">
-          <Text style={styles.emptyTitle}>La page n'attend{'\n'}que vous.</Text>
-          <TouchableOpacity onPress={handleFabPress} pointerEvents="auto">
-            <Text style={styles.emptyLink}>Inscrire mon premier moment →</Text>
-          </TouchableOpacity>
-        </View>
-      )}
 
       {loading && (
         <View style={styles.loadingOverlay}>
@@ -116,7 +133,7 @@ export default function MapScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (T: Theme) => StyleSheet.create({
   container: { flex: 1, backgroundColor: T.bg },
   loadingOverlay: {
     ...StyleSheet.absoluteFillObject,
@@ -124,12 +141,22 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: 'rgba(0,0,0,0.3)',
   },
-  emptyState: {
-    position: 'absolute',
-    bottom: 160,
-    left: 0,
-    right: 0,
+  emptyScreen: {
+    flex: 1,
+    backgroundColor: T.bg,
+  },
+  emptyTopBar: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: T.border,
+  },
+  emptyContent: {
+    flex: 1,
     alignItems: 'center',
+    justifyContent: 'center',
     paddingHorizontal: 32,
   },
   emptyTitle: {
@@ -141,6 +168,15 @@ const styles = StyleSheet.create({
     color: T.text,
     textAlign: 'center',
     marginBottom: 16,
+  },
+  emptyDesc: {
+    fontFamily: F.sans,
+    fontSize: 14,
+    color: T.textFaint,
+    textAlign: 'center',
+    lineHeight: 21,
+    marginBottom: 20,
+    paddingHorizontal: 8,
   },
   emptyLink: {
     fontFamily: F.serif,

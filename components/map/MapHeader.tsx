@@ -1,162 +1,159 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { T } from '@/constants/theme';
+import { useTheme } from '@/hooks/useTheme';
 import { F } from '@/constants/fonts';
-import { IcoPin, IcoHeat, IcoClose } from '@/components/icons';
+import { IcoHeat, IcoPin } from '@/components/icons';
+import type { Theme } from '@/constants/theme';
 
 interface Props {
   viewMode: 'pins' | 'heatmap';
   onViewModeChange: (mode: 'pins' | 'heatmap') => void;
   friendName?: string | null;
   onFriendClear?: () => void;
+  pointCount?: number;
   leftSlot?: React.ReactNode;
 }
 
-export function MapHeader({ viewMode, onViewModeChange, friendName, onFriendClear, leftSlot }: Props) {
+export function MapHeader({ viewMode, onViewModeChange, friendName, onFriendClear, pointCount = 0, leftSlot }: Props) {
   const insets = useSafeAreaInsets();
+  const T = useTheme();
+  const styles = useMemo(() => makeStyles(T), [T]);
+
+  const title = friendName
+    ? `carte de ${friendName}`
+    : `mes moments · ${String(pointCount).padStart(2, '0')}`;
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top + 8 }]}>
-      <View style={styles.row}>
-        {/* Slot gauche (FriendSelector) */}
-        {leftSlot ?? <View style={styles.spacer} />}
-
-        {/* Toggle bandes horizontales */}
-        <View style={styles.toggle}>
-          <Text style={styles.toggleEyebrow}>lovemap</Text>
-          <View style={styles.toggleBands}>
-            <TouchableOpacity
-              style={[styles.band, viewMode === 'pins' && styles.bandActive]}
-              onPress={() => onViewModeChange('pins')}
-              activeOpacity={0.8}
-            >
-              <IcoPin size={13} color={viewMode === 'pins' ? T.text : T.textFaint} />
-              <Text style={[styles.bandText, viewMode === 'pins' && styles.bandTextActive]}>
-                Atlas
-              </Text>
-            </TouchableOpacity>
-            <View style={styles.bandDivider} />
-            <TouchableOpacity
-              style={[styles.band, viewMode === 'heatmap' && styles.bandActive]}
-              onPress={() => onViewModeChange('heatmap')}
-              activeOpacity={0.8}
-            >
-              <IcoHeat size={13} color={viewMode === 'heatmap' ? T.text : T.textFaint} />
-              <Text style={[styles.bandText, viewMode === 'heatmap' && styles.bandTextActive]}>
-                Chaleur
-              </Text>
-            </TouchableOpacity>
+    <View style={[styles.container, { paddingTop: insets.top + 6 }]}>
+      {/* Ligne titre */}
+      <View style={styles.titleRow}>
+        <View style={styles.titleLeft}>
+          <Text style={styles.eyebrow}>lovemap</Text>
+          <View style={styles.titleLine}>
+            <Text style={styles.title}>{title}</Text>
+            {friendName && (
+              <TouchableOpacity onPress={onFriendClear} style={styles.clearBtn} activeOpacity={0.7}>
+                <Text style={styles.clearText}>✕</Text>
+              </TouchableOpacity>
+            )}
           </View>
         </View>
-
-        <View style={styles.spacer} />
+        {/* Bouton VUE (FriendSelector) */}
+        {leftSlot && (
+          <View style={styles.vueSlot}>{leftSlot}</View>
+        )}
       </View>
 
-      {/* Bandeau ami */}
-      {friendName && (
-        <View style={styles.friendBanner}>
-          <Text style={styles.friendBannerLabel}>
-            <Text style={styles.friendBannerEyebrow}>Carte de </Text>
-            {friendName}
+      {/* Toggle MAP / HEATMAP */}
+      <View style={styles.toggle}>
+        <TouchableOpacity
+          style={[styles.toggleBtn, viewMode === 'pins' && styles.toggleBtnActive]}
+          onPress={() => onViewModeChange('pins')}
+          activeOpacity={0.8}
+        >
+          <IcoPin size={12} color={viewMode === 'pins' ? T.text : T.textFaint} />
+          <Text style={[styles.toggleText, viewMode === 'pins' && styles.toggleTextActive]}>
+            Map
           </Text>
-          <TouchableOpacity onPress={onFriendClear} style={styles.friendBannerClose} activeOpacity={0.7}>
-            <IcoClose size={12} color={T.textFaint} />
-          </TouchableOpacity>
-        </View>
-      )}
+        </TouchableOpacity>
+        <View style={styles.toggleDivider} />
+        <TouchableOpacity
+          style={[styles.toggleBtn, viewMode === 'heatmap' && styles.toggleBtnActive]}
+          onPress={() => onViewModeChange('heatmap')}
+          activeOpacity={0.8}
+        >
+          <IcoHeat size={12} color={viewMode === 'heatmap' ? T.text : T.textFaint} />
+          <Text style={[styles.toggleText, viewMode === 'heatmap' && styles.toggleTextActive]}>
+            Heatmap
+          </Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (T: Theme) => StyleSheet.create({
   container: {
     position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
     zIndex: 10,
-    alignItems: 'center',
-    paddingHorizontal: 16,
+    backgroundColor: T.bg + 'e8',
+    paddingHorizontal: 20,
+    paddingBottom: 0,
+    borderBottomWidth: 1,
+    borderBottomColor: T.border,
   },
-  row: {
+  titleRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    width: '100%',
+    justifyContent: 'space-between',
+    paddingBottom: 10,
   },
-  spacer: { width: 44 },
-  toggle: {
-    backgroundColor: T.surface + 'f0',
-    borderWidth: 1,
-    borderColor: T.border,
-    elevation: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.5,
-    shadowRadius: 12,
+  titleLeft: {
+    flex: 1,
   },
-  toggleEyebrow: {
+  eyebrow: {
     fontFamily: F.mono,
     fontSize: 7,
     letterSpacing: 2.5,
     textTransform: 'uppercase',
     color: T.textFaint,
-    textAlign: 'center',
-    paddingTop: 6,
-    paddingHorizontal: 16,
+    marginBottom: 2,
   },
-  toggleBands: {
+  titleLine: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 8,
   },
-  band: {
+  title: {
+    fontFamily: F.serif,
+    fontStyle: 'italic',
+    fontSize: 17,
+    color: T.text,
+    letterSpacing: -0.3,
+  },
+  clearBtn: {
+    padding: 2,
+  },
+  clearText: {
+    fontFamily: F.mono,
+    fontSize: 10,
+    color: T.textFaint,
+  },
+  vueSlot: {
+    marginLeft: 12,
+  },
+  toggle: {
+    flexDirection: 'row',
+    borderTopWidth: 1,
+    borderTopColor: T.border,
+  },
+  toggleBtn: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 14,
+    justifyContent: 'center',
     gap: 6,
+    paddingVertical: 9,
   },
-  bandActive: {
+  toggleBtnActive: {
     backgroundColor: T.primary,
   },
-  bandDivider: {
+  toggleDivider: {
     width: 1,
-    height: 20,
     backgroundColor: T.border,
   },
-  bandText: {
+  toggleText: {
     fontFamily: F.mono,
     fontSize: 9,
     letterSpacing: 1.5,
     textTransform: 'uppercase',
     color: T.textFaint,
   },
-  bandTextActive: {
+  toggleTextActive: {
     color: T.text,
-  },
-  friendBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: T.surface + 'f0',
-    borderWidth: 1,
-    borderColor: T.border,
-    paddingVertical: 8,
-    paddingHorizontal: 14,
-    marginTop: 6,
-    gap: 10,
-  },
-  friendBannerLabel: {
-    fontFamily: F.serif,
-    fontStyle: 'italic',
-    fontSize: 14,
-    color: T.text,
-    flex: 1,
-  },
-  friendBannerEyebrow: {
-    color: T.textFaint,
-  },
-  friendBannerClose: {
-    padding: 4,
   },
 });

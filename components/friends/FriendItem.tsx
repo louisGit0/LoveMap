@@ -1,15 +1,20 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
-import { T } from '@/constants/theme';
+import { useTheme } from '@/hooks/useTheme';
 import { F } from '@/constants/fonts';
+import type { Theme } from '@/constants/theme';
 import type { FriendWithProfile } from '@/types/app.types';
 
 interface Props {
   friend: FriendWithProfile;
   onUnfriend: () => void;
+  onViewMap?: () => void;
 }
 
-export function FriendItem({ friend, onUnfriend }: Props) {
+export function FriendItem({ friend, onUnfriend, onViewMap }: Props) {
+  const T = useTheme();
+  const styles = useMemo(() => makeStyles(T), [T]);
+
   const { profile } = friend;
   const initials = (profile.display_name ?? profile.username)[0]?.toUpperCase() ?? '?';
 
@@ -33,6 +38,11 @@ export function FriendItem({ friend, onUnfriend }: Props) {
         <Text style={styles.displayName}>{profile.display_name ?? profile.username}</Text>
         <Text style={styles.username}>@{profile.username}</Text>
       </View>
+      {onViewMap && (
+        <TouchableOpacity style={styles.mapBtn} onPress={onViewMap} activeOpacity={0.7}>
+          <Text style={styles.mapBtnText}>Carte</Text>
+        </TouchableOpacity>
+      )}
       <TouchableOpacity style={styles.removeBtn} onPress={handleUnfriend} activeOpacity={0.7}>
         <Text style={styles.removeBtnText}>Retirer</Text>
       </TouchableOpacity>
@@ -40,7 +50,7 @@ export function FriendItem({ friend, onUnfriend }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (T: Theme) => StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -76,6 +86,19 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
     color: T.textFaint,
     marginTop: 2,
+  },
+  mapBtn: {
+    borderWidth: 1,
+    borderColor: T.primary,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  mapBtnText: {
+    fontFamily: F.mono,
+    fontSize: 9,
+    letterSpacing: 1.5,
+    textTransform: 'uppercase',
+    color: T.primary,
   },
   removeBtn: {
     borderWidth: 1,

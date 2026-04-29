@@ -1,5 +1,5 @@
 // Input sans bordure encadrée — juste une ligne en bas (direction éditoriale)
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   TextInput,
   Text,
@@ -9,26 +9,34 @@ import {
   StyleProp,
   ViewStyle,
 } from 'react-native';
-import { T } from '@/constants/theme';
+import { useTheme } from '@/hooks/useTheme';
 import { F } from '@/constants/fonts';
+import type { Theme } from '@/constants/theme';
 
 interface Props extends TextInputProps {
   label?: string;
   error?: string;
   containerStyle?: StyleProp<ViewStyle>;
+  right?: React.ReactNode;
 }
 
-export function Input({ label, error, containerStyle, style, ...props }: Props) {
+export function Input({ label, error, containerStyle, style, right, ...props }: Props) {
+  const T = useTheme();
+  const styles = useMemo(() => makeStyles(T), [T]);
+
   return (
     <View style={[styles.container, containerStyle]}>
       {label ? (
         <Text style={styles.label}>{label}</Text>
       ) : null}
-      <TextInput
-        placeholderTextColor={T.textFaint}
-        style={[styles.input, style]}
-        {...props}
-      />
+      <View style={styles.inputRow}>
+        <TextInput
+          placeholderTextColor={T.textFaint}
+          style={[styles.input, style]}
+          {...props}
+        />
+        {right ? right : null}
+      </View>
       {error ? (
         <Text style={styles.error}>↳ {error}</Text>
       ) : null}
@@ -36,7 +44,7 @@ export function Input({ label, error, containerStyle, style, ...props }: Props) 
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (T: Theme) => StyleSheet.create({
   container: { marginBottom: 0 },
   label: {
     fontFamily: F.mono,
@@ -46,10 +54,15 @@ const styles = StyleSheet.create({
     color: T.textFaint,
     marginBottom: 8,
   },
-  input: {
-    backgroundColor: 'transparent',
+  inputRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
     borderBottomWidth: 1,
     borderBottomColor: T.border,
+  },
+  input: {
+    flex: 1,
+    backgroundColor: 'transparent',
     paddingVertical: 12,
     paddingHorizontal: 0,
     fontFamily: F.serif,

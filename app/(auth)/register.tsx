@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -8,13 +8,19 @@ import {
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { supabase } from '@/lib/supabase';
-import { T } from '@/constants/theme';
+import { useAuthStore } from '@/stores/authStore';
+import { useTheme } from '@/hooks/useTheme';
 import { F } from '@/constants/fonts';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
+import type { Theme } from '@/constants/theme';
 
 export default function Register() {
   const insets = useSafeAreaInsets();
+  const { dateOfBirth } = useAuthStore();
+  const T = useTheme();
+  const styles = useMemo(() => makeStyles(T), [T]);
+
   const [form, setForm] = useState({ email: '', pwd: '', pwd2: '', name: '', username: '' });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
@@ -35,7 +41,7 @@ export default function Register() {
   async function handleRegister() {
     if (!validate()) return;
     setLoading(true);
-    const dob = new Date().toISOString().slice(0, 10);
+    const dob = dateOfBirth ?? new Date().toISOString().slice(0, 10);
     const { error } = await supabase.auth.signUp({
       email: form.email.trim(),
       password: form.pwd,
@@ -97,7 +103,7 @@ export default function Register() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (T: Theme) => StyleSheet.create({
   container: { flex: 1, backgroundColor: T.bg },
   innerBorder: {
     position: 'absolute',

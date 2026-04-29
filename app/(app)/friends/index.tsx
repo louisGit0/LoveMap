@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   TextInput,
+  RefreshControl,
 } from 'react-native';
 import { router } from 'expo-router';
 import { Snackbar } from 'react-native-paper';
@@ -15,9 +16,12 @@ import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
 import { useFriends } from '@/hooks/useFriends';
 import { useFriendStore } from '@/stores/friendStore';
+import { useMapStore } from '@/stores/mapStore';
+import { useTheme } from '@/hooks/useTheme';
 import { FriendItem } from '@/components/friends/FriendItem';
-import { T } from '@/constants/theme';
+import { SkeletonRow } from '@/components/ui/SkeletonItem';
 import { F } from '@/constants/fonts';
+import type { Theme } from '@/constants/theme';
 import { IcoSearch, IcoPlus } from '@/components/icons';
 import type { Profile } from '@/types/app.types';
 
@@ -26,17 +30,22 @@ export default function FriendsScreen() {
   const { user } = useAuth();
   const { friends, fetchFriends, sendFriendRequest, unfriend, setPendingReceived } = useFriends();
   const pendingReceived = useFriendStore((s) => s.pendingReceived);
+  const { setViewingFriend } = useMapStore();
+  const T = useTheme();
+  const styles = useMemo(() => makeStyles(T), [T]);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<Profile[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [snackbar, setSnackbar] = useState<string | null>(null);
 
   const loadFriends = useCallback(async () => {
     if (!user) return;
     setLoading(true);
-    await fetchFriends(user.id);
+    const ok = await fetchFriends(user.id);
+    if (!ok) { setLoading(false); setSnackbar('Erreur de chargement.'); return; }
     const { data } = await supabase
       .from('friendships')
       .select(`*, requester:profiles!friendships_requester_id_fkey(*), addressee:profiles!friendships_addressee_id_fkey(*)`)
@@ -49,6 +58,12 @@ export default function FriendsScreen() {
   }, [user, fetchFriends, setPendingReceived]);
 
   useEffect(() => { loadFriends(); }, [loadFriends]);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await loadFriends();
+    setRefreshing(false);
+  }, [loadFriends]);
 
   useEffect(() => {
     if (searchQuery.trim().length < 2) { setSearchResults([]); return; }
@@ -84,16 +99,30 @@ export default function FriendsScreen() {
     <View style={[styles.container, { paddingTop: insets.top }]}>
       {/* Header */}
       <View style={styles.header}>
-        <View style={styles.innerBorder} pointerEvents="none" />
-        <Text style={styles.eyebrow}>N° 004 — Réseau</Text>
+        <Text style={styles.eyebrow}>Confidents</Text>
         <Text style={styles.title}>le cercle</Text>
         <Text style={styles.subtitle}>
-          {String(friends.length).padStart(2, '0')} membre{friends.length > 1 ? 's' : ''}
+          {friends.length} lien{friends.length > 1 ? 's' : ''} · {pendingReceived.length} demande{pendingReceived.length > 1 ? 's' : ''}
         </Text>
       </View>
 
       <View style={styles.body}>
-        {/* Demandes */}
+        {/* Section inviter */}
+        <Text style={styles.sectionLabel}>Inviter quelqu'un</Text>
+        <View style={styles.searchRow}>
+          <IcoSearch size={14} color={T.textFaint} />
+          <TextInput
+            style={styles.searchInput}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            placeholder="@pseudo ou prénom"
+            placeholderTextColor={T.textFaint}
+            autoCapitalize="none"
+          />
+          {searchLoading && <ActivityIndicator color={T.primary} size="small" />}
+        </View>
+
+        {/* Section demandes */}
         <TouchableOpacity
           style={styles.requestsRow}
           onPress={() => router.push('/(app)/friends/requests')}
@@ -107,22 +136,11 @@ export default function FriendsScreen() {
               </View>
             )}
           </View>
+          <Text style={styles.requestsValue}>
+            {pendingReceived.length === 0 ? 'aucune pour l\'instant' : `${pendingReceived.length} en attente`}
+          </Text>
           <Text style={styles.requestsArrow}>›</Text>
         </TouchableOpacity>
-
-        {/* Recherche */}
-        <View style={styles.searchRow}>
-          <IcoSearch size={14} color={T.textFaint} />
-          <TextInput
-            style={styles.searchInput}
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            placeholder="Rechercher par @pseudo"
-            placeholderTextColor={T.textFaint}
-            autoCapitalize="none"
-          />
-          {searchLoading && <ActivityIndicator color={T.primary} size="small" />}
-        </View>
 
         {/* Résultats recherche */}
         {searchResults.length > 0 && (
@@ -153,22 +171,45 @@ export default function FriendsScreen() {
 
         {/* Liste amis */}
         {loading ? (
-          <ActivityIndicator color={T.primary} style={styles.loader} />
+          <View style={styles.skeletonList}>
+            {[1, 2, 3].map((k) => <SkeletonRow key={k} />)}
+          </View>
         ) : friends.length === 0 ? (
           <View style={styles.empty}>
             <Text style={styles.emptyTitle}>Le cercle est vide.</Text>
-            <Text style={styles.emptySubtitle}>Recherchez vos partenaires par pseudo.</Text>
+            <Text style={styles.emptySubtitle}>Vous ne pouvez pas cartographier vos moments en étant seul·e. Invitez quelqu'un en qui vous avez confiance.</Text>
           </View>
         ) : (
-          <FlatList
-            data={friends}
-            keyExtractor={(item) => item.id}
-            renderItem={({ item }) => (
-              <FriendItem friend={item} onUnfriend={() => handleUnfriend(item.id)} />
-            )}
-            contentContainerStyle={styles.listContent}
-            showsVerticalScrollIndicator={false}
-          />
+          <>
+            <View style={styles.cercleSectionRow}>
+              <Text style={styles.cercleSectionLabel}>Mon cercle</Text>
+              <Text style={styles.cercleSectionCount}>{String(friends.length).padStart(2, '0')}</Text>
+            </View>
+            <FlatList
+              data={friends}
+              keyExtractor={(item) => item.id}
+              renderItem={({ item }) => (
+                <FriendItem
+                  friend={item}
+                  onUnfriend={() => handleUnfriend(item.id)}
+                  onViewMap={() => {
+                    setViewingFriend(item.profile.id, item.profile.display_name ?? item.profile.username);
+                    router.push('/(app)/map');
+                  }}
+                />
+              )}
+              contentContainerStyle={styles.listContent}
+              showsVerticalScrollIndicator={false}
+              refreshControl={
+                <RefreshControl
+                  refreshing={refreshing}
+                  onRefresh={onRefresh}
+                  tintColor={T.primary}
+                  colors={[T.primary]}
+                />
+              }
+            />
+          </>
         )}
       </View>
 
@@ -179,18 +220,13 @@ export default function FriendsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (T: Theme) => StyleSheet.create({
   container: { flex: 1, backgroundColor: T.bg },
   header: {
     paddingBottom: 24,
     paddingHorizontal: 36,
     paddingTop: 24,
     position: 'relative',
-  },
-  innerBorder: {
-    position: 'absolute',
-    top: 16, left: 16, right: 16, bottom: 0,
-    borderWidth: 1, borderColor: T.border, borderBottomWidth: 0,
   },
   eyebrow: {
     fontFamily: F.mono,
@@ -336,6 +372,7 @@ const styles = StyleSheet.create({
     color: T.text,
   },
   loader: { marginTop: 32 },
+  skeletonList: { marginTop: 8 },
   empty: { paddingTop: 40, alignItems: 'center' },
   emptyTitle: {
     fontFamily: F.serifLight,
@@ -352,4 +389,42 @@ const styles = StyleSheet.create({
   },
   listContent: { paddingBottom: 100 },
   snackbar: { backgroundColor: T.surface2 },
+  sectionLabel: {
+    fontFamily: F.mono,
+    fontSize: 9,
+    letterSpacing: 2,
+    textTransform: 'uppercase',
+    color: T.textFaint,
+    marginBottom: 8,
+    marginTop: 4,
+  },
+  requestsValue: {
+    fontFamily: F.serif,
+    fontStyle: 'italic',
+    fontSize: 13,
+    color: T.textFaint,
+  },
+  cercleSectionRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    justifyContent: 'space-between',
+    paddingTop: 20,
+    paddingBottom: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: T.border,
+    marginBottom: 0,
+  },
+  cercleSectionLabel: {
+    fontFamily: F.mono,
+    fontSize: 9,
+    letterSpacing: 2,
+    textTransform: 'uppercase',
+    color: T.textFaint,
+  },
+  cercleSectionCount: {
+    fontFamily: F.mono,
+    fontSize: 10,
+    letterSpacing: 1.5,
+    color: T.textFaint,
+  },
 });

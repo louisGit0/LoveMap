@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import {
   View,
   Text,
@@ -17,9 +17,10 @@ import * as Location from 'expo-location';
 import { useAuth } from '@/hooks/useAuth';
 import { usePoints } from '@/hooks/usePoints';
 import { useFriendStore } from '@/stores/friendStore';
+import { useTheme } from '@/hooks/useTheme';
 import { supabase } from '@/lib/supabase';
-import { T } from '@/constants/theme';
 import { F } from '@/constants/fonts';
+import type { Theme } from '@/constants/theme';
 import { IcoArrow, IcoSearch, IcoClose } from '@/components/icons';
 
 const darkMapStyle = [
@@ -35,6 +36,8 @@ export default function NewPoint() {
   const { createPoint } = usePoints();
   const friends = useFriendStore((s) => s.friends);
   const params = useLocalSearchParams<{ latitude: string; longitude: string }>();
+  const T = useTheme();
+  const styles = useMemo(() => makeStyles(T), [T]);
 
   const hasParams =
     !!params.latitude && !!params.longitude &&
@@ -50,6 +53,11 @@ export default function NewPoint() {
   const [selectedPartnerId, setSelectedPartnerId] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [snackbar, setSnackbar] = useState<string | null>(null);
+
+  const today = new Date();
+  const [dayStr, setDayStr] = useState(String(today.getDate()).padStart(2, '0'));
+  const [monthStr, setMonthStr] = useState(String(today.getMonth() + 1).padStart(2, '0'));
+  const [yearStr, setYearStr] = useState(String(today.getFullYear()));
 
   const mapRef = useRef<MapView>(null);
 
@@ -112,7 +120,17 @@ export default function NewPoint() {
 
   async function handleSubmit() {
     if (!user) return;
+    if (!selectedPartnerId) {
+      setSnackbar('Vous devez taguer un partenaire pour sceller ce moment.');
+      return;
+    }
     setSubmitting(true);
+
+    const d = parseInt(dayStr, 10);
+    const m = parseInt(monthStr, 10);
+    const y = parseInt(yearStr, 10);
+    const parsedDate = new Date(y, m - 1, d);
+    const happenedAt = !isNaN(parsedDate.getTime()) ? parsedDate.toISOString() : new Date().toISOString();
 
     const point = await createPoint({
       userId: user.id,
@@ -121,7 +139,7 @@ export default function NewPoint() {
       note,
       comment: comment.trim() || undefined,
       durationMinutes: durationMinutes ? parseInt(durationMinutes, 10) : undefined,
-      happenedAt: new Date().toISOString(),
+      happenedAt,
       address: address || undefined,
     });
 
@@ -165,8 +183,6 @@ export default function NewPoint() {
     setSubmitting(false);
     router.replace('/(app)/map');
   }
-
-  const selectedPartner = friends.find((f) => f.profile.id === selectedPartnerId);
 
   return (
     <KeyboardAvoidingView
@@ -229,8 +245,44 @@ export default function NewPoint() {
           {/* Séparateur */}
           <View style={styles.divider} />
 
+          {/* Date */}
+          <Text style={styles.fieldEyebrow}>Date</Text>
+          <View style={styles.dateRow}>
+            <TextInput
+              style={styles.dateSegment}
+              value={dayStr}
+              onChangeText={(v) => setDayStr(v.replace(/[^0-9]/g, '').slice(0, 2))}
+              keyboardType="numeric"
+              maxLength={2}
+              placeholder="JJ"
+              placeholderTextColor={T.textFaint}
+            />
+            <Text style={styles.dateSep}>/</Text>
+            <TextInput
+              style={styles.dateSegment}
+              value={monthStr}
+              onChangeText={(v) => setMonthStr(v.replace(/[^0-9]/g, '').slice(0, 2))}
+              keyboardType="numeric"
+              maxLength={2}
+              placeholder="MM"
+              placeholderTextColor={T.textFaint}
+            />
+            <Text style={styles.dateSep}>/</Text>
+            <TextInput
+              style={[styles.dateSegment, styles.dateSegmentYear]}
+              value={yearStr}
+              onChangeText={(v) => setYearStr(v.replace(/[^0-9]/g, '').slice(0, 4))}
+              keyboardType="numeric"
+              maxLength={4}
+              placeholder="AAAA"
+              placeholderTextColor={T.textFaint}
+            />
+          </View>
+
+          <View style={styles.divider} />
+
           {/* Note */}
-          <Text style={styles.fieldEyebrow}>Note d'intensité</Text>
+          <Text style={styles.fieldEyebrow}>Note</Text>
           <View style={styles.noteDisplay}>
             <Text style={styles.noteValue}>{note}</Text>
             <Text style={styles.noteDenom}>/10</Text>
@@ -249,7 +301,7 @@ export default function NewPoint() {
           <View style={styles.divider} />
 
           {/* Commentaire */}
-          <Text style={styles.fieldEyebrow}>Note libre</Text>
+          <Text style={styles.fieldEyebrow}>Commentaire</Text>
           <TextInput
             style={styles.commentInput}
             value={comment}
@@ -278,9 +330,12 @@ export default function NewPoint() {
           <View style={styles.divider} />
 
           {/* Partenaire */}
-          <Text style={styles.fieldEyebrow}>Taguer un partenaire</Text>
+          <View style={styles.partnerLabelRow}>
+            <Text style={styles.fieldEyebrow}>Partenaire</Text>
+            <Text style={styles.fieldRequired}>Requis</Text>
+          </View>
           {friends.length === 0 ? (
-            <Text style={styles.noFriends}>Aucun ami dans votre cercle.</Text>
+            <Text style={styles.noFriends}>Ajoutez un ami à votre cercle pour pouvoir inscrire un moment.</Text>
           ) : (
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.partnerScroll}>
               {friends.map((f) => {
@@ -312,8 +367,8 @@ export default function NewPoint() {
           {/* CTA */}
           <TouchableOpacity
             onPress={handleSubmit}
-            disabled={submitting}
-            style={[styles.cta, submitting && { opacity: 0.6 }]}
+            disabled={submitting || friends.length === 0}
+            style={[styles.cta, (submitting || friends.length === 0) && { opacity: 0.4 }]}
             activeOpacity={0.88}
           >
             <View style={styles.ctaLeft}>
@@ -338,7 +393,7 @@ export default function NewPoint() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (T: Theme) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: T.bg,
@@ -421,6 +476,31 @@ const styles = StyleSheet.create({
     color: T.textFaint,
     marginBottom: 12,
   },
+  dateRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: 8,
+  },
+  dateSegment: {
+    fontFamily: F.mono,
+    fontSize: 32,
+    letterSpacing: -1,
+    color: T.text,
+    borderBottomWidth: 1,
+    borderBottomColor: T.border,
+    paddingVertical: 4,
+    textAlign: 'center',
+    width: 52,
+  },
+  dateSegmentYear: {
+    width: 80,
+  },
+  dateSep: {
+    fontFamily: F.mono,
+    fontSize: 20,
+    color: T.textFaint,
+    marginBottom: 4,
+  },
   noteDisplay: {
     flexDirection: 'row',
     alignItems: 'baseline',
@@ -479,6 +559,19 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: T.border,
     paddingVertical: 8,
+  },
+  partnerLabelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
+  fieldRequired: {
+    fontFamily: F.mono,
+    fontSize: 8,
+    letterSpacing: 1.5,
+    textTransform: 'uppercase',
+    color: T.primary,
   },
   noFriends: {
     fontFamily: F.serif,

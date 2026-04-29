@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import { View, ActivityIndicator } from 'react-native';
 import { Stack, router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { PaperProvider, MD3DarkTheme } from 'react-native-paper';
+import { PaperProvider, MD3DarkTheme, MD3LightTheme } from 'react-native-paper';
 import { fr, registerTranslation } from 'react-native-paper-dates';
 import * as Notifications from 'expo-notifications';
 import { useFonts } from 'expo-font';
@@ -23,25 +23,30 @@ import {
 } from '@expo-google-fonts/jetbrains-mono';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/stores/authStore';
+import { useThemeStore } from '@/stores/themeStore';
+import { darkTheme, lightTheme } from '@/constants/theme';
 import { registerForPushNotificationsAsync, savePushToken } from '@/lib/notifications';
-import { T } from '@/constants/theme';
 
 registerTranslation('fr', fr);
 
-const theme = {
-  ...MD3DarkTheme,
-  colors: {
-    ...MD3DarkTheme.colors,
-    primary: T.primary,
-    background: T.bg,
-    surface: T.surface,
-  },
-};
-
 export default function RootLayout() {
   const { setSession, setLoading, user } = useAuthStore();
+  const isDark = useThemeStore((s) => s.isDark);
   const notifSubRef = useRef<Notifications.Subscription | null>(null);
   const notifResponseRef = useRef<Notifications.Subscription | null>(null);
+
+  const themeColors = isDark ? darkTheme : lightTheme;
+  const basePaperTheme = isDark ? MD3DarkTheme : MD3LightTheme;
+
+  const paperTheme = {
+    ...basePaperTheme,
+    colors: {
+      ...basePaperTheme.colors,
+      primary: themeColors.primary,
+      background: themeColors.bg,
+      surface: themeColors.surface,
+    },
+  };
 
   const [fontsLoaded] = useFonts({
     CormorantGaramond_300Light_Italic,
@@ -91,15 +96,15 @@ export default function RootLayout() {
 
   if (!fontsLoaded) {
     return (
-      <View style={{ flex: 1, backgroundColor: T.bg, alignItems: 'center', justifyContent: 'center' }}>
-        <ActivityIndicator color={T.primary} />
+      <View style={{ flex: 1, backgroundColor: '#000000', alignItems: 'center', justifyContent: 'center' }}>
+        <ActivityIndicator color="#ff2d87" />
       </View>
     );
   }
 
   return (
-    <PaperProvider theme={theme}>
-      <StatusBar style="light" />
+    <PaperProvider theme={paperTheme}>
+      <StatusBar style={isDark ? 'light' : 'dark'} />
       <Stack screenOptions={{ headerShown: false }} />
     </PaperProvider>
   );

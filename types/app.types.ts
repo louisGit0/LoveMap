@@ -17,3 +17,11 @@ export interface MapPoint extends Omit<Point, 'location'> {
 export interface FriendWithProfile extends Friendship {
   profile: Profile;
 }
+
+export interface PointPhoto {
+  id: string;
+  point_id: string;
+  photo_url: string;
+  position: number;
+  created_at: string;
+}

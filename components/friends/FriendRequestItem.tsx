@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { T } from '@/constants/theme';
+import { useTheme } from '@/hooks/useTheme';
 import { F } from '@/constants/fonts';
 import { IcoCheck, IcoClose } from '@/components/icons';
+import type { Theme } from '@/constants/theme';
 import type { FriendWithProfile } from '@/types/app.types';
 
 interface Props {
@@ -12,6 +13,9 @@ interface Props {
 }
 
 export function FriendRequestItem({ request, onAccept, onReject }: Props) {
+  const T = useTheme();
+  const styles = useMemo(() => makeStyles(T), [T]);
+
   const { profile } = request;
   const initials = (profile.display_name ?? profile.username)[0]?.toUpperCase() ?? '?';
 
@@ -36,7 +40,7 @@ export function FriendRequestItem({ request, onAccept, onReject }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (T: Theme) => StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -8,6 +8,7 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
+  Switch,
 } from 'react-native';
 import { router } from 'expo-router';
 import { Snackbar } from 'react-native-paper';
@@ -15,21 +16,29 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
 import { useAuthStore } from '@/stores/authStore';
+import { useThemeStore } from '@/stores/themeStore';
+import { useTheme } from '@/hooks/useTheme';
 import { Input } from '@/components/ui/Input';
-import { T } from '@/constants/theme';
 import { F } from '@/constants/fonts';
+import type { Theme } from '@/constants/theme';
 import { IcoArrow } from '@/components/icons';
 
 export default function Settings() {
   const insets = useSafeAreaInsets();
   const { user, signOut } = useAuth();
   const reset = useAuthStore((s) => s.reset);
+  const { isDark, toggleTheme } = useThemeStore();
+  const T = useTheme();
+  const styles = useMemo(() => makeStyles(T), [T]);
 
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showNew, setShowNew] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [savingPwd, setSavingPwd] = useState(false);
+
+  const [newEmail, setNewEmail] = useState('');
+  const [savingEmail, setSavingEmail] = useState(false);
 
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
   const [snackbar, setSnackbar] = useState<string | null>(null);
@@ -47,6 +56,19 @@ export default function Settings() {
       setConfirmPassword('');
     }
     setSavingPwd(false);
+  }
+
+  async function handleChangeEmail() {
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newEmail)) { setSnackbar('Adresse email invalide.'); return; }
+    setSavingEmail(true);
+    const { error } = await supabase.auth.updateUser({ email: newEmail });
+    if (error) {
+      setSnackbar('Erreur : ' + error.message);
+    } else {
+      setSnackbar('Email mis à jour. Vérifiez votre boîte mail pour confirmer.');
+      setNewEmail('');
+    }
+    setSavingEmail(false);
   }
 
   async function handleSignOut() {
@@ -107,6 +129,44 @@ export default function Settings() {
         </TouchableOpacity>
 
         <Text style={styles.title}>Réglages</Text>
+
+        {/* Section — Apparence */}
+        <View style={styles.sectionBlock}>
+          <Text style={styles.sectionEyebrow}>Apparence</Text>
+          <View style={styles.themeRow}>
+            <Text style={styles.themeLabel}>Mode sombre</Text>
+            <Switch
+              value={isDark}
+              onValueChange={toggleTheme}
+              trackColor={{ false: '#e2e2e2', true: T.primary }}
+              thumbColor={T.text}
+            />
+          </View>
+        </View>
+
+        {/* Section — Email */}
+        <View style={styles.sectionBlock}>
+          <Text style={styles.sectionEyebrow}>Email</Text>
+          <Text style={styles.currentEmail}>{user?.email}</Text>
+          <Input
+            label="Nouvel email"
+            value={newEmail}
+            onChangeText={setNewEmail}
+            keyboardType="email-address"
+            autoCapitalize="none"
+            containerStyle={styles.inputWrap}
+          />
+          <TouchableOpacity
+            style={[styles.updateBtn, savingEmail && { opacity: 0.6 }]}
+            onPress={handleChangeEmail}
+            disabled={savingEmail}
+            activeOpacity={0.88}
+          >
+            <Text style={styles.updateBtnText}>
+              {savingEmail ? 'Mise à jour...' : 'Changer l\'email'}
+            </Text>
+          </TouchableOpacity>
+        </View>
 
         {/* Section — Identité (mot de passe) */}
         <View style={styles.sectionBlock}>
@@ -189,7 +249,7 @@ export default function Settings() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (T: Theme) => StyleSheet.create({
   container: { flex: 1, backgroundColor: T.bg },
   backBtn: {
     flexDirection: 'row',
@@ -228,6 +288,25 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     color: T.textFaint,
     marginBottom: 20,
+  },
+  themeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 4,
+  },
+  themeLabel: {
+    fontFamily: F.serif,
+    fontStyle: 'italic',
+    fontSize: 18,
+    color: T.textDim,
+  },
+  currentEmail: {
+    fontFamily: F.mono,
+    fontSize: 11,
+    letterSpacing: 0.5,
+    color: T.textFaint,
+    marginBottom: 16,
   },
   inputWrap: { marginBottom: 16 },
   showToggle: {

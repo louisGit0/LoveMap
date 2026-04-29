@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -12,20 +12,30 @@ import { router } from 'expo-router';
 import { Snackbar } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as FileSystem from 'expo-file-system';
-import * as ImagePicker from 'expo-image-picker';
+// Dynamic import to avoid native module crash when module is not in the dev build
+let ImagePicker: typeof import('expo-image-picker') | null = null;
+try { ImagePicker = require('expo-image-picker'); } catch { ImagePicker = null; }
 import { useAuth } from '@/hooks/useAuth';
 import { usePoints } from '@/hooks/usePoints';
 import { useFriends } from '@/hooks/useFriends';
+import { useTheme } from '@/hooks/useTheme';
 import { supabase } from '@/lib/supabase';
-import { T } from '@/constants/theme';
 import { F } from '@/constants/fonts';
+import type { Theme } from '@/constants/theme';
 import { IcoCog } from '@/components/icons';
+
+const MONTHS_FR = [
+  'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
+  'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre',
+];
 
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
   const { user, profile, fetchProfile } = useAuth();
   const { points, fetchMyPoints } = usePoints();
   const { friends, fetchFriends } = useFriends();
+  const T = useTheme();
+  const styles = useMemo(() => makeStyles(T), [T]);
 
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -45,9 +55,34 @@ export default function ProfileScreen() {
       ? (points.reduce((sum, p) => sum + p.note, 0) / points.length).toFixed(1)
       : '—';
 
+  const noteDistribution = useMemo(() => {
+    const counts = Array.from({ length: 10 }, (_, i) =>
+      points.filter((p) => Math.round(p.note) === i + 1).length
+    );
+    const max = Math.max(...counts, 1);
+    return counts.map((count, i) => ({ note: i + 1, count, ratio: count / max }));
+  }, [points]);
+
+  const topMonths = useMemo(() => {
+    const map: Record<string, { label: string; count: number }> = {};
+    for (const p of points) {
+      const d = new Date(p.happened_at ?? p.created_at);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      if (!map[key]) map[key] = { label: `${MONTHS_FR[d.getMonth()]} ${d.getFullYear()}`, count: 0 };
+      map[key].count++;
+    }
+    return Object.values(map).sort((a, b) => b.count - a.count).slice(0, 3);
+  }, [points]);
+
+  const totalMinutes = useMemo(
+    () => points.reduce((sum, p) => sum + (p.duration_minutes ?? 0), 0),
+    [points]
+  );
+
   const initials = (profile?.display_name ?? profile?.username ?? '?')[0]?.toUpperCase();
 
   async function handlePickAvatar() {
+    if (!ImagePicker) { setSnackbar("Galerie non disponible dans ce build."); return; }
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') { setSnackbar("Permission galerie refusée."); return; }
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -120,7 +155,6 @@ export default function ProfileScreen() {
                   <Text style={styles.avatarInitial}>{initials}</Text>
                 </View>
               )}
-              {/* Indicateur d'édition : carré rose en coin */}
               <View style={styles.avatarCorner}>
                 {uploadingAvatar ? (
                   <ActivityIndicator size="small" color={T.text} />
@@ -190,6 +224,51 @@ export default function ProfileScreen() {
               ))}
           </View>
         )}
+
+        {/* Analyse */}
+        {points.length > 0 && (
+          <View style={[styles.section, { paddingTop: 0 }]}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionEyebrow}>Analyse</Text>
+            </View>
+
+            <View style={styles.analyseBlock}>
+              <Text style={styles.analyseTitle}>Distribution des notes</Text>
+              {noteDistribution.map(({ note, count, ratio }) => (
+                <View key={note} style={styles.noteBarRow}>
+                  <Text style={styles.noteBarLabel}>{note}</Text>
+                  <View style={styles.noteBarTrack}>
+                    <View style={[styles.noteBarFill, { flex: ratio }]} />
+                    <View style={{ flex: 1 - ratio }} />
+                  </View>
+                  <Text style={styles.noteBarCount}>{count}</Text>
+                </View>
+              ))}
+            </View>
+
+            {topMonths.length > 0 && (
+              <View style={styles.analyseBlock}>
+                <Text style={styles.analyseTitle}>Mois les plus actifs</Text>
+                {topMonths.map((m, i) => (
+                  <View key={m.label} style={styles.topMonthRow}>
+                    <Text style={styles.topMonthRank}>{String(i + 1).padStart(2, '0')}</Text>
+                    <Text style={styles.topMonthLabel}>{m.label}</Text>
+                    <Text style={styles.topMonthCount}>{m.count}</Text>
+                  </View>
+                ))}
+              </View>
+            )}
+
+            {totalMinutes > 0 && (
+              <View style={styles.analyseBlock}>
+                <Text style={styles.analyseTitle}>Durée totale</Text>
+                <Text style={styles.analyseDuration}>
+                  {Math.floor(totalMinutes / 60)}h{String(totalMinutes % 60).padStart(2, '0')}
+                </Text>
+              </View>
+            )}
+          </View>
+        )}
       </ScrollView>
 
       <Snackbar visible={!!snackbar} onDismiss={() => setSnackbar(null)} duration={3000} style={styles.snackbar}>
@@ -199,7 +278,7 @@ export default function ProfileScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (T: Theme) => StyleSheet.create({
   container: { flex: 1, backgroundColor: T.bg },
   centered: { flex: 1, backgroundColor: T.bg, justifyContent: 'center', alignItems: 'center' },
   header: {
@@ -371,4 +450,87 @@ const styles = StyleSheet.create({
     color: T.textFaint,
   },
   snackbar: { backgroundColor: T.surface2 },
+  analyseBlock: {
+    paddingTop: 20,
+    paddingBottom: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: T.border,
+  },
+  analyseTitle: {
+    fontFamily: F.mono,
+    fontSize: 9,
+    letterSpacing: 2,
+    textTransform: 'uppercase',
+    color: T.textFaint,
+    marginBottom: 12,
+  },
+  noteBarRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 6,
+    gap: 8,
+  },
+  noteBarLabel: {
+    fontFamily: F.mono,
+    fontSize: 9,
+    letterSpacing: 1,
+    color: T.textFaint,
+    width: 16,
+    textAlign: 'right',
+  },
+  noteBarTrack: {
+    flex: 1,
+    flexDirection: 'row',
+    height: 3,
+    backgroundColor: T.surface2,
+  },
+  noteBarFill: {
+    height: 3,
+    backgroundColor: T.primary,
+  },
+  noteBarCount: {
+    fontFamily: F.mono,
+    fontSize: 9,
+    letterSpacing: 1,
+    color: T.textFaint,
+    width: 20,
+    textAlign: 'right',
+  },
+  topMonthRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: T.border,
+    gap: 12,
+  },
+  topMonthRank: {
+    fontFamily: F.mono,
+    fontSize: 9,
+    letterSpacing: 1.5,
+    color: T.textFaint,
+    width: 20,
+  },
+  topMonthLabel: {
+    flex: 1,
+    fontFamily: F.serif,
+    fontStyle: 'italic',
+    fontSize: 16,
+    color: T.text,
+  },
+  topMonthCount: {
+    fontFamily: F.mono,
+    fontSize: 11,
+    letterSpacing: 1,
+    color: T.primary,
+  },
+  analyseDuration: {
+    fontFamily: F.serifLight,
+    fontStyle: 'italic',
+    fontSize: 48,
+    lineHeight: 48,
+    letterSpacing: -1,
+    color: T.primary,
+    marginTop: 4,
+  },
 });
