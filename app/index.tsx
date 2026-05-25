@@ -6,9 +6,11 @@ export default function Index() {
 
   if (isLoading) return null; // Splash screen géré par Expo
 
-  if (session) return <Redirect href="/(app)/map" />;
-
+  // Age gate vérifié EN PREMIER — même si une session est déjà active
+  // (session persistée en AsyncStorage ne doit pas court-circuiter la vérification d'âge)
   if (!ageVerified) return <Redirect href="/(auth)/age-gate" />;
 
-  return <Redirect href="/(auth)/login" />;
+  if (!session) return <Redirect href="/(auth)/login" />;
+
+  return <Redirect href="/(app)/map" />;
 }
