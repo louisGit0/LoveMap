@@ -14,11 +14,19 @@
     },
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.louisgit0.lovemap",
+      "bundleIdentifier": "com.louissoudy.lovemap",
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "LoveMap utilise votre position pour placer des points sur la carte.",
         "NSLocationAlwaysAndWhenInUseUsageDescription": "LoveMap utilise votre position pour placer des points sur la carte.",
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSAppTransportSecurity": {
+          "NSExceptionDomains": {
+            "supabase.co": {
+              "NSExceptionAllowsInsecureHTTPLoads": false,
+              "NSIncludesSubdomains": true
+            }
+          }
+        }
       }
     },
     "android": {
