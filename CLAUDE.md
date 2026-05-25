@@ -167,6 +167,9 @@ lovemap/
 6. **Tous les textes de l'interface sont en français**
 7. **Partenaire obligatoire sur un point** — `handleSubmit` dans `point/new.tsx` bloque si aucun partenaire n'est sélectionné ; le CTA est désactivé si `friends.length === 0`
 8. **`happened_at` saisi par l'utilisateur** — ne jamais utiliser `new Date()` pour `happened_at` ; la date est saisie via les champs JJ/MM/AAAA dans `point/new.tsx`
+9. **Secrets Supabase via EAS secrets uniquement** — ne jamais hardcoder `EXPO_PUBLIC_SUPABASE_URL` ou `EXPO_PUBLIC_SUPABASE_ANON_KEY` dans `eas.json`. Utiliser `eas secret:create --scope project --name ... --value ...` (à faire une seule fois avant chaque build production)
+10. **Age gate : double validation obligatoire** — toute règle de sécurité d'âge doit être validée côté client (age-gate.tsx + index.tsx) ET côté serveur (trigger Supabase `handle_new_user()`). La validation serveur est dans `supabase/migrations/005_age_check_trigger.sql`
+11. **Ordre des gardes dans `index.tsx`** — toujours dans cet ordre : `isLoading` → `!ageVerified` → `!session` → redirect map. Ne jamais tester `session` avant `ageVerified`, sinon un utilisateur déjà connecté bypass l'age gate au redémarrage
 
 ---
 
@@ -235,6 +238,7 @@ Le toggle dark/light est dans `app/(app)/profile/settings.tsx` via `useThemeStor
 | 7 | ✅ Terminé | Profil, paramètres, avatar upload |
 | D3 | ✅ Terminé | Système dark/light mode — themeStore, useTheme, makeStyles pattern sur tous les composants |
 | MAJ | ✅ Terminé | Grosse mise à jour finale — Blocs A+C+D+E (voir détail ci-dessous) |
+| TF1 | ✅ Terminé | Bugfix TestFlight — age gate bypass (index.tsx + trigger SQL), network request failed (timeout + ATS), bouton retour login/register |
 | 8 | 🔲 À faire | Audit sécurité |
 | 9 | 🔲 À faire | Déploiement EAS |
 
