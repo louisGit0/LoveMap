@@ -127,6 +127,16 @@ export function IcoBell({ size = 18, color = T.textFaint }: IcoProps) {
   );
 }
 
+export function IcoFilter({ size = 18, color = T.textFaint }: IcoProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Line x1="4" y1="6" x2="20" y2="6" stroke={color} strokeWidth="1.5" strokeLinecap="round" />
+      <Line x1="7" y1="12" x2="17" y2="12" stroke={color} strokeWidth="1.5" strokeLinecap="round" />
+      <Line x1="10" y1="18" x2="14" y2="18" stroke={color} strokeWidth="1.5" strokeLinecap="round" />
+    </Svg>
+  );
+}
+
 // Wordmark SVG — cœur cousu en pointillés entre "love" et "map"
 export function IcoHeartDashed({ size = 18, color = T.primary }: IcoProps) {
   return (

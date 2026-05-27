@@ -31,9 +31,12 @@ export function usePoints() {
     setPoints((data ?? []).map((raw: any) => {
       const mapped = toMapPoint(raw);
       const pp = raw.point_partners?.[0];
-      if (pp?.profiles) {
-        mapped.partnerUsername = pp.profiles.username;
-        mapped.partnerDisplayName = pp.profiles.display_name;
+      if (pp) {
+        mapped.partnerStatus = pp.status;
+        if (pp.profiles) {
+          mapped.partnerUsername = pp.profiles.username;
+          mapped.partnerDisplayName = pp.profiles.display_name;
+        }
       }
       return mapped;
     }));
@@ -107,9 +110,12 @@ export function usePoints() {
     setPoints((data ?? []).map((raw: any) => {
       const mapped = toMapPoint(raw);
       const pp = raw.point_partners?.[0];
-      if (pp?.profiles) {
-        mapped.partnerUsername = pp.profiles.username;
-        mapped.partnerDisplayName = pp.profiles.display_name;
+      if (pp) {
+        mapped.partnerStatus = pp.status;
+        if (pp.profiles) {
+          mapped.partnerUsername = pp.profiles.username;
+          mapped.partnerDisplayName = pp.profiles.display_name;
+        }
       }
       return mapped;
     }));

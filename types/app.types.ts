@@ -11,6 +11,7 @@ export interface MapPoint extends Omit<Point, 'location'> {
   longitude: number;
   partnerUsername?: string;
   partnerDisplayName?: string;
+  partnerStatus?: 'pending' | 'accepted' | 'rejected';
 }
 
 // Amitié enrichie avec le profil de l'autre utilisateur

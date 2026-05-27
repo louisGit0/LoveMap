@@ -5,7 +5,6 @@ import {
   StyleSheet,
   SectionList,
   TouchableOpacity,
-  ScrollView,
   RefreshControl,
 } from 'react-native';
 import { Snackbar } from 'react-native-paper';
@@ -15,6 +14,14 @@ import { useAuth } from '@/hooks/useAuth';
 import { usePoints } from '@/hooks/usePoints';
 import { useTheme } from '@/hooks/useTheme';
 import { PointListItem } from '@/components/point/PointListItem';
+import {
+  FiltersBottomSheet,
+  DEFAULT_FILTERS,
+  countActiveFilters,
+  type FiltersState,
+  type FilterSort,
+} from '@/components/point/FiltersBottomSheet';
+import { IcoFilter } from '@/components/icons';
 import { F } from '@/constants/fonts';
 import type { Theme } from '@/constants/theme';
 import type { MapPoint } from '@/types/app.types';
@@ -24,20 +31,15 @@ const MONTHS_FR = [
   'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre',
 ];
 
-type SortMode = 'date' | 'note';
-type MinNote = 0 | 5 | 7 | 9;
-
-const NOTE_FILTERS: { label: string; value: MinNote }[] = [
-  { label: 'Tous', value: 0 },
-  { label: '5+', value: 5 },
-  { label: '7+', value: 7 },
-  { label: '9+', value: 9 },
-];
-
-function groupByMonth(points: MapPoint[], sort: SortMode): { title: string; monthNum: string; data: MapPoint[] }[] {
+function groupByMonth(points: MapPoint[], sort: FilterSort): { title: string; monthNum: string; data: MapPoint[] }[] {
   const sorted = [...points].sort((a, b) => {
-    if (sort === 'note') return b.note - a.note;
-    return new Date(b.happened_at ?? b.created_at).getTime() - new Date(a.happened_at ?? a.created_at).getTime();
+    const da = new Date(a.happened_at ?? a.created_at).getTime();
+    const db = new Date(b.happened_at ?? b.created_at).getTime();
+    if (sort === 'date_desc') return db - da;
+    if (sort === 'date_asc') return da - db;
+    if (sort === 'note_desc') return b.note - a.note;
+    if (sort === 'note_asc') return a.note - b.note;
+    return db - da;
   });
 
   const groups: Record<string, { label: string; monthNum: string; items: MapPoint[] }> = {};
@@ -65,11 +67,14 @@ export default function PointList() {
   const { points, fetchMyPoints } = usePoints();
   const T = useTheme();
   const styles = useMemo(() => makeStyles(T), [T]);
+
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [minNote, setMinNote] = useState<MinNote>(0);
-  const [sortMode, setSortMode] = useState<SortMode>('date');
   const [snackbar, setSnackbar] = useState<string | null>(null);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [filters, setFilters] = useState<FiltersState>(DEFAULT_FILTERS);
+
+  const activeCount = countActiveFilters(filters);
 
   const load = useCallback(async (): Promise<boolean> => {
     if (!user) return false;
@@ -91,9 +96,29 @@ export default function PointList() {
     if (!ok) setSnackbar('Erreur de chargement.');
   }, [load]);
 
-  const filtered = useMemo(() => points.filter((p) => p.note >= minNote), [points, minNote]);
-  const sections = useMemo(() => groupByMonth(filtered, sortMode), [filtered, sortMode]);
-  const monthCount = sections.length;
+  const filtered = useMemo(() => {
+    return points.filter((p) => {
+      // Filtre par note minimale
+      if (p.note < filters.minNote) return false;
+
+      // Filtre par statut de consentement partenaire
+      if (filters.partnerStatus !== 'all') {
+        if ((p.partnerStatus ?? null) !== filters.partnerStatus) return false;
+      }
+
+      // Filtre par période
+      if (filters.period !== null) {
+        const cutoff = new Date();
+        cutoff.setDate(cutoff.getDate() - filters.period);
+        const date = new Date(p.happened_at ?? p.created_at);
+        if (date < cutoff) return false;
+      }
+
+      return true;
+    });
+  }, [points, filters]);
+
+  const sections = useMemo(() => groupByMonth(filtered, filters.sort), [filtered, filters.sort]);
 
   if (loading) {
     return (
@@ -123,53 +148,41 @@ export default function PointList() {
           <View style={styles.header}>
             <Text style={styles.eyebrow}>le carnet</Text>
             <Text style={styles.title}>Vos moments</Text>
+
+            {/* Stats — uniquement le compteur d'entrées */}
             <View style={styles.statsRow}>
               <View style={styles.statBlock}>
                 <Text style={styles.statNum}>{String(points.length).padStart(2, '0')}</Text>
                 <Text style={styles.statLabel}>Entrées</Text>
               </View>
-              <Text style={styles.statSep}>|</Text>
-              <View style={styles.statBlock}>
-                <Text style={styles.statNum}>{String(monthCount).padStart(2, '0')}</Text>
-                <Text style={styles.statLabel}>Mois</Text>
-              </View>
             </View>
 
+            {/* Bouton Filtres */}
             <View style={styles.filterBar}>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterScroll}>
-                {NOTE_FILTERS.map(({ label, value }) => (
-                  <TouchableOpacity
-                    key={value}
-                    style={[styles.pill, minNote === value && styles.pillActive]}
-                    onPress={() => setMinNote(value)}
-                    activeOpacity={0.75}
-                  >
-                    <Text style={[styles.pillText, minNote === value && styles.pillTextActive]}>{label}</Text>
-                  </TouchableOpacity>
-                ))}
-                <View style={styles.pillSep} />
-                <TouchableOpacity
-                  style={[styles.pill, sortMode === 'date' && styles.pillActive]}
-                  onPress={() => setSortMode('date')}
-                  activeOpacity={0.75}
-                >
-                  <Text style={[styles.pillText, sortMode === 'date' && styles.pillTextActive]}>Date</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.pill, sortMode === 'note' && styles.pillActive]}
-                  onPress={() => setSortMode('note')}
-                  activeOpacity={0.75}
-                >
-                  <Text style={[styles.pillText, sortMode === 'note' && styles.pillTextActive]}>Note</Text>
-                </TouchableOpacity>
-              </ScrollView>
+              <TouchableOpacity
+                style={styles.filtersBtn}
+                onPress={() => setFiltersOpen(true)}
+                activeOpacity={0.75}
+              >
+                <IcoFilter size={14} color={activeCount > 0 ? T.primary : T.textFaint} />
+                <Text style={[styles.filtersBtnText, activeCount > 0 && styles.filtersBtnTextActive]}>
+                  Filtres
+                </Text>
+                {activeCount > 0 ? (
+                  <View style={styles.badge}>
+                    <Text style={styles.badgeText}>{activeCount}</Text>
+                  </View>
+                ) : null}
+              </TouchableOpacity>
             </View>
           </View>
         }
         ListEmptyComponent={
           <View style={styles.empty}>
             <Text style={styles.emptyTitle}>
-              {minNote > 0 ? `Aucun moment\nnoté ${minNote}+.` : `Aucun moment\nn'a encore été inscrit.`}
+              {activeCount > 0
+                ? 'Aucun résultat\npour ces filtres.'
+                : 'Aucun moment\nn\'a encore été inscrit.'}
             </Text>
           </View>
         }
@@ -185,6 +198,14 @@ export default function PointList() {
           />
         }
       />
+
+      <FiltersBottomSheet
+        visible={filtersOpen}
+        filters={filters}
+        onApply={(f) => setFilters(f)}
+        onClose={() => setFiltersOpen(false)}
+      />
+
       <Snackbar visible={!!snackbar} onDismiss={() => setSnackbar(null)} duration={3000} style={styles.snackbar}>
         {snackbar}
       </Snackbar>
@@ -194,7 +215,6 @@ export default function PointList() {
 
 const makeStyles = (T: Theme) => StyleSheet.create({
   container: { flex: 1, backgroundColor: T.bg },
-  centered: { flex: 1, backgroundColor: T.bg, justifyContent: 'center', alignItems: 'center' },
   header: {
     paddingTop: 32,
     paddingBottom: 0,
@@ -239,44 +259,44 @@ const makeStyles = (T: Theme) => StyleSheet.create({
     color: T.textFaint,
     marginTop: 2,
   },
-  statSep: { color: T.border, fontSize: 20, fontFamily: F.mono },
   filterBar: {
     marginHorizontal: -24,
     borderTopWidth: 1,
     borderTopColor: T.border,
     borderBottomWidth: 1,
     borderBottomColor: T.border,
-  },
-  filterScroll: {
-    paddingHorizontal: 24,
     paddingVertical: 10,
-    gap: 6,
+    paddingHorizontal: 24,
+  },
+  filtersBtn: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 8,
+    alignSelf: 'flex-start',
   },
-  pill: {
-    paddingHorizontal: 12,
-    paddingVertical: 5,
-    borderWidth: 1,
-    borderColor: T.border,
-  },
-  pillActive: {
-    borderColor: T.primary,
-    backgroundColor: T.primary,
-  },
-  pillText: {
+  filtersBtnText: {
     fontFamily: F.mono,
     fontSize: 9,
-    letterSpacing: 1.5,
+    letterSpacing: 2,
     textTransform: 'uppercase',
     color: T.textFaint,
   },
-  pillTextActive: { color: T.text },
-  pillSep: {
-    width: 1,
-    height: 14,
-    backgroundColor: T.border,
-    marginHorizontal: 4,
+  filtersBtnTextActive: {
+    color: T.primary,
+  },
+  badge: {
+    backgroundColor: T.primary,
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  badgeText: {
+    fontFamily: F.mono,
+    fontSize: 9,
+    color: T.text,
+    lineHeight: 14,
   },
   listContent: { paddingHorizontal: 24, paddingBottom: 100 },
   sectionHeader: {
