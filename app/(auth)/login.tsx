@@ -14,7 +14,7 @@ import { useTheme } from '@/hooks/useTheme';
 import { F } from '@/constants/fonts';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
-import { IcoHeartDashed, IcoArrow } from '@/components/icons';
+import { IcoHeartDashed } from '@/components/icons';
 import type { Theme } from '@/constants/theme';
 
 export default function Login() {
@@ -47,16 +47,6 @@ export default function Login() {
   return (
     <View style={[styles.container, { paddingTop: insets.top + 56 }]}>
       <View style={styles.innerBorder} pointerEvents="none" />
-
-      {/* Bouton retour vers age-gate — router.replace évite une boucle si appui répété */}
-      <TouchableOpacity
-        onPress={() => router.replace('/(auth)/age-gate')}
-        style={[styles.backBtn, { top: insets.top + 16 }]}
-        activeOpacity={0.7}
-        hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-      >
-        <IcoArrow size={18} color={T.textFaint} dir="left" />
-      </TouchableOpacity>
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
         {/* Wordmark */}
@@ -121,12 +111,6 @@ export default function Login() {
 
 const makeStyles = (T: Theme) => StyleSheet.create({
   container: { flex: 1, backgroundColor: T.bg },
-  backBtn: {
-    position: 'absolute',
-    left: 24,
-    zIndex: 10,
-    padding: 4,
-  },
   innerBorder: {
     position: 'absolute',
     top: 16, left: 16, right: 16, bottom: 16,

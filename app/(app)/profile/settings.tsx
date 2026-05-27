@@ -105,7 +105,7 @@ export default function Settings() {
             });
             if (error) { setSnackbar('Erreur lors de la suppression.'); return; }
             reset();
-            router.replace('/(auth)/age-gate');
+            router.replace('/(auth)/login');
           },
         },
       ]

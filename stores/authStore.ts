@@ -7,13 +7,10 @@ interface AuthState {
   user: User | null;
   profile: Profile | null;
   isLoading: boolean;
-  ageVerified: boolean;
-  dateOfBirth: string | null;
 
   setSession: (session: Session | null) => void;
   setProfile: (profile: Profile | null) => void;
   setLoading: (loading: boolean) => void;
-  setAgeVerified: (verified: boolean, dateOfBirth: string) => void;
   reset: () => void;
 }
 
@@ -22,8 +19,6 @@ export const useAuthStore = create<AuthState>((set) => ({
   user: null,
   profile: null,
   isLoading: true,
-  ageVerified: false,
-  dateOfBirth: null,
 
   setSession: (session) =>
     set({ session, user: session?.user ?? null }),
@@ -32,15 +27,11 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   setLoading: (isLoading) => set({ isLoading }),
 
-  setAgeVerified: (ageVerified, dateOfBirth) => set({ ageVerified, dateOfBirth }),
-
   reset: () =>
     set({
       session: null,
       user: null,
       profile: null,
       isLoading: false,
-      ageVerified: false,
-      dateOfBirth: null,
     }),
 }));
