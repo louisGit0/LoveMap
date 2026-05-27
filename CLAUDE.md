@@ -73,11 +73,10 @@ eas update --branch main --message "description courte de la modification"
 lovemap/
 ├── app/                          # Expo Router — routing file-based
 │   ├── _layout.tsx               # Root layout (PaperProvider + auth listener)
-│   ├── index.tsx                 # Redirect : age-gate → login → map
+│   ├── index.tsx                 # Redirect : login → map (plus d'age-gate au démarrage)
 │   ├── (auth)/                   # Routes non protégées
-│   │   ├── age-gate.tsx          # Vérification d'âge (18+) — design Bold
 │   │   ├── login.tsx             # Connexion — design Bold
-│   │   └── register.tsx          # Inscription — design Bold
+│   │   └── register.tsx          # Inscription 2 étapes : âge (step 1) + formulaire (step 2)
 │   └── (app)/                    # Routes protégées (session requise)
 │       ├── _layout.tsx           # Bottom tab navigator (Carte, Cercle, Profil)
 │       ├── map/index.tsx         # Carte principale + FAB
@@ -98,7 +97,7 @@ lovemap/
 │   │   ├── HeatmapLayer.web.tsx  # Stub web (null)
 │   │   ├── MapHeader.tsx         # Toggle pins/heatmap
 │   │   └── FriendSelector.tsx    # Sélecteur d'ami pour filtre carte
-│   ├── point/                    # PointForm, PointListItem, PhotoPicker
+│   ├── point/                    # PointForm, PointListItem, PhotoPicker, FiltersBottomSheet
 │   ├── friends/                  # FriendItem, FriendRequestItem
 │   └── ui/
 │       ├── Button.tsx            # Pill button custom (primary/ghost)
@@ -113,7 +112,7 @@ lovemap/
 │   └── react-native-maps.web.js  # Stub complet react-native-maps pour web
 ├── metro.config.js               # Alias react-native-maps → stub sur platform=web
 ├── stores/                       # Zustand
-│   ├── authStore.ts              # session, user, profile, ageVerified
+│   ├── authStore.ts              # session, user, profile (ageVerified supprimé — géré dans register.tsx)
 │   ├── mapStore.ts               # points, viewMode (pins/heatmap)
 │   ├── friendStore.ts            # friends, pendingReceived, pendingSent
 │   └── themeStore.ts             # isDark, toggleTheme
@@ -168,8 +167,8 @@ lovemap/
 7. **Partenaire obligatoire sur un point** — `handleSubmit` dans `point/new.tsx` bloque si aucun partenaire n'est sélectionné ; le CTA est désactivé si `friends.length === 0`
 8. **`happened_at` saisi par l'utilisateur** — ne jamais utiliser `new Date()` pour `happened_at` ; la date est saisie via les champs JJ/MM/AAAA dans `point/new.tsx`
 9. **Secrets Supabase via EAS secrets uniquement** — ne jamais hardcoder `EXPO_PUBLIC_SUPABASE_URL` ou `EXPO_PUBLIC_SUPABASE_ANON_KEY` dans `eas.json`. Utiliser `eas secret:create --scope project --name ... --value ...` (à faire une seule fois avant chaque build production)
-10. **Age gate : double validation obligatoire** — toute règle de sécurité d'âge doit être validée côté client (age-gate.tsx + index.tsx) ET côté serveur (trigger Supabase `handle_new_user()`). La validation serveur est dans `supabase/migrations/005_age_check_trigger.sql`
-11. **Ordre des gardes dans `index.tsx`** — toujours dans cet ordre : `isLoading` → `!ageVerified` → `!session` → redirect map. Ne jamais tester `session` avant `ageVerified`, sinon un utilisateur déjà connecté bypass l'age gate au redémarrage
+10. **Age gate : intégré dans register.tsx uniquement** — la vérification d'âge est la première étape du formulaire d'inscription (step 1). La validation côté serveur reste active via le trigger `handle_new_user()` dans `supabase/migrations/005_age_check_trigger.sql`. Il n'existe plus d'écran `age-gate.tsx` séparé, et `index.tsx` ne contient plus de garde `ageVerified`.
+11. **Ordre des gardes dans `index.tsx`** — uniquement : `isLoading` → `!session` → redirect map. Simple et sans état d'age gate.
 
 ---
 
@@ -239,6 +238,7 @@ Le toggle dark/light est dans `app/(app)/profile/settings.tsx` via `useThemeStor
 | D3 | ✅ Terminé | Système dark/light mode — themeStore, useTheme, makeStyles pattern sur tous les composants |
 | MAJ | ✅ Terminé | Grosse mise à jour finale — Blocs A+C+D+E (voir détail ci-dessous) |
 | TF1 | ✅ Terminé | Bugfix TestFlight — age gate bypass (index.tsx + trigger SQL), network request failed (timeout + ATS), bouton retour login/register |
+| TF2 | ✅ Terminé | Round 2 — age gate dans register (stepper 2 étapes), null guards requests.tsx, filtres bottom sheet list.tsx, profil amélioré (avatar 80px, édition inline, section actions) |
 | 8 | 🔲 À faire | Audit sécurité |
 | 9 | 🔲 À faire | Déploiement EAS |
 
