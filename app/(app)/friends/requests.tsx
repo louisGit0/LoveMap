@@ -125,26 +125,30 @@ export default function FriendRequests() {
               {sent.length === 0 ? (
                 <Text style={styles.emptyText}>Aucune demande envoyée.</Text>
               ) : (
-                sent.map((item) => (
-                  <View key={item.id} style={styles.sentItem}>
-                    <View style={styles.avatar}>
-                      <Text style={styles.avatarInitial}>
-                        {(item.profile.display_name ?? item.profile.username)[0].toUpperCase()}
-                      </Text>
+                sent.map((item) => {
+                  // Profil peut être null si la FK ne résout pas (utilisateur supprimé ou RLS)
+                  if (!item.profile) return null;
+                  const displayName = item.profile.display_name ?? item.profile.username;
+                  const initial = displayName?.[0]?.toUpperCase() ?? '?';
+                  return (
+                    <View key={item.id} style={styles.sentItem}>
+                      <View style={styles.avatar}>
+                        <Text style={styles.avatarInitial}>{initial}</Text>
+                      </View>
+                      <View style={styles.sentInfo}>
+                        <Text style={styles.sentName}>{displayName}</Text>
+                        <Text style={styles.sentUsername}>@{item.profile.username}</Text>
+                      </View>
+                      <View style={styles.sentMeta}>
+                        <Text style={styles.pendingLabel}>En attente</Text>
+                        <TouchableOpacity style={styles.cancelBtn} onPress={() => handleCancel(item.id)} activeOpacity={0.7}>
+                          <IcoClose size={12} color={T.textFaint} />
+                          <Text style={styles.cancelBtnText}>Annuler</Text>
+                        </TouchableOpacity>
+                      </View>
                     </View>
-                    <View style={styles.sentInfo}>
-                      <Text style={styles.sentName}>{item.profile.display_name ?? item.profile.username}</Text>
-                      <Text style={styles.sentUsername}>@{item.profile.username}</Text>
-                    </View>
-                    <View style={styles.sentMeta}>
-                      <Text style={styles.pendingLabel}>En attente</Text>
-                      <TouchableOpacity style={styles.cancelBtn} onPress={() => handleCancel(item.id)} activeOpacity={0.7}>
-                        <IcoClose size={12} color={T.textFaint} />
-                        <Text style={styles.cancelBtnText}>Annuler</Text>
-                      </TouchableOpacity>
-                    </View>
-                  </View>
-                ))
+                  );
+                })
               )}
             </>
           }

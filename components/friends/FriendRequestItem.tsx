@@ -17,7 +17,11 @@ export function FriendRequestItem({ request, onAccept, onReject }: Props) {
   const styles = useMemo(() => makeStyles(T), [T]);
 
   const { profile } = request;
-  const initials = (profile.display_name ?? profile.username)[0]?.toUpperCase() ?? '?';
+
+  // Profil peut être null si la FK ne résout pas (utilisateur supprimé ou RLS)
+  if (!profile) return null;
+
+  const initials = (profile.display_name ?? profile.username)?.[0]?.toUpperCase() ?? '?';
 
   return (
     <View style={styles.container}>
