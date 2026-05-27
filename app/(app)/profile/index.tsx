@@ -1,12 +1,15 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useRef } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
+  TextInput,
   ActivityIndicator,
   Image,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { router } from 'expo-router';
 import { Snackbar } from 'react-native-paper';
@@ -22,7 +25,7 @@ import { useTheme } from '@/hooks/useTheme';
 import { supabase } from '@/lib/supabase';
 import { F } from '@/constants/fonts';
 import type { Theme } from '@/constants/theme';
-import { IcoCog } from '@/components/icons';
+import { IcoCog, IcoPlus, IcoCheck, IcoClose } from '@/components/icons';
 
 const MONTHS_FR = [
   'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
@@ -31,15 +34,21 @@ const MONTHS_FR = [
 
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
-  const { user, profile, fetchProfile } = useAuth();
+  const { user, profile, fetchProfile, signOut } = useAuth();
   const { points, fetchMyPoints } = usePoints();
   const { friends, fetchFriends } = useFriends();
   const T = useTheme();
   const styles = useMemo(() => makeStyles(T), [T]);
+  const scrollRef = useRef<ScrollView>(null);
 
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [loading, setLoading] = useState(true);
   const [snackbar, setSnackbar] = useState<string | null>(null);
+
+  /* ── Edition inline du prénom ── */
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [editName, setEditName] = useState('');
+  const [savingName, setSavingName] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -50,6 +59,7 @@ export default function ProfileScreen() {
     })();
   }, [user]);
 
+  /* ── Stats ── */
   const avgNote =
     points.length > 0
       ? (points.reduce((sum, p) => sum + p.note, 0) / points.length).toFixed(1)
@@ -81,6 +91,7 @@ export default function ProfileScreen() {
 
   const initials = (profile?.display_name ?? profile?.username ?? '?')[0]?.toUpperCase();
 
+  /* ── Upload avatar ── */
   async function handlePickAvatar() {
     if (!ImagePicker) { setSnackbar("Galerie non disponible dans ce build."); return; }
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -125,6 +136,32 @@ export default function ProfileScreen() {
     }
   }
 
+  /* ── Sauvegarde du prénom ── */
+  function startEditingName() {
+    setEditName(profile?.display_name ?? '');
+    setIsEditingName(true);
+    // Scroll to top pour voir le champ
+    setTimeout(() => scrollRef.current?.scrollTo({ y: 0, animated: true }), 100);
+  }
+
+  async function saveDisplayName() {
+    const trimmed = editName.trim();
+    if (!trimmed) { setSnackbar('Le prénom ne peut pas être vide.'); return; }
+    if (trimmed === profile?.display_name) { setIsEditingName(false); return; }
+    setSavingName(true);
+    const { error } = await supabase.from('profiles').update({ display_name: trimmed }).eq('id', user!.id);
+    setSavingName(false);
+    if (error) { setSnackbar('Erreur de mise à jour.'); return; }
+    await fetchProfile(user!.id);
+    setIsEditingName(false);
+    setSnackbar('Prénom mis à jour.');
+  }
+
+  function cancelEditName() {
+    setIsEditingName(false);
+    setEditName('');
+  }
+
   if (loading) {
     return (
       <View style={[styles.centered, { paddingTop: insets.top }]}>
@@ -134,14 +171,18 @@ export default function ProfileScreen() {
   }
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
-      <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Header identité */}
+    <KeyboardAvoidingView
+      style={[styles.container, { paddingTop: insets.top }]}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    >
+      <ScrollView ref={scrollRef} showsVerticalScrollIndicator={false}>
+
+        {/* ── Header identité ── */}
         <View style={styles.header}>
           <View style={styles.innerBorder} pointerEvents="none" />
 
           <View style={styles.headerTop}>
-            {/* Avatar carré */}
+            {/* Avatar 80×80 + badge + */}
             <TouchableOpacity
               style={styles.avatarWrapper}
               onPress={handlePickAvatar}
@@ -155,15 +196,46 @@ export default function ProfileScreen() {
                   <Text style={styles.avatarInitial}>{initials}</Text>
                 </View>
               )}
-              <View style={styles.avatarCorner}>
-                {uploadingAvatar ? (
-                  <ActivityIndicator size="small" color={T.text} />
-                ) : null}
+              <View style={styles.plusBadge}>
+                {uploadingAvatar
+                  ? <ActivityIndicator size="small" color={T.text} />
+                  : <IcoPlus size={10} color={T.text} />
+                }
               </View>
             </TouchableOpacity>
 
+            {/* Identité + édition inline */}
             <View style={styles.identity}>
-              <Text style={styles.displayName}>{profile?.display_name ?? profile?.username}</Text>
+              {isEditingName ? (
+                <View style={styles.editNameBlock}>
+                  <TextInput
+                    value={editName}
+                    onChangeText={setEditName}
+                    style={[styles.editNameInput, { color: T.text }]}
+                    autoFocus
+                    returnKeyType="done"
+                    onSubmitEditing={saveDisplayName}
+                    selectionColor={T.primary}
+                    placeholderTextColor={T.textFaint}
+                  />
+                  <View style={styles.editNameActions}>
+                    {savingName ? (
+                      <ActivityIndicator size="small" color={T.primary} />
+                    ) : (
+                      <>
+                        <TouchableOpacity onPress={saveDisplayName} style={styles.editIconBtn} activeOpacity={0.75}>
+                          <IcoCheck size={14} color={T.primary} />
+                        </TouchableOpacity>
+                        <TouchableOpacity onPress={cancelEditName} style={styles.editIconBtn} activeOpacity={0.75}>
+                          <IcoClose size={14} color={T.textFaint} />
+                        </TouchableOpacity>
+                      </>
+                    )}
+                  </View>
+                </View>
+              ) : (
+                <Text style={styles.displayName}>{profile?.display_name ?? profile?.username}</Text>
+              )}
               <Text style={styles.username}>@{profile?.username}</Text>
             </View>
 
@@ -177,7 +249,7 @@ export default function ProfileScreen() {
           </View>
         </View>
 
-        {/* Statistiques */}
+        {/* ── Statistiques ── */}
         <View style={styles.statsRow}>
           {[
             { value: String(points.length), label: 'Entrées' },
@@ -191,7 +263,7 @@ export default function ProfileScreen() {
           ))}
         </View>
 
-        {/* Anthologie */}
+        {/* ── Anthologie ── */}
         {points.length > 0 && (
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
@@ -225,7 +297,7 @@ export default function ProfileScreen() {
           </View>
         )}
 
-        {/* Analyse */}
+        {/* ── Analyse ── */}
         {points.length > 0 && (
           <View style={[styles.section, { paddingTop: 0 }]}>
             <View style={styles.sectionHeader}>
@@ -269,18 +341,42 @@ export default function ProfileScreen() {
             )}
           </View>
         )}
+
+        {/* ── Actions ── */}
+        <View style={[styles.section, { paddingTop: 0, paddingBottom: 48 }]}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionEyebrow}>Actions</Text>
+          </View>
+
+          <TouchableOpacity style={styles.actionRow} onPress={startEditingName} activeOpacity={0.75}>
+            <Text style={styles.actionLabel}>Modifier le prénom</Text>
+            <Text style={styles.actionArrow}>→</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.actionRow} onPress={() => router.push('/(app)/profile/settings')} activeOpacity={0.75}>
+            <Text style={styles.actionLabel}>Paramètres</Text>
+            <Text style={styles.actionArrow}>→</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={[styles.actionRow, { borderBottomWidth: 0 }]} onPress={signOut} activeOpacity={0.75}>
+            <Text style={[styles.actionLabel, { color: T.primary }]}>Se déconnecter</Text>
+          </TouchableOpacity>
+        </View>
+
       </ScrollView>
 
       <Snackbar visible={!!snackbar} onDismiss={() => setSnackbar(null)} duration={3000} style={styles.snackbar}>
         {snackbar}
       </Snackbar>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 
 const makeStyles = (T: Theme) => StyleSheet.create({
   container: { flex: 1, backgroundColor: T.bg },
   centered: { flex: 1, backgroundColor: T.bg, justifyContent: 'center', alignItems: 'center' },
+
+  /* Header */
   header: {
     paddingTop: 24,
     paddingBottom: 24,
@@ -297,12 +393,14 @@ const makeStyles = (T: Theme) => StyleSheet.create({
     alignItems: 'center',
     gap: 16,
   },
+
+  /* Avatar 80×80 */
   avatarWrapper: {
     position: 'relative',
   },
   avatarBox: {
-    width: 72,
-    height: 72,
+    width: 80,
+    height: 80,
     backgroundColor: T.surface2,
     borderWidth: 1,
     borderColor: T.border,
@@ -310,25 +408,28 @@ const makeStyles = (T: Theme) => StyleSheet.create({
     justifyContent: 'center',
   },
   avatarImage: {
-    width: 72,
-    height: 72,
+    width: 80,
+    height: 80,
   },
   avatarInitial: {
     fontFamily: F.serif,
     fontStyle: 'italic',
-    fontSize: 32,
+    fontSize: 36,
     color: T.primary,
   },
-  avatarCorner: {
+  /* Badge + dans le coin bas-droit */
+  plusBadge: {
     position: 'absolute',
     bottom: 0,
     right: 0,
-    width: 16,
-    height: 16,
+    width: 20,
+    height: 20,
     backgroundColor: T.primary,
     alignItems: 'center',
     justifyContent: 'center',
   },
+
+  /* Identité */
   identity: { flex: 1 },
   displayName: {
     fontFamily: F.serifLight,
@@ -345,6 +446,40 @@ const makeStyles = (T: Theme) => StyleSheet.create({
     color: T.textFaint,
     marginTop: 4,
   },
+
+  /* Edition inline du prénom */
+  editNameBlock: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderBottomWidth: 1,
+    borderBottomColor: T.primary,
+    paddingBottom: 4,
+    gap: 8,
+  },
+  editNameInput: {
+    flex: 1,
+    fontFamily: F.serifLight,
+    fontStyle: 'italic',
+    fontSize: 24,
+    lineHeight: 28,
+    letterSpacing: -0.5,
+    padding: 0,
+    margin: 0,
+  },
+  editNameActions: {
+    flexDirection: 'row',
+    gap: 4,
+  },
+  editIconBtn: {
+    width: 28,
+    height: 28,
+    borderWidth: 1,
+    borderColor: T.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  /* Settings button */
   settingsBtn: {
     width: 40,
     height: 40,
@@ -353,6 +488,8 @@ const makeStyles = (T: Theme) => StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+
+  /* Stats */
   statsRow: {
     flexDirection: 'row',
     borderTopWidth: 1,
@@ -385,6 +522,8 @@ const makeStyles = (T: Theme) => StyleSheet.create({
     textTransform: 'uppercase',
     color: T.textFaint,
   },
+
+  /* Sections génériques */
   section: {
     paddingHorizontal: 24,
     paddingTop: 24,
@@ -413,6 +552,8 @@ const makeStyles = (T: Theme) => StyleSheet.create({
     color: T.primary,
     textDecorationLine: 'underline',
   },
+
+  /* Anthologie */
   pointRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -449,7 +590,8 @@ const makeStyles = (T: Theme) => StyleSheet.create({
     letterSpacing: 1,
     color: T.textFaint,
   },
-  snackbar: { backgroundColor: T.surface2 },
+
+  /* Analyse */
   analyseBlock: {
     paddingTop: 20,
     paddingBottom: 8,
@@ -533,4 +675,28 @@ const makeStyles = (T: Theme) => StyleSheet.create({
     color: T.primary,
     marginTop: 4,
   },
+
+  /* Actions */
+  actionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: T.border,
+  },
+  actionLabel: {
+    fontFamily: F.serif,
+    fontStyle: 'italic',
+    fontSize: 16,
+    color: T.text,
+  },
+  actionArrow: {
+    fontFamily: F.serif,
+    fontStyle: 'italic',
+    fontSize: 16,
+    color: T.textFaint,
+  },
+
+  snackbar: { backgroundColor: T.surface2 },
 });

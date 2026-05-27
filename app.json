@@ -57,7 +57,13 @@
           "color": "#e91e8c"
         }
       ],
-      "expo-font"
+      "expo-font",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "LoveMap accède à votre galerie pour choisir un portrait."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true
