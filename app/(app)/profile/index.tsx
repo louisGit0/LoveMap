@@ -18,7 +18,6 @@ import { router } from 'expo-router';
 import { Snackbar } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as FileSystem from 'expo-file-system';
-import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '@/hooks/useAuth';
 import { usePoints } from '@/hooks/usePoints';
 import { useFriends } from '@/hooks/useFriends';
@@ -30,6 +29,9 @@ import { Input } from '@/components/ui/Input';
 import { F } from '@/constants/fonts';
 import type { Theme } from '@/constants/theme';
 import { IcoPlus, IcoCheck, IcoClose, IcoSun, IcoMoon } from '@/components/icons';
+
+let ImagePicker: typeof import('expo-image-picker') | null = null;
+try { ImagePicker = require('expo-image-picker'); } catch { ImagePicker = null; }
 
 const MONTHS_FR = [
   'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
@@ -116,6 +118,14 @@ export default function ProfileScreen() {
 
   /* ── Upload avatar ── */
   async function handlePickAvatar() {
+    if (!ImagePicker) {
+      Alert.alert(
+        'Galerie indisponible',
+        'Cette fonctionnalité nécessite une mise à jour de l\'application.',
+        [{ text: 'OK' }],
+      );
+      return;
+    }
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
       Alert.alert(
