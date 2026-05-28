@@ -175,6 +175,9 @@ lovemap/
 9. **Secrets Supabase via EAS secrets uniquement** — ne jamais hardcoder `EXPO_PUBLIC_SUPABASE_URL` ou `EXPO_PUBLIC_SUPABASE_ANON_KEY` dans `eas.json`. Utiliser `eas secret:create --scope project --name ... --value ...` (à faire une seule fois avant chaque build production)
 10. **Age gate : intégré dans register.tsx uniquement** — la vérification d'âge est la première étape du formulaire d'inscription (step 1). La validation côté serveur reste active via le trigger `handle_new_user()` dans `supabase/migrations/005_age_check_trigger.sql`. Il n'existe plus d'écran `age-gate.tsx` séparé, et `index.tsx` ne contient plus de garde `ageVerified`.
 11. **Ordre des gardes dans `index.tsx`** — uniquement : `isLoading` → `!session` → redirect map. Simple et sans état d'age gate.
+12. **Création de point via RPC uniquement** — ne jamais insérer directement dans `points` avec un WKT géométrique côté client. Toujours utiliser `supabase.rpc('create_point', { p_longitude, p_latitude, ... })` — la fonction SQL gère `ST_SetSRID(ST_MakePoint(...), 4326)` côté serveur.
+13. **Tab bar : fond opaque** — ne jamais remettre un `BlurView` sur la tab bar. Utiliser `backgroundColor: isDark ? '#111114' : '#f2f2f7'` dans `makeStyles`. La lisibilité prime.
+14. **Permissions manquantes (image picker)** — quand une permission est refusée, afficher un `Alert` natif avec un bouton "Ouvrir les réglages" appelant `Linking.openSettings()`. Ne pas se contenter d'un Snackbar.
 
 ---
 
@@ -246,8 +249,10 @@ Le toggle dark/light est dans `app/(app)/profile/index.tsx` via `useThemeStore` 
 | TF1 | ✅ Terminé | Bugfix TestFlight — age gate bypass (index.tsx + trigger SQL), network request failed (timeout + ATS), bouton retour login/register |
 | TF2 | ✅ Terminé | Round 2 — age gate dans register (stepper 2 étapes), null guards requests.tsx, filtres bottom sheet list.tsx, profil amélioré (avatar 80px, édition inline, section actions) |
 | R3 | ✅ Terminé | Round 3 — C1: RLS profiles pending + fix requête requests.tsx · C2: profil unifié (settings fusionné, toggle thème IcoSun/IcoMoon) · C3: migration @rnmapbox/maps (AppMapView + PointMarker + HeatmapLayer + point/new + point/[id]) · C4: BlurView tab bar, PressableScale, PageHeader, COLORS, expo-haptics |
+| R4 | ✅ Terminé | Round 4 — C1: création de point via RPC `create_point` (fix PostGIS WKT) + migration 007 · C2: tab bar opaque `#111114`/`#f2f2f7` (BlurView supprimé) · C3: "Cercle" → "Amis" dans stats profil · C4: expo-image-picker cameraPermission + Alert Linking.openSettings |
 | 8 | 🔲 À faire | Audit sécurité |
-| 9 | ✅ Terminé | Build EAS natif iOS — build number 6, soumis à TestFlight (29/05/2026) |
+| 9 | ✅ Terminé | Build EAS natif iOS #6, soumis à TestFlight (28/05/2026) |
+| 10 | 🔄 En cours | Build EAS natif iOS #7 — fix cameraPermission expo-image-picker (28/05/2026) |
 
 > Mettre à jour ce tableau à chaque phase complétée.
 
