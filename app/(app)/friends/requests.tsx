@@ -10,6 +10,7 @@ import {
 import { router } from 'expo-router';
 import { Snackbar } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import * as Haptics from 'expo-haptics';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
 import { useFriends } from '@/hooks/useFriends';
@@ -69,6 +70,11 @@ export default function FriendRequests() {
   async function handleRespond(friendshipId: string, accept: boolean) {
     const ok = await respondToRequest(friendshipId, accept ? 'accepted' : 'rejected');
     if (ok) {
+      if (accept) {
+        await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      } else {
+        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      }
       setSnackbar(accept ? 'Demande acceptée.' : 'Demande refusée.');
       await loadRequests();
     } else {

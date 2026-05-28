@@ -12,8 +12,10 @@ import {
 import { router, useLocalSearchParams } from 'expo-router';
 import { Snackbar } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
+import MapboxGL from '@rnmapbox/maps';
 import * as Location from 'expo-location';
+import * as Haptics from 'expo-haptics';
+import { APP_CONFIG } from '@/constants/config';
 import { useAuth } from '@/hooks/useAuth';
 import { usePoints } from '@/hooks/usePoints';
 import { useFriendStore } from '@/stores/friendStore';
@@ -23,12 +25,6 @@ import { F } from '@/constants/fonts';
 import type { Theme } from '@/constants/theme';
 import { IcoArrow, IcoSearch, IcoClose } from '@/components/icons';
 
-const darkMapStyle = [
-  { elementType: 'geometry', stylers: [{ color: '#0a0a0a' }] },
-  { elementType: 'labels.text.fill', stylers: [{ color: '#8a8a8a' }] },
-  { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#1f1f1f' }] },
-  { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#050505' }] },
-];
 
 export default function NewPoint() {
   const insets = useSafeAreaInsets();
@@ -59,7 +55,7 @@ export default function NewPoint() {
   const [monthStr, setMonthStr] = useState(String(today.getMonth() + 1).padStart(2, '0'));
   const [yearStr, setYearStr] = useState(String(today.getFullYear()));
 
-  const mapRef = useRef<MapView>(null);
+  const mapRef = useRef<MapboxGL.Camera>(null);
 
   async function reverseGeocode(lat: number, lng: number) {
     try {
@@ -74,10 +70,12 @@ export default function NewPoint() {
   }
 
   function animateTo(lat: number, lng: number) {
-    mapRef.current?.animateToRegion(
-      { latitude: lat, longitude: lng, latitudeDelta: 0.005, longitudeDelta: 0.005 },
-      600
-    );
+    mapRef.current?.setCamera({
+      centerCoordinate: [lng, lat],
+      zoomLevel: 15,
+      animationDuration: 600,
+      animationMode: 'flyTo',
+    });
   }
 
   useEffect(() => {
@@ -181,6 +179,7 @@ export default function NewPoint() {
     }
 
     setSubmitting(false);
+    await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     router.replace('/(app)/map');
   }
 
@@ -219,27 +218,37 @@ export default function NewPoint() {
             <Text style={styles.addressResolved} numberOfLines={1}>{address}</Text>
           ) : null}
 
-          {/* Mini carte */}
+          {/* Mini carte — pan pour repositionner le point */}
           <View style={styles.miniMap}>
-            <MapView
-              ref={mapRef}
+            <MapboxGL.MapView
               style={StyleSheet.absoluteFillObject}
-              provider={Platform.OS === 'android' ? PROVIDER_GOOGLE : undefined}
-              initialRegion={{ latitude, longitude, latitudeDelta: 0.005, longitudeDelta: 0.005 }}
-              customMapStyle={darkMapStyle}
+              styleURL={APP_CONFIG.MAPBOX_STYLE}
+              scrollEnabled
+              logoEnabled={false}
+              attributionEnabled={false}
+              compassEnabled={false}
+              onCameraChanged={(state: { properties: { center: [number, number] } }) => {
+                const [lng, lat] = state.properties.center;
+                setLatitude(lat);
+                setLongitude(lng);
+              }}
+              onMapIdle={(state: { properties: { center: [number, number] } }) => {
+                const [lng, lat] = state.properties.center;
+                reverseGeocode(lat, lng);
+              }}
             >
-              <Marker
-                coordinate={{ latitude, longitude }}
-                pinColor={T.primary}
-                draggable
-                onDragEnd={(e) => {
-                  const { latitude: lat, longitude: lng } = e.nativeEvent.coordinate;
-                  setLatitude(lat);
-                  setLongitude(lng);
-                  reverseGeocode(lat, lng);
-                }}
+              <MapboxGL.Camera
+                ref={mapRef}
+                zoomLevel={15}
+                centerCoordinate={[longitude, latitude]}
+                animationMode="none"
+                animationDuration={0}
               />
-            </MapView>
+            </MapboxGL.MapView>
+            {/* Pin fixe centré — le fond de carte se déplace sous lui */}
+            <View style={styles.centerPin} pointerEvents="none">
+              <View style={styles.centerPinDot} />
+            </View>
           </View>
 
           {/* Séparateur */}
@@ -462,6 +471,29 @@ const makeStyles = (T: Theme) => StyleSheet.create({
     marginVertical: 16,
     borderWidth: 1,
     borderColor: T.border,
+    overflow: 'hidden',
+  },
+  centerPin: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  centerPinDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: T.primary,
+    borderWidth: 2,
+    borderColor: T.bg,
+    shadowColor: T.primary,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.8,
+    shadowRadius: 6,
+    elevation: 4,
   },
   divider: {
     height: 1,

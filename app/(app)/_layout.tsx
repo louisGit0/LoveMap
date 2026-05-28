@@ -1,9 +1,11 @@
 import { useEffect, useMemo } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Tabs, router } from 'expo-router';
+import { BlurView } from 'expo-blur';
 import { useAuthStore } from '@/stores/authStore';
 import { useFriendStore } from '@/stores/friendStore';
 import { useTheme } from '@/hooks/useTheme';
+import { useThemeStore } from '@/stores/themeStore';
 import { F } from '@/constants/fonts';
 import type { Theme } from '@/constants/theme';
 import { IcoPin, IcoList, IcoCircle, IcoUser } from '@/components/icons';
@@ -53,6 +55,7 @@ export default function AppLayout() {
   const { session, loading } = useAuthStore();
   const { pendingReceived } = useFriendStore();
   const T = useTheme();
+  const { isDark } = useThemeStore();
   const styles = useMemo(() => makeStyles(T), [T]);
 
   useEffect(() => {
@@ -70,6 +73,13 @@ export default function AppLayout() {
         tabBarLabelStyle: styles.tabLabel,
         tabBarActiveTintColor: T.primary,
         tabBarInactiveTintColor: T.textFaint,
+        tabBarBackground: () => (
+          <BlurView
+            intensity={60}
+            tint={isDark ? 'dark' : 'light'}
+            style={StyleSheet.absoluteFillObject}
+          />
+        ),
       }}
     >
       <Tabs.Screen
@@ -112,7 +122,7 @@ export default function AppLayout() {
 
 const makeStyles = (T: Theme) => StyleSheet.create({
   tabBar: {
-    backgroundColor: T.bg + 'f0',
+    backgroundColor: 'transparent',
     borderTopWidth: 1,
     borderTopColor: T.border,
     height: 72,

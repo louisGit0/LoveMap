@@ -9,14 +9,14 @@ import {
   TextInput,
   Alert,
   ActivityIndicator,
-  Platform,
 } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Snackbar } from 'react-native-paper';
 import { DatePickerModal } from 'react-native-paper-dates';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
+import MapboxGL from '@rnmapbox/maps';
 import { supabase } from '@/lib/supabase';
+import { APP_CONFIG } from '@/constants/config';
 import { useAuth } from '@/hooks/useAuth';
 import { usePoints } from '@/hooks/usePoints';
 import { useTheme } from '@/hooks/useTheme';
@@ -25,12 +25,6 @@ import type { Theme } from '@/constants/theme';
 import { IcoArrow, IcoTrash } from '@/components/icons';
 import type { MapPoint, Profile, PointPartner } from '@/types/app.types';
 
-const darkMapStyle = [
-  { elementType: 'geometry', stylers: [{ color: '#0a0a0a' }] },
-  { elementType: 'labels.text.fill', stylers: [{ color: '#8a8a8a' }] },
-  { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#1f1f1f' }] },
-  { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#050505' }] },
-];
 
 function formatDate(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString('fr-FR', {
@@ -176,19 +170,31 @@ export default function PointDetail() {
   return (
     <View style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Mini carte */}
+        {/* Mini carte statique */}
         <View style={styles.miniMap}>
-          <MapView
+          <MapboxGL.MapView
             style={StyleSheet.absoluteFillObject}
-            provider={Platform.OS === 'android' ? PROVIDER_GOOGLE : undefined}
-            initialRegion={{ latitude: point.latitude, longitude: point.longitude, latitudeDelta: 0.005, longitudeDelta: 0.005 }}
+            styleURL={APP_CONFIG.MAPBOX_STYLE}
             scrollEnabled={false}
             zoomEnabled={false}
-            customMapStyle={darkMapStyle}
-            pointerEvents="none"
+            logoEnabled={false}
+            attributionEnabled={false}
+            compassEnabled={false}
           >
-            <Marker coordinate={{ latitude: point.latitude, longitude: point.longitude }} pinColor={T.primary} />
-          </MapView>
+            <MapboxGL.Camera
+              zoomLevel={15}
+              centerCoordinate={[point.longitude, point.latitude]}
+              animationMode="none"
+              animationDuration={0}
+            />
+            <MapboxGL.MarkerView
+              id={point.id}
+              coordinate={[point.longitude, point.latitude]}
+              anchor={{ x: 0.5, y: 0.5 }}
+            >
+              <View style={styles.markerDot} />
+            </MapboxGL.MarkerView>
+          </MapboxGL.MapView>
 
           {/* Bouton retour flottant */}
           <TouchableOpacity style={[styles.backBtn, { top: insets.top + 12 }]} onPress={() => router.back()} activeOpacity={0.8}>
@@ -373,7 +379,15 @@ const makeStyles = (T: Theme) => StyleSheet.create({
   container: { flex: 1, backgroundColor: T.bg },
   centered: { flex: 1, backgroundColor: T.bg, justifyContent: 'center', alignItems: 'center' },
   errorText: { fontFamily: F.serif, fontStyle: 'italic', fontSize: 16, color: T.primary },
-  miniMap: { height: 220, backgroundColor: T.surface },
+  miniMap: { height: 220, backgroundColor: T.surface, overflow: 'hidden' },
+  markerDot: {
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: T.primary,
+    borderWidth: 2,
+    borderColor: T.bg,
+  },
   backBtn: {
     position: 'absolute',
     left: 16,

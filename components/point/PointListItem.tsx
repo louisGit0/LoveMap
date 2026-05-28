@@ -1,10 +1,12 @@
 import React, { useMemo } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { router } from 'expo-router';
+import * as Haptics from 'expo-haptics';
 import { useTheme } from '@/hooks/useTheme';
 import { F } from '@/constants/fonts';
 import type { Theme } from '@/constants/theme';
 import type { MapPoint } from '@/types/app.types';
+import { PressableScale } from '@/components/ui/PressableScale';
 
 interface Props {
   point: MapPoint;
@@ -21,10 +23,12 @@ export function PointListItem({ point, index }: Props) {
   });
 
   return (
-    <TouchableOpacity
+    <PressableScale
       style={styles.container}
-      onPress={() => router.push(`/(app)/point/${point.id}`)}
-      activeOpacity={0.75}
+      onPress={() => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        router.push(`/(app)/point/${point.id}`);
+      }}
     >
       {/* Numéro */}
       <Text style={styles.number}>N°{String(index + 1).padStart(3, '0')}</Text>
@@ -49,7 +53,7 @@ export function PointListItem({ point, index }: Props) {
       </View>
 
       <Text style={styles.arrow}>›</Text>
-    </TouchableOpacity>
+    </PressableScale>
   );
 }
 
