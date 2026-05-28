@@ -247,7 +247,7 @@ Le toggle dark/light est dans `app/(app)/profile/index.tsx` via `useThemeStore` 
 | TF2 | ✅ Terminé | Round 2 — age gate dans register (stepper 2 étapes), null guards requests.tsx, filtres bottom sheet list.tsx, profil amélioré (avatar 80px, édition inline, section actions) |
 | R3 | ✅ Terminé | Round 3 — C1: RLS profiles pending + fix requête requests.tsx · C2: profil unifié (settings fusionné, toggle thème IcoSun/IcoMoon) · C3: migration @rnmapbox/maps (AppMapView + PointMarker + HeatmapLayer + point/new + point/[id]) · C4: BlurView tab bar, PressableScale, PageHeader, COLORS, expo-haptics |
 | 8 | 🔲 À faire | Audit sécurité |
-| 9 | 🔲 À faire | Build EAS natif (nécessaire pour @rnmapbox/maps — voir variables d'env ci-dessous) |
+| 9 | ✅ Terminé | Build EAS natif iOS — build number 6, soumis à TestFlight (29/05/2026) |
 
 > Mettre à jour ce tableau à chaque phase complétée.
 
@@ -302,9 +302,9 @@ Fichier : `.env.local` à la racine (jamais commité — présent dans `.gitigno
 
 **Secret EAS requis pour le build natif :**
 ```bash
-eas secret:create --scope project --name MAPBOX_DOWNLOAD_TOKEN --value "sk.eyJ1..."
+eas env:create production --name RNMAPBOX_MAPS_DOWNLOAD_TOKEN --value "sk.eyJ1..." --scope project --visibility secret --type string --non-interactive
 ```
-Le `MAPBOX_DOWNLOAD_TOKEN` (`sk.xxx`) est le token secret Mapbox pour télécharger le SDK natif pendant le build EAS. À faire une seule fois avant `eas build`.
+Le `RNMAPBOX_MAPS_DOWNLOAD_TOKEN` (`sk.xxx`) est le token secret Mapbox pour télécharger le SDK natif pendant le build EAS. Le podspec de `@rnmapbox/maps` le lit via `ENV['RNMAPBOX_MAPS_DOWNLOAD_TOKEN']` — ne pas utiliser `RNMapboxMapsDownloadToken` dans `app.json` (déprécié, écrit le token en clair dans le Podfile). À créer une seule fois avant `eas build`.
 
 ---
 
