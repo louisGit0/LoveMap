@@ -279,6 +279,7 @@ Le toggle dark/light est dans `app/(app)/profile/index.tsx` via `useThemeStore` 
 | TF5 | ✅ Terminé | Build #13 : regression ImagePicker (import statique réintroduit par erreur) → crash onglet "Moi" revenu + création de point toujours échouée |
 | TF6 | ✅ Terminé | Build #14 — fix définitif : ImagePicker dynamic require dans fonction + createPoint robuste aux deux signatures RPC (007 TABLE / 008 UUID) + erreurs Supabase visibles dans snackbar |
 | TF7 | ✅ Terminé | Build #15 — migration 009 (colonnes address+happened_at + create_point UUID définitif) + suppression requestMediaLibraryPermissionsAsync() crash avatar |
+| TF8 | ✅ Terminé | Build #16 — zoom : MarkerView→PointAnnotation (pins toujours visibles) · mention : migration 010 RLS + section taguages en attente dans requests.tsx |
 
 > Mettre à jour ce tableau à chaque phase complétée.
 

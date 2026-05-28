@@ -9,7 +9,6 @@ import {
 } from 'react-native';
 import MapboxGL from '@rnmapbox/maps';
 import { router } from 'expo-router';
-import Svg, { Circle, Line } from 'react-native-svg';
 import { useTheme } from '@/hooks/useTheme';
 import { F } from '@/constants/fonts';
 import { IcoTrash } from '@/components/icons';
@@ -41,24 +40,31 @@ function formatDateRelative(dateStr: string): string {
   return date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' });
 }
 
-/** Pin SVG : cercle extérieur + cercle intérieur + tige + point bas */
+/**
+ * Pin View sans SVG — compatible PointAnnotation (rendu natif Mapbox, snapshot RN view).
+ * Cercle extérieur + cercle intérieur rose + tige + point bas.
+ */
 function PinIcon({ T }: { T: Theme }) {
-  const size = 40;
-  const cx = size / 2;
-  const stemTop = size * 0.72;
-  const stemBottom = size - 2;
-
   return (
-    <Svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+    <View style={{ width: 28, height: 38, alignItems: 'center' }}>
+      {/* Tête */}
+      <View style={{
+        width: 26,
+        height: 26,
+        borderRadius: 13,
+        backgroundColor: T.bg,
+        borderWidth: 2,
+        borderColor: T.primary,
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}>
+        <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: T.primary }} />
+      </View>
       {/* Tige */}
-      <Line x1={cx} y1={stemTop} x2={cx} y2={stemBottom} stroke={T.primary} strokeWidth="1.5" />
+      <View style={{ width: 2, height: 9, backgroundColor: T.primary }} />
       {/* Point bas */}
-      <Circle cx={cx} cy={stemBottom} r="1.5" fill={T.primary} />
-      {/* Cercle extérieur */}
-      <Circle cx={cx} cy={cx * 0.82} r={cx * 0.7} fill={T.bg} stroke={T.primary} strokeWidth="1.5" />
-      {/* Cercle intérieur */}
-      <Circle cx={cx} cy={cx * 0.82} r={cx * 0.38} fill={T.primary} />
-    </Svg>
+      <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: T.primary }} />
+    </View>
   );
 }
 
@@ -69,15 +75,19 @@ export function PointMarker({ point, isOwner = false, onDelete }: Props) {
 
   return (
     <>
-      <MapboxGL.MarkerView
+      {/*
+       * PointAnnotation (annotation native Mapbox) — toujours visible quel que soit le zoom.
+       * MarkerView était une overlay RN qui disparaissait lors du re-rendu des tiles.
+       * onSelected remplace le TouchableOpacity interne.
+       */}
+      <MapboxGL.PointAnnotation
         id={point.id}
         coordinate={[point.longitude, point.latitude]}
         anchor={{ x: 0.5, y: 1 }}
+        onSelected={() => setModalVisible(true)}
       >
-        <TouchableOpacity onPress={() => setModalVisible(true)} activeOpacity={0.8}>
-          <PinIcon T={T} />
-        </TouchableOpacity>
-      </MapboxGL.MarkerView>
+        <PinIcon T={T} />
+      </MapboxGL.PointAnnotation>
 
       <Modal
         visible={modalVisible}

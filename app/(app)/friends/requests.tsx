@@ -21,6 +21,27 @@ import type { Theme } from '@/constants/theme';
 import { IcoArrow, IcoClose } from '@/components/icons';
 import type { FriendWithProfile } from '@/types/app.types';
 
+interface PendingTag {
+  id: string;
+  point_id: string;
+  notified_at: string | null;
+  points: {
+    note: number;
+    happened_at: string | null;
+    created_at: string;
+    comment: string | null;
+  } | null;
+}
+
+function formatDate(dateStr: string | null | undefined): string {
+  if (!dateStr) return '—';
+  return new Date(dateStr).toLocaleDateString('fr-FR', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  });
+}
+
 export default function FriendRequests() {
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
@@ -30,13 +51,16 @@ export default function FriendRequests() {
 
   const [received, setReceived] = useState<FriendWithProfile[]>([]);
   const [sent, setSent] = useState<FriendWithProfile[]>([]);
+  const [pendingTags, setPendingTags] = useState<PendingTag[]>([]);
   const [loading, setLoading] = useState(true);
   const [snackbar, setSnackbar] = useState<string | null>(null);
 
   const loadRequests = useCallback(async () => {
     if (!user) return;
     setLoading(true);
-    const [receivedRes, sentRes] = await Promise.all([
+
+    const [receivedRes, sentRes, tagsRes] = await Promise.all([
+      // Demandes d'amitié reçues
       supabase
         .from('friendships')
         .select(`
@@ -45,6 +69,8 @@ export default function FriendRequests() {
         `)
         .eq('addressee_id', user.id)
         .eq('status', 'pending'),
+
+      // Demandes d'amitié envoyées
       supabase
         .from('friendships')
         .select(`
@@ -53,13 +79,33 @@ export default function FriendRequests() {
         `)
         .eq('requester_id', user.id)
         .eq('status', 'pending'),
+
+      // Taguages en attente de consentement (où je suis le partenaire)
+      // Nécessite migration 010 : la RLS points_select autorise désormais le partenaire tagué
+      supabase
+        .from('point_partners')
+        .select(`
+          id,
+          point_id,
+          notified_at,
+          points (
+            note,
+            happened_at,
+            created_at,
+            comment
+          )
+        `)
+        .eq('partner_id', user.id)
+        .eq('status', 'pending'),
     ]);
 
     const receivedData = (receivedRes.data ?? []) as unknown as FriendWithProfile[];
     const sentData = (sentRes.data ?? []) as unknown as FriendWithProfile[];
+    const tagsData = (tagsRes.data ?? []) as unknown as PendingTag[];
 
     setReceived(receivedData);
     setSent(sentData);
+    setPendingTags(tagsData);
     setPendingReceived(receivedData);
     setPendingSent(sentData);
     setLoading(false);
@@ -111,8 +157,48 @@ export default function FriendRequests() {
           showsVerticalScrollIndicator={false}
           ListHeaderComponent={
             <>
-              {/* Section reçues */}
+              {/* ── Taguages en attente de consentement ── */}
               <View style={styles.sectionHeader}>
+                <Text style={styles.sectionEyebrow}>Taguages</Text>
+                <Text style={styles.sectionCount}>{String(pendingTags.length).padStart(2, '0')}</Text>
+              </View>
+              {pendingTags.length === 0 ? (
+                <Text style={styles.emptyText}>Aucun taguage en attente.</Text>
+              ) : (
+                pendingTags.map((tag) => {
+                  const p = tag.points;
+                  const dateStr = formatDate(p?.happened_at ?? p?.created_at);
+                  return (
+                    <TouchableOpacity
+                      key={tag.id}
+                      style={styles.tagItem}
+                      onPress={() => router.push(`/(app)/point/${tag.point_id}`)}
+                      activeOpacity={0.8}
+                    >
+                      <View style={styles.tagNoteBox}>
+                        <Text style={styles.tagNote}>{p?.note ?? '—'}</Text>
+                        <Text style={styles.tagNoteDenom}>/10</Text>
+                      </View>
+                      <View style={styles.tagInfo}>
+                        <Text style={styles.tagLabel}>Vous avez été mentionné·e</Text>
+                        <Text style={styles.tagDate}>{dateStr}</Text>
+                        {p?.comment ? (
+                          <Text style={styles.tagComment} numberOfLines={1}>
+                            {p.comment}
+                          </Text>
+                        ) : null}
+                      </View>
+                      <View style={styles.tagCta}>
+                        <Text style={styles.tagCtaText}>Répondre</Text>
+                        <Text style={styles.tagCtaArrow}>→</Text>
+                      </View>
+                    </TouchableOpacity>
+                  );
+                })
+              )}
+
+              {/* ── Demandes d'amitié reçues ── */}
+              <View style={[styles.sectionHeader, styles.sectionHeaderMargin]}>
                 <Text style={styles.sectionEyebrow}>↓ Reçues</Text>
                 <Text style={styles.sectionCount}>{String(received.length).padStart(2, '0')}</Text>
               </View>
@@ -132,7 +218,7 @@ export default function FriendRequests() {
                 })
               )}
 
-              {/* Section envoyées */}
+              {/* ── Demandes d'amitié envoyées ── */}
               <View style={[styles.sectionHeader, styles.sectionHeaderMargin]}>
                 <Text style={styles.sectionEyebrow}>↑ Envoyées</Text>
                 <Text style={styles.sectionCount}>{String(sent.length).padStart(2, '0')}</Text>
@@ -141,7 +227,6 @@ export default function FriendRequests() {
                 <Text style={styles.emptyText}>Aucune demande envoyée.</Text>
               ) : (
                 sent.map((item) => {
-                  // Profil peut être null si la FK ne résout pas (utilisateur supprimé ou RLS)
                   if (!item.profile) return null;
                   const displayName = item.profile.display_name ?? item.profile.username;
                   const initial = displayName?.[0]?.toUpperCase() ?? '?';
@@ -233,6 +318,82 @@ const makeStyles = (T: Theme) => StyleSheet.create({
     color: T.textFaint,
     paddingVertical: 12,
   },
+
+  /* ── Taguage en attente ── */
+  tagItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: T.border,
+    gap: 14,
+  },
+  tagNoteBox: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    width: 44,
+  },
+  tagNote: {
+    fontFamily: F.serifLight,
+    fontStyle: 'italic',
+    fontSize: 36,
+    lineHeight: 34,
+    color: T.primary,
+    letterSpacing: -1,
+  },
+  tagNoteDenom: {
+    fontFamily: F.mono,
+    fontSize: 9,
+    color: T.textFaint,
+    marginLeft: 1,
+    marginBottom: 4,
+  },
+  tagInfo: { flex: 1 },
+  tagLabel: {
+    fontFamily: F.serif,
+    fontStyle: 'italic',
+    fontSize: 15,
+    color: T.text,
+    marginBottom: 2,
+  },
+  tagDate: {
+    fontFamily: F.mono,
+    fontSize: 9,
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+    color: T.textFaint,
+  },
+  tagComment: {
+    fontFamily: F.serif,
+    fontStyle: 'italic',
+    fontSize: 12,
+    color: T.textDim,
+    marginTop: 4,
+  },
+  tagCta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    borderWidth: 1,
+    borderColor: T.primary,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+  },
+  tagCtaText: {
+    fontFamily: F.mono,
+    fontSize: 9,
+    letterSpacing: 1.5,
+    textTransform: 'uppercase',
+    color: T.primary,
+  },
+  tagCtaArrow: {
+    fontFamily: F.serif,
+    fontStyle: 'italic',
+    fontSize: 14,
+    color: T.primary,
+  },
+
+  /* ── Demandes envoyées ── */
   sentItem: {
     flexDirection: 'row',
     alignItems: 'center',
