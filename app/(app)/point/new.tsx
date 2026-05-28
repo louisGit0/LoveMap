@@ -122,6 +122,13 @@ export default function NewPoint() {
       setSnackbar('Vous devez taguer un partenaire pour sceller ce moment.');
       return;
     }
+
+    // Vérification coordonnées avant soumission
+    if (!latitude || !longitude || isNaN(latitude) || isNaN(longitude)) {
+      setSnackbar('Position GPS manquante. Autorisez la localisation et réessayez.');
+      return;
+    }
+
     setSubmitting(true);
 
     const d = parseInt(dayStr, 10);
@@ -130,19 +137,27 @@ export default function NewPoint() {
     const parsedDate = new Date(y, m - 1, d);
     const happenedAt = !isNaN(parsedDate.getTime()) ? parsedDate.toISOString() : new Date().toISOString();
 
-    const point = await createPoint({
-      userId: user.id,
-      latitude,
-      longitude,
-      note,
-      comment: comment.trim() || undefined,
-      durationMinutes: durationMinutes ? parseInt(durationMinutes, 10) : undefined,
-      happenedAt,
-      address: address || undefined,
-    });
+    let point = null;
+    try {
+      point = await createPoint({
+        userId: user.id,
+        latitude,
+        longitude,
+        note,
+        comment: comment.trim() || undefined,
+        durationMinutes: durationMinutes ? parseInt(durationMinutes, 10) : undefined,
+        happenedAt,
+        address: address || undefined,
+      });
+    } catch (err) {
+      console.error('[NewPoint] handleSubmit crash:', err);
+      setSnackbar('Une erreur inattendue s\'est produite. Réessayez.');
+      setSubmitting(false);
+      return;
+    }
 
     if (!point) {
-      setSnackbar('Erreur lors de la création.');
+      setSnackbar('Erreur lors de la création. Vérifiez votre connexion et réessayez.');
       setSubmitting(false);
       return;
     }

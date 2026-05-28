@@ -3,13 +3,23 @@ import { supabase } from '@/lib/supabase';
 import { useMapStore } from '@/stores/mapStore';
 import type { MapPoint } from '@/types/app.types';
 
-// Convertit un point PostGIS en MapPoint exploitable par react-native-maps
+// Convertit un point PostGIS en MapPoint exploitable
 function toMapPoint(raw: any): MapPoint {
   const coords = raw.location?.coordinates ?? [0, 0];
   return {
     ...raw,
     longitude: coords[0],
     latitude: coords[1],
+  };
+}
+
+// Convertit un résultat RPC (sans champ location) en MapPoint partiel
+function rpcRowToMapPoint(row: any, longitude: number, latitude: number): MapPoint {
+  return {
+    ...row,
+    longitude,
+    latitude,
+    location: null,
   };
 }
 
@@ -53,28 +63,53 @@ export function usePoints() {
     happenedAt?: string;
     address?: string;
   }): Promise<MapPoint | null> => {
-    const { data, error } = await supabase
-      .from('points')
-      .insert({
-        creator_id: params.userId,
-        // Syntaxe WKT pour PostGIS via Supabase
-        location: `POINT(${params.longitude} ${params.latitude})` as any,
-        note: params.note,
-        comment: params.comment ?? null,
-        duration_minutes: params.durationMinutes ?? null,
-        happened_at: params.happenedAt ?? new Date().toISOString(),
-        is_visible: false,
-        address: params.address ?? null,
-      })
-      .select()
-      .single();
+    console.log('[createPoint] Params:', JSON.stringify({
+      userId: params.userId,
+      lat: params.latitude,
+      lng: params.longitude,
+      note: params.note,
+    }));
 
-    if (error) {
-      console.error('[usePoints] createPoint error:', error.message);
+    // Validation des coordonnées
+    if (!params.latitude || !params.longitude ||
+        isNaN(params.latitude) || isNaN(params.longitude)) {
+      console.error('[createPoint] Coordonnées invalides:', params.latitude, params.longitude);
       return null;
     }
 
-    const mapped = toMapPoint(data);
+    if (!params.userId) {
+      console.error('[createPoint] userId manquant');
+      return null;
+    }
+
+    // Passage par RPC pour garantir la compatibilité PostGIS
+    // ST_MakePoint(longitude, latitude) côté serveur — pas de problème WKT client
+    const { data, error } = await supabase.rpc('create_point', {
+      p_creator_id: params.userId,
+      p_longitude: params.longitude,
+      p_latitude: params.latitude,
+      p_note: params.note,
+      p_comment: params.comment ?? null,
+      p_duration_minutes: params.durationMinutes ?? null,
+      p_happened_at: params.happenedAt ?? new Date().toISOString(),
+      p_address: params.address ?? null,
+    });
+
+    if (error) {
+      console.error('[createPoint] RPC error:', error.code, error.message, error.details);
+      return null;
+    }
+
+    // La RPC retourne un SETOF — prendre la première ligne
+    const row = Array.isArray(data) ? data[0] : data;
+    if (!row) {
+      console.error('[createPoint] RPC a retourné une réponse vide');
+      return null;
+    }
+
+    console.log('[createPoint] Point créé:', row.id);
+
+    const mapped = rpcRowToMapPoint(row, params.longitude, params.latitude);
     addPoint(mapped);
     return mapped;
   }, [addPoint]);
