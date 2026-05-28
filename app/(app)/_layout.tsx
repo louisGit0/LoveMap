@@ -106,7 +106,6 @@ export default function AppLayout() {
       <Tabs.Screen name="point/new" options={{ href: null }} />
       <Tabs.Screen name="point/[id]" options={{ href: null }} />
       <Tabs.Screen name="friends/requests" options={{ href: null }} />
-      <Tabs.Screen name="profile/settings" options={{ href: null }} />
     </Tabs>
   );
 }

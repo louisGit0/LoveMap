@@ -1,0 +1,67 @@
+<?xml version="1.0"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <title>LoveMap</title>
+  <desc>App icon — glass heart pin with magenta glow halo on a dark editorial map.</desc>
+
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1a0822"></stop>
+      <stop offset="1" stop-color="#0a0610"></stop>
+    </linearGradient>
+    <linearGradient id="pinFill" x1="0.3" y1="0" x2="0.7" y2="1">
+      <stop offset="0" stop-color="#ff5fa8"></stop>
+      <stop offset="1" stop-color="#a855f7"></stop>
+    </linearGradient>
+    <radialGradient id="pinVol" cx="0.5" cy="0.25" r="0.85">
+      <stop offset="0" stop-color="#000" stop-opacity="0"></stop>
+      <stop offset="0.55" stop-color="#000" stop-opacity="0"></stop>
+      <stop offset="1" stop-color="#000" stop-opacity="0.32"></stop>
+    </radialGradient>
+
+    <filter id="glowFar" x="-200%" y="-200%" width="500%" height="500%"><feGaussianBlur stdDeviation="80"></feGaussianBlur></filter>
+    <filter id="glowWide" x="-200%" y="-200%" width="500%" height="500%"><feGaussianBlur stdDeviation="50"></feGaussianBlur></filter>
+    <filter id="glowMid" x="-150%" y="-150%" width="400%" height="400%"><feGaussianBlur stdDeviation="25"></feGaussianBlur></filter>
+    <filter id="glowNear" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="12"></feGaussianBlur></filter>
+    <filter id="tipShadow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="1.5"></feGaussianBlur></filter>
+
+    <path id="heartPin" d="M 50 124 C 50 124, 6 92, 6 46 C 6 22, 24 8, 38 8 C 45 8, 50 14, 50 24 C 50 14, 55 8, 62 8 C 76 8, 94 22, 94 46 C 94 92, 50 124, 50 124 Z"></path>
+  </defs>
+
+  <rect width="1024" height="1024" fill="url(#bg)"></rect>
+  <rect width="1024" height="1024" fill="#ffffff" fill-opacity="0.04"></rect>
+
+  <path d="M 0 0 L 0 360 Q 200 320 380 280 Q 540 240 700 180 Q 860 110 1024 0 Z" fill="#a855f7" fill-opacity="0.18"></path>
+  <path d="M 1024 1024 L 1024 700 Q 880 740 700 800 Q 540 860 360 920 Q 200 980 0 1024 Z" fill="#ec2d8c" fill-opacity="0.16"></path>
+
+  <g stroke="#f5f1f4" stroke-opacity="0.8" stroke-width="14" fill="none" stroke-linecap="round">
+    <path d="M -20 460 Q 200 480 380 500 Q 580 520 760 540 Q 900 555 1044 565"></path>
+    <path d="M -20 620 Q 220 600 420 590 Q 620 580 820 595 Q 940 605 1044 615"></path>
+    <path d="M 380 -20 Q 400 200 420 380 Q 440 580 460 760 Q 470 920 480 1044"></path>
+    <path d="M 600 -20 Q 620 220 640 420 Q 660 620 670 820 Q 678 940 686 1044"></path>
+  </g>
+  <g stroke="#f5f1f4" stroke-opacity="0.3" stroke-width="6" fill="none" stroke-linecap="round">
+    <path d="M 200 -20 Q 210 200 220 380 Q 230 580 240 760"></path>
+    <path d="M 820 100 Q 830 280 840 460 Q 850 640 860 820"></path>
+    <path d="M -20 800 Q 200 810 420 820 Q 620 830 820 838 Q 940 842 1044 846"></path>
+  </g>
+
+  
+  <g transform="translate(262, 164) scale(5)" style="mix-blend-mode: screen;">
+    <g filter="url(#glowFar)" opacity="0.7"><use href="#heartPin" fill="#ff1080"></use></g>
+    <g filter="url(#glowWide)" opacity="0.85"><use href="#heartPin" fill="#ff3090"></use></g>
+    <g filter="url(#glowMid)" opacity="0.9"><use href="#heartPin" fill="#ff5fa8"></use></g>
+    <g filter="url(#glowNear)" opacity="0.6"><use href="#heartPin" fill="#ffaad4"></use></g>
+  </g>
+
+  
+  <g transform="translate(262, 164) scale(5)">
+    <g filter="url(#tipShadow)">
+      <ellipse cx="50" cy="130" rx="13" ry="2.5" fill="#000" fill-opacity="0.55"></ellipse>
+    </g>
+    <use href="#heartPin" fill="url(#pinFill)"></use>
+    <use href="#heartPin" fill="url(#pinVol)"></use>
+    <path d="M 16 38 C 16 22, 26 14, 36 14" stroke="#ffffff" stroke-opacity="0.55" stroke-width="3" stroke-linecap="round" fill="none"></path>
+    <circle cx="50" cy="124" r="4.5" fill="#f5f1f4" fill-opacity="0.95"></circle>
+    <circle cx="50" cy="124" r="1.6" fill="#ff5fa8"></circle>
+  </g>
+</svg>
