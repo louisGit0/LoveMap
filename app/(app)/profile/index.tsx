@@ -17,7 +17,6 @@ import {
 import { router } from 'expo-router';
 import { Snackbar } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import * as FileSystem from 'expo-file-system';
 import { useAuth } from '@/hooks/useAuth';
 import { usePoints } from '@/hooks/usePoints';
 import { useFriends } from '@/hooks/useFriends';
@@ -182,8 +181,14 @@ function ProfileScreenInner() {
       const asset = result.assets[0];
       const ext = asset.uri.split('.').pop()?.toLowerCase() ?? 'jpg';
       const fileName = `${user!.id}.${ext}`;
+      let FileSystem: typeof import('expo-file-system') | null = null;
+      try { FileSystem = require('expo-file-system'); } catch { FileSystem = null; }
+      if (!FileSystem) {
+        setSnackbar('Impossible de lire le fichier image.');
+        return;
+      }
       const base64 = await FileSystem.readAsStringAsync(asset.uri, {
-        encoding: FileSystem.EncodingType?.Base64 ?? 'base64',
+        encoding: (FileSystem.EncodingType?.Base64 ?? 'base64') as 'base64',
       });
       const byteCharacters = atob(base64);
       const byteArray = new Uint8Array(byteCharacters.length);
