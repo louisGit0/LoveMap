@@ -313,7 +313,7 @@ export default function ProfileScreen() {
         <View style={styles.statsRow}>
           {[
             { value: String(points.length), label: 'Entrées' },
-            { value: String(friends.length), label: 'Cercle' },
+            { value: String(friends.length), label: 'Amis' },
             { value: avgNote, label: 'Moyenne' },
           ].map((s, i) => (
             <View key={s.label} style={[styles.statItem, i > 0 && styles.statItemBorder]}>
