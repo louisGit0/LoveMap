@@ -65,8 +65,8 @@ export function usePoints() {
       return null;
     }
 
-    // Création via RPC PostGIS — retourne UUID directement
-    const { data: pointId, error: rpcError } = await supabase.rpc('create_point', {
+    // Création via RPC PostGIS
+    const { data: rpcData, error: rpcError } = await supabase.rpc('create_point', {
       p_creator_id: params.userId,
       p_longitude: params.longitude,
       p_latitude: params.latitude,
@@ -77,24 +77,60 @@ export function usePoints() {
       p_address: params.address ?? null,
     });
 
-    if (rpcError || !pointId) {
-      console.error('[createPoint] RPC error:', rpcError?.code, rpcError?.message, rpcError?.details);
+    if (rpcError) {
+      console.error('[createPoint] RPC error:', rpcError.code, rpcError.message, rpcError.details);
       return null;
     }
 
-    console.log('[createPoint] Point créé avec ID:', pointId);
+    // Compatibilité migration 007 (RETURNS TABLE → array) et 008 (RETURNS UUID → string)
+    let pointId: string | null = null;
+    let rawPoint: any = null;
 
-    // Récupérer le point complet pour le store
-    const { data: pointData, error: fetchError } = await supabase
-      .from('points')
-      .select('*')
-      .eq('id', pointId as string)
-      .single();
+    if (typeof rpcData === 'string' && rpcData) {
+      // Migration 008 : retourne directement l'UUID
+      pointId = rpcData;
+    } else if (Array.isArray(rpcData) && rpcData.length > 0 && rpcData[0]?.id) {
+      // Migration 007 : retourne RETURNS TABLE → premier élément
+      pointId = rpcData[0].id;
+      rawPoint = rpcData[0];
+    }
 
-    if (fetchError || !pointData) {
-      console.error('[createPoint] Erreur récupération point:', fetchError?.message);
+    if (!pointId) {
+      console.error('[createPoint] ID manquant — rpcData type:', typeof rpcData, '— val:', String(rpcData).slice(0, 120));
       return null;
     }
+
+    console.log('[createPoint] Point créé ID:', pointId);
+
+    // Récupérer le point complet si pas déjà disponible (cas UUID)
+    if (!rawPoint) {
+      const { data: fetched, error: fetchError } = await supabase
+        .from('points')
+        .select('*')
+        .eq('id', pointId)
+        .maybeSingle();
+
+      if (fetchError) {
+        console.error('[createPoint] Erreur récupération point:', fetchError.code, fetchError.message);
+        return null;
+      }
+      rawPoint = fetched;
+    }
+
+    if (!rawPoint) {
+      console.error('[createPoint] Point introuvable après création, id:', pointId);
+      return null;
+    }
+
+    // Garantir la présence des coordonnées (absentes dans RETURNS TABLE)
+    if (!rawPoint.location) {
+      rawPoint = {
+        ...rawPoint,
+        location: { type: 'Point', coordinates: [params.longitude, params.latitude] },
+      };
+    }
+
+    const pointData = rawPoint;
 
     // Taguage partenaire
     if (params.partnerId) {
@@ -130,16 +166,20 @@ export function usePoints() {
             (creatorProfile as any)?.username ??
             'Quelqu\'un';
 
-          await fetch('https://exp.host/--/api/v2/push/send', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              to: (partnerProfile as any).push_token,
-              title: 'LoveMap — Vous avez été tagué',
-              body: `${senderName} vous a tagué sur un moment. Acceptez-vous ?`,
-              data: { pointId, type: 'partner_tag' },
-            }),
-          });
+          try {
+            await fetch('https://exp.host/--/api/v2/push/send', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                to: (partnerProfile as any).push_token,
+                title: 'LoveMap — Vous avez été tagué',
+                body: `${senderName} vous a tagué sur un moment. Acceptez-vous ?`,
+                data: { pointId, type: 'partner_tag' },
+              }),
+            });
+          } catch (pushErr) {
+            console.warn('[createPoint] Push notification échouée:', pushErr);
+          }
         }
       }
     }

@@ -15,6 +15,7 @@ import {
   Linking,
 } from 'react-native';
 import { router } from 'expo-router';
+import * as ImagePicker from 'expo-image-picker';
 import { Snackbar } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '@/hooks/useAuth';
@@ -114,13 +115,6 @@ export default function ProfileScreen() {
 
   /* ── Upload avatar ── */
   async function handlePickAvatar() {
-    let ImagePicker: typeof import('expo-image-picker') | null = null;
-    let _ipErr = '';
-    try { ImagePicker = require('expo-image-picker'); } catch (e) { ImagePicker = null; _ipErr = String(e); }
-    if (!ImagePicker) {
-      Alert.alert('DEBUG — ImagePicker null', _ipErr || 'require() n\'a pas levé d\'exception mais retourne falsy', [{ text: 'OK' }]);
-      return;
-    }
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
       Alert.alert(
