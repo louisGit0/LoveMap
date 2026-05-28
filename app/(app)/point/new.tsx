@@ -20,7 +20,6 @@ import { useAuth } from '@/hooks/useAuth';
 import { usePoints } from '@/hooks/usePoints';
 import { useFriendStore } from '@/stores/friendStore';
 import { useTheme } from '@/hooks/useTheme';
-import { supabase } from '@/lib/supabase';
 import { F } from '@/constants/fonts';
 import type { Theme } from '@/constants/theme';
 import { IcoArrow, IcoSearch, IcoClose } from '@/components/icons';
@@ -148,6 +147,7 @@ export default function NewPoint() {
         durationMinutes: durationMinutes ? parseInt(durationMinutes, 10) : undefined,
         happenedAt,
         address: address || undefined,
+        partnerId: selectedPartnerId ?? undefined,
       });
     } catch (err) {
       console.error('[NewPoint] handleSubmit crash:', err);
@@ -160,37 +160,6 @@ export default function NewPoint() {
       setSnackbar('Erreur lors de la création. Vérifiez votre connexion et réessayez.');
       setSubmitting(false);
       return;
-    }
-
-    if (selectedPartnerId) {
-      const { error } = await supabase.from('point_partners').insert({
-        point_id: point.id,
-        partner_id: selectedPartnerId,
-        status: 'pending',
-        notified_at: new Date().toISOString(),
-      });
-
-      if (!error) {
-        const { data: partnerProfile } = await supabase
-          .from('profiles')
-          .select('push_token, display_name')
-          .eq('id', selectedPartnerId)
-          .single();
-
-        if (partnerProfile?.push_token) {
-          const senderName = user.user_metadata?.display_name ?? 'Quelqu\'un';
-          await fetch('https://exp.host/--/api/v2/push/send', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              to: partnerProfile.push_token,
-              title: 'LoveMap — Vous avez été tagué',
-              body: `${senderName} vous a tagué sur un moment. Acceptez-vous ?`,
-              data: { pointId: point.id, type: 'partner_tag' },
-            }),
-          });
-        }
-      }
     }
 
     setSubmitting(false);

@@ -13,16 +13,6 @@ function toMapPoint(raw: any): MapPoint {
   };
 }
 
-// Convertit un résultat RPC (sans champ location) en MapPoint partiel
-function rpcRowToMapPoint(row: any, longitude: number, latitude: number): MapPoint {
-  return {
-    ...row,
-    longitude,
-    latitude,
-    location: null,
-  };
-}
-
 export function usePoints() {
   const { points, setPoints, addPoint, updatePoint, removePoint } = useMapStore();
 
@@ -62,29 +52,21 @@ export function usePoints() {
     durationMinutes?: number;
     happenedAt?: string;
     address?: string;
+    partnerId?: string;
   }): Promise<MapPoint | null> => {
-    console.log('[createPoint] Params:', JSON.stringify({
-      userId: params.userId,
-      lat: params.latitude,
-      lng: params.longitude,
-      note: params.note,
-    }));
 
-    // Validation des coordonnées
-    if (!params.latitude || !params.longitude ||
-        isNaN(params.latitude) || isNaN(params.longitude)) {
-      console.error('[createPoint] Coordonnées invalides:', params.latitude, params.longitude);
-      return null;
-    }
-
+    // Vérifications préalables
     if (!params.userId) {
       console.error('[createPoint] userId manquant');
       return null;
     }
+    if (!params.latitude || !params.longitude || isNaN(params.latitude) || isNaN(params.longitude)) {
+      console.error('[createPoint] Coordonnées invalides:', params.latitude, params.longitude);
+      return null;
+    }
 
-    // Passage par RPC pour garantir la compatibilité PostGIS
-    // ST_MakePoint(longitude, latitude) côté serveur — pas de problème WKT client
-    const { data, error } = await supabase.rpc('create_point', {
+    // Création via RPC PostGIS — retourne UUID directement
+    const { data: pointId, error: rpcError } = await supabase.rpc('create_point', {
       p_creator_id: params.userId,
       p_longitude: params.longitude,
       p_latitude: params.latitude,
@@ -95,21 +77,74 @@ export function usePoints() {
       p_address: params.address ?? null,
     });
 
-    if (error) {
-      console.error('[createPoint] RPC error:', error.code, error.message, error.details);
+    if (rpcError || !pointId) {
+      console.error('[createPoint] RPC error:', rpcError?.code, rpcError?.message, rpcError?.details);
       return null;
     }
 
-    // La RPC retourne un SETOF — prendre la première ligne
-    const row = Array.isArray(data) ? data[0] : data;
-    if (!row) {
-      console.error('[createPoint] RPC a retourné une réponse vide');
+    console.log('[createPoint] Point créé avec ID:', pointId);
+
+    // Récupérer le point complet pour le store
+    const { data: pointData, error: fetchError } = await supabase
+      .from('points')
+      .select('*')
+      .eq('id', pointId as string)
+      .single();
+
+    if (fetchError || !pointData) {
+      console.error('[createPoint] Erreur récupération point:', fetchError?.message);
       return null;
     }
 
-    console.log('[createPoint] Point créé:', row.id);
+    // Taguage partenaire
+    if (params.partnerId) {
+      const { error: partnerError } = await supabase
+        .from('point_partners')
+        .insert({
+          point_id: pointId,
+          partner_id: params.partnerId,
+          status: 'pending',
+          notified_at: new Date().toISOString(),
+        });
 
-    const mapped = rpcRowToMapPoint(row, params.longitude, params.latitude);
+      if (partnerError) {
+        console.error('[createPoint] Erreur taguage partenaire:', partnerError.message);
+        // Ne bloque pas — le point est créé, le taguage a échoué
+      } else {
+        // Notification push au partenaire
+        const { data: partnerProfile } = await supabase
+          .from('profiles')
+          .select('push_token')
+          .eq('id', params.partnerId)
+          .single();
+
+        if (partnerProfile?.push_token) {
+          const { data: creatorProfile } = await supabase
+            .from('profiles')
+            .select('username, display_name')
+            .eq('id', params.userId)
+            .single();
+
+          const senderName =
+            (creatorProfile as any)?.display_name ??
+            (creatorProfile as any)?.username ??
+            'Quelqu\'un';
+
+          await fetch('https://exp.host/--/api/v2/push/send', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              to: (partnerProfile as any).push_token,
+              title: 'LoveMap — Vous avez été tagué',
+              body: `${senderName} vous a tagué sur un moment. Acceptez-vous ?`,
+              data: { pointId, type: 'partner_tag' },
+            }),
+          });
+        }
+      }
+    }
+
+    const mapped = toMapPoint(pointData);
     addPoint(mapped);
     return mapped;
   }, [addPoint]);
