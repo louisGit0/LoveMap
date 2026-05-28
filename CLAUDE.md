@@ -262,7 +262,7 @@ Le toggle dark/light est dans `app/(app)/profile/index.tsx` via `useThemeStore` 
 | 9 | ✅ Terminé | Build EAS natif iOS #6, soumis à TestFlight (28/05/2026) |
 | 10 | ✅ Terminé | Build EAS natif iOS #7 — fix cameraPermission expo-image-picker, soumis à TestFlight (28/05/2026) |
 | R5 | ✅ Terminé | Round 5 — C1: create_point RPC v2 (UUID) + partner tagging dans hook · C2: carte toujours visible (hint non-bloquant) · C3: ImagePicker import statique |
-| 11 | 🔄 En cours | Build EAS natif iOS #8 — R5 C3 expo-image-picker import statique (28/05/2026) |
+| 11 | ✅ Terminé | Build EAS natif iOS #8 — R5 C3 expo-image-picker import statique, soumis à TestFlight (28/05/2026) |
 
 > Mettre à jour ce tableau à chaque phase complétée.
 
