@@ -252,7 +252,7 @@ Le toggle dark/light est dans `app/(app)/profile/index.tsx` via `useThemeStore` 
 | R4 | ✅ Terminé | Round 4 — C1: création de point via RPC `create_point` (fix PostGIS WKT) + migration 007 · C2: tab bar opaque `#111114`/`#f2f2f7` (BlurView supprimé) · C3: "Cercle" → "Amis" dans stats profil · C4: expo-image-picker cameraPermission + Alert Linking.openSettings |
 | 8 | 🔲 À faire | Audit sécurité |
 | 9 | ✅ Terminé | Build EAS natif iOS #6, soumis à TestFlight (28/05/2026) |
-| 10 | 🔄 En cours | Build EAS natif iOS #7 — fix cameraPermission expo-image-picker (28/05/2026) |
+| 10 | ✅ Terminé | Build EAS natif iOS #7 — fix cameraPermission expo-image-picker, soumis à TestFlight (28/05/2026) |
 
 > Mettre à jour ce tableau à chaque phase complétée.
 
