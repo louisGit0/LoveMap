@@ -1,7 +1,6 @@
 import { useEffect, useMemo } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Tabs, router } from 'expo-router';
-import { BlurView } from 'expo-blur';
 import { useAuthStore } from '@/stores/authStore';
 import { useFriendStore } from '@/stores/friendStore';
 import { useTheme } from '@/hooks/useTheme';
@@ -21,12 +20,10 @@ function TabIcon({
 }) {
   const T = useTheme();
   const { isDark } = useThemeStore();
-  // Couleur inactive bien visible sur fond blurré
-  const inactiveColor = isDark ? 'rgba(255,255,255,0.55)' : 'rgba(0,0,0,0.45)';
+  const inactiveColor = isDark ? '#636366' : '#8e8e93';
 
   return (
     <View style={{ alignItems: 'center' }}>
-      {/* Indicateur actif — barre rose en haut */}
       {focused && (
         <View
           style={{
@@ -63,8 +60,7 @@ export default function AppLayout() {
   const { isDark } = useThemeStore();
   const styles = useMemo(() => makeStyles(T, isDark), [T, isDark]);
 
-  // Couleur label inactive bien lisible
-  const inactiveTint = isDark ? 'rgba(255,255,255,0.55)' : 'rgba(0,0,0,0.45)';
+  const inactiveTint = isDark ? '#636366' : '#8e8e93';
 
   useEffect(() => {
     if (!loading && !session) router.replace('/(auth)/login');
@@ -81,13 +77,6 @@ export default function AppLayout() {
         tabBarLabelStyle: styles.tabLabel,
         tabBarActiveTintColor: T.primary,
         tabBarInactiveTintColor: inactiveTint,
-        tabBarBackground: () => (
-          <BlurView
-            intensity={isDark ? 90 : 85}
-            tint={isDark ? 'dark' : 'light'}
-            style={[StyleSheet.absoluteFillObject, styles.blurOverlay]}
-          />
-        ),
       }}
     >
       <Tabs.Screen
@@ -130,11 +119,12 @@ export default function AppLayout() {
 
 const makeStyles = (T: Theme, isDark: boolean) => StyleSheet.create({
   tabBar: {
-    backgroundColor: 'transparent',
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)',
-    height: 74,
-    paddingBottom: 12,
+    // Fond opaque — le BlurView translucide cause des problèmes de lisibilité
+    backgroundColor: isDark ? '#111114' : '#f2f2f7',
+    borderTopWidth: 0.5,
+    borderTopColor: isDark ? '#2c2c2e' : '#c6c6c8',
+    height: 83,
+    paddingBottom: 28,
     paddingTop: 10,
     elevation: 0,
   },
@@ -144,9 +134,5 @@ const makeStyles = (T: Theme, isDark: boolean) => StyleSheet.create({
     letterSpacing: 1.5,
     textTransform: 'uppercase',
     marginTop: 3,
-  },
-  blurOverlay: {
-    // Légère teinte supplémentaire pour garantir le contraste
-    backgroundColor: isDark ? 'rgba(0,0,0,0.15)' : 'rgba(255,255,255,0.1)',
   },
 });
