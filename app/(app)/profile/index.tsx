@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo, useRef, Component } from 'react';
+import React, { useEffect, useState, useMemo, useRef } from 'react';
 import {
   View,
   Text,
@@ -37,39 +37,7 @@ const MONTHS_FR = [
   'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre',
 ];
 
-/* ── Error boundary — DEBUG ONLY ── */
-class ProfileErrorBoundary extends Component<
-  { children: React.ReactNode },
-  { error: Error | null }
-> {
-  constructor(props: { children: React.ReactNode }) {
-    super(props);
-    this.state = { error: null };
-  }
-  static getDerivedStateFromError(error: Error) {
-    return { error };
-  }
-  render() {
-    if (this.state.error) {
-      return (
-        <View style={{ flex: 1, backgroundColor: '#000', padding: 24, paddingTop: 60 }}>
-          <Text style={{ color: '#ff2d87', fontFamily: 'monospace', fontSize: 12, marginBottom: 12 }}>
-            CRASH — ProfileScreen
-          </Text>
-          <Text style={{ color: '#fff', fontFamily: 'monospace', fontSize: 11, lineHeight: 18 }}>
-            {this.state.error.message}
-          </Text>
-          <Text style={{ color: '#888', fontFamily: 'monospace', fontSize: 10, lineHeight: 16, marginTop: 16 }}>
-            {this.state.error.stack}
-          </Text>
-        </View>
-      );
-    }
-    return this.props.children;
-  }
-}
-
-function ProfileScreenInner() {
+export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
   const { user, profile, fetchProfile, signOut } = useAuth();
   const { points, fetchMyPoints } = usePoints();
@@ -530,14 +498,6 @@ function ProfileScreenInner() {
         {snackbar}
       </Snackbar>
     </KeyboardAvoidingView>
-  );
-}
-
-export default function ProfileScreen() {
-  return (
-    <ProfileErrorBoundary>
-      <ProfileScreenInner />
-    </ProfileErrorBoundary>
   );
 }
 
