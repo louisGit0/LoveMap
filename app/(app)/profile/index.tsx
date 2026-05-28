@@ -15,7 +15,6 @@ import {
   Linking,
 } from 'react-native';
 import { router } from 'expo-router';
-import * as ImagePicker from 'expo-image-picker';
 import { Snackbar } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '@/hooks/useAuth';
@@ -115,6 +114,15 @@ export default function ProfileScreen() {
 
   /* ── Upload avatar ── */
   async function handlePickAvatar() {
+    // Dynamic require obligatoire — import statique crashe le module natif iOS au chargement de l'écran
+    let ImagePicker: typeof import('expo-image-picker');
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      ImagePicker = require('expo-image-picker');
+    } catch (e) {
+      setSnackbar('Galerie indisponible : ' + (e instanceof Error ? e.message : String(e)));
+      return;
+    }
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
       Alert.alert(

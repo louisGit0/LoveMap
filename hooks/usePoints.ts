@@ -78,8 +78,8 @@ export function usePoints() {
     });
 
     if (rpcError) {
-      console.error('[createPoint] RPC error:', rpcError.code, rpcError.message, rpcError.details);
-      return null;
+      // Throw avec le vrai message Supabase pour affichage dans le snackbar
+      throw new Error(`[${rpcError.code ?? 'ERR'}] ${rpcError.message ?? 'RPC failed'}`);
     }
 
     // Compatibilité migration 007 (RETURNS TABLE → array) et 008 (RETURNS UUID → string)
@@ -89,20 +89,21 @@ export function usePoints() {
     if (typeof rpcData === 'string' && rpcData) {
       // Migration 008 : retourne directement l'UUID
       pointId = rpcData;
-    } else if (Array.isArray(rpcData) && rpcData.length > 0 && rpcData[0]?.id) {
+    } else if (Array.isArray(rpcData) && rpcData.length > 0) {
       // Migration 007 : retourne RETURNS TABLE → premier élément
-      pointId = rpcData[0].id;
-      rawPoint = rpcData[0];
+      pointId = rpcData[0]?.id ?? null;
+      rawPoint = rpcData[0] ?? null;
+    } else if (rpcData && typeof rpcData === 'object' && !Array.isArray(rpcData)) {
+      // Cas imprévu : objet scalar
+      pointId = (rpcData as any).id ?? null;
+      rawPoint = rpcData;
     }
 
     if (!pointId) {
-      console.error('[createPoint] ID manquant — rpcData type:', typeof rpcData, '— val:', String(rpcData).slice(0, 120));
-      return null;
+      throw new Error(`ID manquant — type: ${typeof rpcData}, val: ${String(rpcData).slice(0, 60)}`);
     }
 
-    console.log('[createPoint] Point créé ID:', pointId);
-
-    // Récupérer le point complet si pas déjà disponible (cas UUID)
+    // Récupérer le point complet si pas encore disponible (cas UUID pur)
     if (!rawPoint) {
       const { data: fetched, error: fetchError } = await supabase
         .from('points')
@@ -111,15 +112,13 @@ export function usePoints() {
         .maybeSingle();
 
       if (fetchError) {
-        console.error('[createPoint] Erreur récupération point:', fetchError.code, fetchError.message);
-        return null;
+        throw new Error(`Fetch point: [${fetchError.code}] ${fetchError.message}`);
       }
       rawPoint = fetched;
     }
 
     if (!rawPoint) {
-      console.error('[createPoint] Point introuvable après création, id:', pointId);
-      return null;
+      throw new Error(`Point introuvable après création (id: ${pointId.slice(0, 8)}…)`);
     }
 
     // Garantir la présence des coordonnées (absentes dans RETURNS TABLE)

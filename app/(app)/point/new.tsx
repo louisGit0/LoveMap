@@ -150,14 +150,14 @@ export default function NewPoint() {
         partnerId: selectedPartnerId ?? undefined,
       });
     } catch (err) {
-      console.error('[NewPoint] handleSubmit crash:', err);
-      setSnackbar('Une erreur inattendue s\'est produite. Réessayez.');
+      const msg = err instanceof Error ? err.message : String(err);
+      setSnackbar('Erreur : ' + msg);
       setSubmitting(false);
       return;
     }
 
     if (!point) {
-      setSnackbar('Erreur lors de la création. Vérifiez votre connexion et réessayez.');
+      setSnackbar('Création échouée — réponse vide du serveur.');
       setSubmitting(false);
       return;
     }
