@@ -186,7 +186,7 @@ lovemap/
 12. **Création de point via RPC uniquement** — ne jamais insérer directement dans `points` avec un WKT géométrique côté client. Toujours utiliser `supabase.rpc('create_point', { p_longitude, p_latitude, ... })` — la fonction SQL gère `ST_SetSRID(ST_MakePoint(...), 4326)` côté serveur.
 13. **Tab bar : fond opaque** — ne jamais remettre un `BlurView` sur la tab bar. Utiliser `backgroundColor: isDark ? '#111114' : '#f2f2f7'` dans `makeStyles`. La lisibilité prime.
 14. **Permissions manquantes (image picker)** — quand une permission est refusée, afficher un `Alert` natif avec un bouton "Ouvrir les réglages" appelant `Linking.openSettings()`. Ne pas se contenter d'un Snackbar.
-15. **`expo-image-picker` : toujours importer via `require` dynamique** — NE JAMAIS utiliser `import * as ImagePicker from 'expo-image-picker'` (import statique). Utiliser exclusivement : `let ImagePicker: typeof import('expo-image-picker') | null = null; try { ImagePicker = require('expo-image-picker'); } catch { ImagePicker = null; }` placé APRÈS tous les `import`. L'import statique peut crasher l'écran entier au chargement si le module natif n'est pas disponible.
+15. **Modules natifs Expo : toujours importer via `require` dynamique** — NE JAMAIS utiliser d'import statique (`import * as X from 'expo-...'`) pour les modules natifs facultatifs (`expo-image-picker`, `expo-file-system`, etc.). Utiliser exclusivement le pattern `let X: typeof import('expo-...') | null = null; try { X = require('expo-...'); } catch { X = null; }` placé APRÈS tous les `import`. Un import statique d'un module natif non lié peut crasher l'écran entier au chargement — crash natif non catchable par ErrorBoundary. Placer le require à l'intérieur de la fonction qui l'utilise si le module n'est pas nécessaire au rendu.
 
 ---
 
@@ -265,6 +265,7 @@ Le toggle dark/light est dans `app/(app)/profile/index.tsx` via `useThemeStore` 
 | R5 | ✅ Terminé | Round 5 — C1: create_point RPC v2 (UUID) + partner tagging dans hook · C2: carte toujours visible (hint non-bloquant) · C3: ImagePicker import statique |
 | 11 | ✅ Terminé | Build EAS natif iOS #8 — R5 C3 expo-image-picker import statique, soumis à TestFlight (28/05/2026) |
 | TF3 | ✅ Terminé | Hotfix OTA — ImagePicker revenu en dynamic require (try/catch) — fix crash onglet "Moi" (28/05/2026) |
+| TF4 | ⏳ En attente build | Fix crash natif onglet "Moi" — expo-file-system et expo-image-picker passés en dynamic require — build iOS #9 bloqué quota EAS (reset 01/06/2026) |
 
 > Mettre à jour ce tableau à chaque phase complétée.
 
