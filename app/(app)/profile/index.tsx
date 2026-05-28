@@ -115,13 +115,10 @@ export default function ProfileScreen() {
   /* ── Upload avatar ── */
   async function handlePickAvatar() {
     let ImagePicker: typeof import('expo-image-picker') | null = null;
-    try { ImagePicker = require('expo-image-picker'); } catch { ImagePicker = null; }
+    let _ipErr = '';
+    try { ImagePicker = require('expo-image-picker'); } catch (e) { ImagePicker = null; _ipErr = String(e); }
     if (!ImagePicker) {
-      Alert.alert(
-        'Galerie indisponible',
-        'Cette fonctionnalité nécessite une mise à jour de l\'application.',
-        [{ text: 'OK' }],
-      );
+      Alert.alert('DEBUG — ImagePicker null', _ipErr || 'require() n\'a pas levé d\'exception mais retourne falsy', [{ text: 'OK' }]);
       return;
     }
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
