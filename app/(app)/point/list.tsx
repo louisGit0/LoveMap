@@ -149,32 +149,45 @@ export default function PointList() {
             <Text style={styles.eyebrow}>le carnet</Text>
             <Text style={styles.title}>Vos moments</Text>
 
-            {/* Stats — uniquement le compteur d'entrées */}
+            {/* Stats row */}
             <View style={styles.statsRow}>
               <View style={styles.statBlock}>
                 <Text style={styles.statNum}>{String(points.length).padStart(2, '0')}</Text>
                 <Text style={styles.statLabel}>Entrées</Text>
               </View>
+              {points.length > 0 && (
+                <View style={styles.statDivider} />
+              )}
+              {points.length > 0 && (
+                <View style={styles.statBlock}>
+                  <Text style={styles.statNum}>
+                    {points.length > 0
+                      ? (points.reduce((s, p) => s + p.note, 0) / points.length).toFixed(1)
+                      : '—'}
+                  </Text>
+                  <Text style={styles.statLabel}>Moy.</Text>
+                </View>
+              )}
             </View>
 
             {/* Bouton Filtres */}
-            <View style={styles.filterBar}>
-              <TouchableOpacity
-                style={styles.filtersBtn}
-                onPress={() => setFiltersOpen(true)}
-                activeOpacity={0.75}
-              >
-                <IcoFilter size={14} color={activeCount > 0 ? T.primary : T.textFaint} />
-                <Text style={[styles.filtersBtnText, activeCount > 0 && styles.filtersBtnTextActive]}>
-                  Filtres
-                </Text>
-                {activeCount > 0 ? (
-                  <View style={styles.badge}>
-                    <Text style={styles.badgeText}>{activeCount}</Text>
-                  </View>
-                ) : null}
-              </TouchableOpacity>
-            </View>
+            <TouchableOpacity
+              style={[styles.filterBar, activeCount > 0 && styles.filterBarActive]}
+              onPress={() => setFiltersOpen(true)}
+              activeOpacity={0.7}
+            >
+              <IcoFilter size={13} color={activeCount > 0 ? T.primary : T.textFaint} />
+              <Text style={[styles.filtersBtnText, activeCount > 0 && styles.filtersBtnTextActive]}>
+                {activeCount > 0 ? `Filtres actifs` : 'Filtres'}
+              </Text>
+              {activeCount > 0 ? (
+                <View style={styles.badge}>
+                  <Text style={styles.badgeText}>{activeCount}</Text>
+                </View>
+              ) : (
+                <Text style={styles.filterArrow}>›</Text>
+              )}
+            </TouchableOpacity>
           </View>
         }
         ListEmptyComponent={
@@ -241,15 +254,21 @@ const makeStyles = (T: Theme) => StyleSheet.create({
   statsRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 16,
-    marginBottom: 16,
+    gap: 20,
+    marginBottom: 20,
   },
-  statBlock: { alignItems: 'center' },
+  statBlock: { alignItems: 'flex-start' },
+  statDivider: {
+    width: 1,
+    height: 24,
+    backgroundColor: T.border,
+  },
   statNum: {
     fontFamily: F.mono,
-    fontSize: 20,
-    letterSpacing: 0,
+    fontSize: 22,
+    letterSpacing: -0.5,
     color: T.text,
+    lineHeight: 24,
   },
   statLabel: {
     fontFamily: F.mono,
@@ -265,14 +284,15 @@ const makeStyles = (T: Theme) => StyleSheet.create({
     borderTopColor: T.border,
     borderBottomWidth: 1,
     borderBottomColor: T.border,
-    paddingVertical: 10,
+    paddingVertical: 12,
     paddingHorizontal: 24,
-  },
-  filtersBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    alignSelf: 'flex-start',
+  },
+  filterBarActive: {
+    borderTopColor: T.primary + '40',
+    borderBottomColor: T.primary + '40',
   },
   filtersBtnText: {
     fontFamily: F.mono,
@@ -280,23 +300,32 @@ const makeStyles = (T: Theme) => StyleSheet.create({
     letterSpacing: 2,
     textTransform: 'uppercase',
     color: T.textFaint,
+    flex: 1,
   },
   filtersBtnTextActive: {
     color: T.primary,
   },
+  filterArrow: {
+    fontFamily: F.sansLight,
+    fontSize: 18,
+    color: T.textFaint,
+    lineHeight: 18,
+  },
   badge: {
     backgroundColor: T.primary,
-    width: 16,
-    height: 16,
-    borderRadius: 8,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
     alignItems: 'center',
     justifyContent: 'center',
+    minWidth: 18,
+    height: 16,
   },
   badgeText: {
     fontFamily: F.mono,
     fontSize: 9,
-    color: T.text,
+    color: '#ffffff',
     lineHeight: 14,
+    letterSpacing: 0.5,
   },
   listContent: { paddingHorizontal: 24, paddingBottom: 100 },
   sectionHeader: {
@@ -322,13 +351,13 @@ const makeStyles = (T: Theme) => StyleSheet.create({
     color: T.textFaint,
   },
   snackbar: { backgroundColor: T.surface2 },
-  empty: { paddingTop: 48, alignItems: 'center', paddingHorizontal: 32 },
+  empty: { paddingTop: 64, alignItems: 'center', paddingHorizontal: 40 },
   emptyTitle: {
     fontFamily: F.serifLight,
     fontStyle: 'italic',
-    fontSize: 32,
+    fontSize: 30,
     lineHeight: 34,
-    color: T.text,
+    color: T.textDim,
     textAlign: 'center',
     marginBottom: 20,
   },

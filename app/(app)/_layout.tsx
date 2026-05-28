@@ -20,20 +20,25 @@ function TabIcon({
   badge?: boolean;
 }) {
   const T = useTheme();
+  const { isDark } = useThemeStore();
+  // Couleur inactive bien visible sur fond blurré
+  const inactiveColor = isDark ? 'rgba(255,255,255,0.55)' : 'rgba(0,0,0,0.45)';
+
   return (
     <View style={{ alignItems: 'center' }}>
+      {/* Indicateur actif — barre rose en haut */}
       {focused && (
         <View
           style={{
             position: 'absolute',
-            top: -8,
+            top: -10,
             height: 2,
-            width: 28,
+            width: 24,
             backgroundColor: T.primary,
           }}
         />
       )}
-      <Icon size={20} color={focused ? T.primary : T.textFaint} />
+      <Icon size={22} color={focused ? T.primary : inactiveColor} />
       {badge && (
         <View
           style={{
@@ -56,7 +61,10 @@ export default function AppLayout() {
   const { pendingReceived } = useFriendStore();
   const T = useTheme();
   const { isDark } = useThemeStore();
-  const styles = useMemo(() => makeStyles(T), [T]);
+  const styles = useMemo(() => makeStyles(T, isDark), [T, isDark]);
+
+  // Couleur label inactive bien lisible
+  const inactiveTint = isDark ? 'rgba(255,255,255,0.55)' : 'rgba(0,0,0,0.45)';
 
   useEffect(() => {
     if (!loading && !session) router.replace('/(auth)/login');
@@ -72,12 +80,12 @@ export default function AppLayout() {
         tabBarShowLabel: true,
         tabBarLabelStyle: styles.tabLabel,
         tabBarActiveTintColor: T.primary,
-        tabBarInactiveTintColor: T.textFaint,
+        tabBarInactiveTintColor: inactiveTint,
         tabBarBackground: () => (
           <BlurView
-            intensity={60}
+            intensity={isDark ? 90 : 85}
             tint={isDark ? 'dark' : 'light'}
-            style={StyleSheet.absoluteFillObject}
+            style={[StyleSheet.absoluteFillObject, styles.blurOverlay]}
           />
         ),
       }}
@@ -120,20 +128,25 @@ export default function AppLayout() {
   );
 }
 
-const makeStyles = (T: Theme) => StyleSheet.create({
+const makeStyles = (T: Theme, isDark: boolean) => StyleSheet.create({
   tabBar: {
     backgroundColor: 'transparent',
-    borderTopWidth: 1,
-    borderTopColor: T.border,
-    height: 72,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)',
+    height: 74,
     paddingBottom: 12,
-    paddingTop: 8,
+    paddingTop: 10,
+    elevation: 0,
   },
   tabLabel: {
     fontFamily: F.mono,
     fontSize: 9,
     letterSpacing: 1.5,
     textTransform: 'uppercase',
-    marginTop: 2,
+    marginTop: 3,
+  },
+  blurOverlay: {
+    // Légère teinte supplémentaire pour garantir le contraste
+    backgroundColor: isDark ? 'rgba(0,0,0,0.15)' : 'rgba(255,255,255,0.1)',
   },
 });
