@@ -38,18 +38,24 @@ export default function FriendRequests() {
     const [receivedRes, sentRes] = await Promise.all([
       supabase
         .from('friendships')
-        .select(`*, requester:profiles!friendships_requester_id_fkey(*), addressee:profiles!friendships_addressee_id_fkey(*)`)
+        .select(`
+          id, requester_id, addressee_id, status, created_at, updated_at,
+          profile:profiles!friendships_requester_id_fkey(id, username, display_name, avatar_url)
+        `)
         .eq('addressee_id', user.id)
         .eq('status', 'pending'),
       supabase
         .from('friendships')
-        .select(`*, requester:profiles!friendships_requester_id_fkey(*), addressee:profiles!friendships_addressee_id_fkey(*)`)
+        .select(`
+          id, requester_id, addressee_id, status, created_at, updated_at,
+          profile:profiles!friendships_addressee_id_fkey(id, username, display_name, avatar_url)
+        `)
         .eq('requester_id', user.id)
         .eq('status', 'pending'),
     ]);
 
-    const receivedData: FriendWithProfile[] = (receivedRes.data ?? []).map((f: any) => ({ ...f, profile: f.requester }));
-    const sentData: FriendWithProfile[] = (sentRes.data ?? []).map((f: any) => ({ ...f, profile: f.addressee }));
+    const receivedData = (receivedRes.data ?? []) as unknown as FriendWithProfile[];
+    const sentData = (sentRes.data ?? []) as unknown as FriendWithProfile[];
 
     setReceived(receivedData);
     setSent(sentData);
@@ -107,14 +113,17 @@ export default function FriendRequests() {
               {received.length === 0 ? (
                 <Text style={styles.emptyText}>Aucune demande reçue.</Text>
               ) : (
-                received.map((item) => (
-                  <FriendRequestItem
-                    key={item.id}
-                    request={item}
-                    onAccept={() => handleRespond(item.id, true)}
-                    onReject={() => handleRespond(item.id, false)}
-                  />
-                ))
+                received.map((item) => {
+                  if (!item.profile) return null;
+                  return (
+                    <FriendRequestItem
+                      key={item.id}
+                      request={item}
+                      onAccept={() => handleRespond(item.id, true)}
+                      onReject={() => handleRespond(item.id, false)}
+                    />
+                  );
+                })
               )}
 
               {/* Section envoyées */}
