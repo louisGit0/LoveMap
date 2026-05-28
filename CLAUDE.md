@@ -153,12 +153,20 @@ lovemap/
 | `point_partners` | point_id, partner_id, status (pending/accepted/rejected) | Consentement du partenaire tagué |
 | `friendships` | requester_id, addressee_id, status (pending/accepted/rejected/blocked) | Relation bidirectionnelle |
 
+### Fonctions SQL exposées
+
+| Fonction | Signature | Retour | Usage |
+|----------|-----------|--------|-------|
+| `create_point` | `(p_creator_id, p_longitude, p_latitude, p_note, p_comment?, p_duration_minutes?, p_happened_at?, p_address?)` | `UUID` | Crée un point avec PostGIS `ST_MakePoint` côté serveur — appelée via `supabase.rpc('create_point', {...})` |
+| `search_users` | `(query TEXT)` | `SETOF profiles` | Recherche d'utilisateurs — exclut `date_of_birth` et `push_token` |
+
 ### Règles métier critiques
 
 - `is_visible` passe à `TRUE` **uniquement** via le trigger SQL `on_partner_consent` — ne jamais le modifier côté client directement
 - Un point sans partenaire tagué reste `is_visible = FALSE` — visible uniquement par son créateur via RLS
 - RLS est actif sur toutes les tables — ne jamais utiliser la service key côté client
-- `search_users(query)` est la seule fonction exposée pour chercher des utilisateurs (exclut date_of_birth et push_token)
+- **La création de point utilise exclusivement la RPC `create_point`** — ne jamais faire d'insert direct sur `points` depuis le client
+- **La carte MAP s'affiche toujours**, sans condition sur le nombre de points — un hint non-bloquant s'affiche si aucun point
 
 ---
 
@@ -253,6 +261,8 @@ Le toggle dark/light est dans `app/(app)/profile/index.tsx` via `useThemeStore` 
 | 8 | 🔲 À faire | Audit sécurité |
 | 9 | ✅ Terminé | Build EAS natif iOS #6, soumis à TestFlight (28/05/2026) |
 | 10 | ✅ Terminé | Build EAS natif iOS #7 — fix cameraPermission expo-image-picker, soumis à TestFlight (28/05/2026) |
+| R5 | ✅ Terminé | Round 5 — C1: create_point RPC v2 (UUID) + partner tagging dans hook · C2: carte toujours visible (hint non-bloquant) · C3: ImagePicker import statique |
+| 11 | 🔄 En cours | Build EAS natif iOS #8 — R5 C3 expo-image-picker import statique (28/05/2026) |
 
 > Mettre à jour ce tableau à chaque phase complétée.
 

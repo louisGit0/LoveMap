@@ -18,8 +18,7 @@ import { router } from 'expo-router';
 import { Snackbar } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as FileSystem from 'expo-file-system';
-let ImagePicker: typeof import('expo-image-picker') | null = null;
-try { ImagePicker = require('expo-image-picker'); } catch { ImagePicker = null; }
+import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '@/hooks/useAuth';
 import { usePoints } from '@/hooks/usePoints';
 import { useFriends } from '@/hooks/useFriends';
@@ -117,7 +116,6 @@ export default function ProfileScreen() {
 
   /* ── Upload avatar ── */
   async function handlePickAvatar() {
-    if (!ImagePicker) { setSnackbar('Galerie non disponible dans ce build.'); return; }
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
       Alert.alert(
