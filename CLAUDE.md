@@ -185,7 +185,7 @@ lovemap/
 11. **Ordre des gardes dans `index.tsx`** — uniquement : `isLoading` → `!session` → redirect map. Simple et sans état d'age gate.
 12. **Création de point via RPC uniquement** — ne jamais insérer directement dans `points` avec un WKT géométrique côté client. Toujours utiliser `supabase.rpc('create_point', { p_longitude, p_latitude, ... })` — la fonction SQL gère `ST_SetSRID(ST_MakePoint(...), 4326)` côté serveur.
 13. **Tab bar : fond opaque** — ne jamais remettre un `BlurView` sur la tab bar. Utiliser `backgroundColor: isDark ? '#111114' : '#f2f2f7'` dans `makeStyles`. La lisibilité prime.
-14. **Permissions manquantes (image picker)** — quand une permission est refusée, afficher un `Alert` natif avec un bouton "Ouvrir les réglages" appelant `Linking.openSettings()`. Ne pas se contenter d'un Snackbar.
+14. **`requestMediaLibraryPermissionsAsync()` interdit** — NE JAMAIS appeler cette fonction. Sur iOS 14+, `launchImageLibraryAsync()` utilise PHPickerViewController qui gère sa propre autorisation. Appeler `requestMediaLibraryPermissionsAsync()` déclenche un crash natif iOS non catchable. Appeler `launchImageLibraryAsync()` directement dans un try/catch.
 15. **`expo-image-picker` et `expo-file-system` : require dynamique OBLIGATOIRE à l'intérieur de la fonction** — Ces deux modules crashent l'écran "Moi" si importés statiquement OU via require au niveau module. Le seul pattern sûr est :
 ```typescript
 async function handlePickAvatar() {
@@ -277,7 +277,8 @@ Le toggle dark/light est dans `app/(app)/profile/index.tsx` via `useThemeStore` 
 | TF3 | ✅ Terminé | Hotfix OTA — ImagePicker revenu en dynamic require (try/catch) — fix crash onglet "Moi" (28/05/2026) |
 | TF4 | ✅ Terminé | Fix crash natif onglet "Moi" — expo-file-system et expo-image-picker passés en dynamic require — Build EAS natif iOS #11, soumis à TestFlight (28/05/2026) |
 | TF5 | ✅ Terminé | Build #13 : regression ImagePicker (import statique réintroduit par erreur) → crash onglet "Moi" revenu + création de point toujours échouée |
-| TF6 | 🔄 En cours | Build #14 — fix définitif : ImagePicker dynamic require dans fonction + createPoint robuste aux deux signatures RPC (007 TABLE / 008 UUID) + erreurs Supabase visibles dans snackbar |
+| TF6 | ✅ Terminé | Build #14 — fix définitif : ImagePicker dynamic require dans fonction + createPoint robuste aux deux signatures RPC (007 TABLE / 008 UUID) + erreurs Supabase visibles dans snackbar |
+| TF7 | ✅ Terminé | Build #15 — migration 009 (colonnes address+happened_at + create_point UUID définitif) + suppression requestMediaLibraryPermissionsAsync() crash avatar |
 
 > Mettre à jour ce tableau à chaque phase complétée.
 

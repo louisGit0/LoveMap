@@ -12,7 +12,6 @@ import {
   Platform,
   Switch,
   Alert,
-  Linking,
 } from 'react-native';
 import { router } from 'expo-router';
 import { Snackbar } from 'react-native-paper';
@@ -123,25 +122,20 @@ export default function ProfileScreen() {
       setSnackbar('Galerie indisponible : ' + (e instanceof Error ? e.message : String(e)));
       return;
     }
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== 'granted') {
-      Alert.alert(
-        'Accès galerie refusé',
-        'Pour choisir un portrait, autorisez l\'accès à la galerie dans les réglages.',
-        [
-          { text: 'Annuler', style: 'cancel' },
-          { text: 'Ouvrir les réglages', onPress: () => Linking.openSettings() },
-        ],
-      );
+    // iOS 14+ : PHPickerViewController gère sa propre permission — pas besoin de requestMediaLibraryPermissionsAsync()
+    let result: import('expo-image-picker').ImagePickerResult;
+    try {
+      result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.7,
+      });
+    } catch (e) {
+      setSnackbar('Impossible d\'ouvrir la galerie.');
       return;
     }
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'],
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.7,
-    });
-    if (result.canceled || !result.assets[0]) return;
+    if (result.canceled || !result.assets?.[0]) return;
     setUploadingAvatar(true);
     try {
       const asset = result.assets[0];
