@@ -62,29 +62,6 @@ export default function MapScreen() {
     ]);
   }
 
-  if (!loading && points.length === 0 && !viewingFriendId) {
-    return (
-      <View style={[styles.emptyScreen, { paddingTop: insets.top }]}>
-        <View style={styles.emptyTopBar}>
-          <FriendSelector
-            isViewingFriend={false}
-            onSelectFriend={(id, name) => setViewingFriend(id, name)}
-            onSelectSelf={() => setViewingFriend(null)}
-          />
-        </View>
-        <View style={styles.emptyContent}>
-          <Text style={styles.emptyTitle}>La page{'\n'}n'attend que vous.</Text>
-          <Text style={styles.emptyDesc}>
-            Marquez un moment, attribuez-lui une note, et tagguez la personne avec qui vous l'avez vécu — son consentement scellera le souvenir.
-          </Text>
-          <TouchableOpacity onPress={handleFabPress} activeOpacity={0.75}>
-            <Text style={styles.emptyLink}>Inscrire mon premier moment {'>'}</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    );
-  }
-
   return (
     <View style={styles.container}>
       <AppMapView onLongPress={viewingFriendId ? undefined : handleLongPress} onCenterChange={setCenterCoords}>
@@ -126,6 +103,13 @@ export default function MapScreen() {
         </TouchableOpacity>
       )}
 
+      {/* Hint discret quand aucun point — non bloquant */}
+      {!loading && points.length === 0 && !viewingFriendId && (
+        <View style={[styles.emptyHint, { bottom: insets.bottom + 148 }]} pointerEvents="none">
+          <Text style={styles.emptyHintText}>Appuyez sur + pour inscrire votre premier moment</Text>
+        </View>
+      )}
+
       <Snackbar visible={!!snackbar} onDismiss={() => setSnackbar(null)} duration={2500} style={styles.snackbar}>
         {snackbar}
       </Snackbar>
@@ -141,49 +125,21 @@ const makeStyles = (T: Theme) => StyleSheet.create({
     alignItems: 'center',
     backgroundColor: 'rgba(0,0,0,0.3)',
   },
-  emptyScreen: {
-    flex: 1,
-    backgroundColor: T.bg,
-  },
-  emptyTopBar: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: T.border,
-  },
-  emptyContent: {
-    flex: 1,
+  emptyHint: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
     alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 32,
+    pointerEvents: 'none',
   },
-  emptyTitle: {
-    fontFamily: F.serifLight,
-    fontStyle: 'italic',
-    fontSize: 38,
-    lineHeight: 40,
-    letterSpacing: -1,
-    color: T.text,
+  emptyHintText: {
+    fontFamily: F.mono,
+    fontSize: 10,
+    letterSpacing: 1.5,
+    textTransform: 'uppercase',
+    color: 'rgba(255,255,255,0.35)',
     textAlign: 'center',
-    marginBottom: 16,
-  },
-  emptyDesc: {
-    fontFamily: F.sans,
-    fontSize: 14,
-    color: T.textFaint,
-    textAlign: 'center',
-    lineHeight: 21,
-    marginBottom: 20,
-    paddingHorizontal: 8,
-  },
-  emptyLink: {
-    fontFamily: F.serif,
-    fontStyle: 'italic',
-    fontSize: 16,
-    color: T.textDim,
-    textDecorationLine: 'underline',
+    paddingHorizontal: 40,
   },
   fab: {
     position: 'absolute',
