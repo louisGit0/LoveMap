@@ -50,12 +50,7 @@
     "plugins": [
       "expo-router",
       "expo-location",
-      [
-        "@rnmapbox/maps",
-        {
-          "RNMapboxMapsDownloadToken": "$(MAPBOX_DOWNLOAD_TOKEN)"
-        }
-      ],
+      "@rnmapbox/maps",
       [
         "expo-notifications",
         {
