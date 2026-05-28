@@ -29,9 +29,6 @@ import { F } from '@/constants/fonts';
 import type { Theme } from '@/constants/theme';
 import { IcoPlus, IcoCheck, IcoClose, IcoSun, IcoMoon } from '@/components/icons';
 
-let ImagePicker: typeof import('expo-image-picker') | null = null;
-try { ImagePicker = require('expo-image-picker'); } catch { ImagePicker = null; }
-
 const MONTHS_FR = [
   'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
   'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre',
@@ -117,6 +114,8 @@ export default function ProfileScreen() {
 
   /* ── Upload avatar ── */
   async function handlePickAvatar() {
+    let ImagePicker: typeof import('expo-image-picker') | null = null;
+    try { ImagePicker = require('expo-image-picker'); } catch { ImagePicker = null; }
     if (!ImagePicker) {
       Alert.alert(
         'Galerie indisponible',
