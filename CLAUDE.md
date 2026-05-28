@@ -265,7 +265,7 @@ Le toggle dark/light est dans `app/(app)/profile/index.tsx` via `useThemeStore` 
 | R5 | ✅ Terminé | Round 5 — C1: create_point RPC v2 (UUID) + partner tagging dans hook · C2: carte toujours visible (hint non-bloquant) · C3: ImagePicker import statique |
 | 11 | ✅ Terminé | Build EAS natif iOS #8 — R5 C3 expo-image-picker import statique, soumis à TestFlight (28/05/2026) |
 | TF3 | ✅ Terminé | Hotfix OTA — ImagePicker revenu en dynamic require (try/catch) — fix crash onglet "Moi" (28/05/2026) |
-| TF4 | ⏳ En attente build | Fix crash natif onglet "Moi" — expo-file-system et expo-image-picker passés en dynamic require — build iOS #9 bloqué quota EAS (reset 01/06/2026) |
+| TF4 | ✅ Terminé | Fix crash natif onglet "Moi" — expo-file-system et expo-image-picker passés en dynamic require — Build EAS natif iOS #11, soumis à TestFlight (28/05/2026) |
 
 > Mettre à jour ce tableau à chaque phase complétée.
 
