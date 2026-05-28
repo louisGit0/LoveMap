@@ -58,11 +58,13 @@ eas update --branch main --message "description courte de la modification"
 | TypeScript | strict | Langage (pas de `any` sans justification) |
 | Expo Router | v6 (file-based) | Navigation |
 | Supabase JS | v2 | Backend, Auth, DB, Realtime |
-| react-native-maps | 1.20.1 | Carte interactive (mobile uniquement) |
+| @rnmapbox/maps | 10.3.1 | Carte interactive Mapbox (mobile uniquement) |
 | Zustand | v4 | State management |
 | React Native Paper | v5 | Composants UI (usage réduit — UI principale via theme.ts) |
 | expo-location | ~19.0.8 | Géolocalisation |
 | expo-notifications | ~0.32.16 | Push notifications |
+| expo-blur | latest | Tab bar translucent BlurView |
+| expo-haptics | latest | Retour haptique sur actions clés |
 | react-dom + react-native-web | 19.1.0 / ^0.21.0 | Support web Expo |
 
 ---
@@ -85,32 +87,34 @@ lovemap/
 │       ├── point/list.tsx        # Liste chronologique des moments
 │       ├── friends/index.tsx     # "Cercle" — liste amis + recherche
 │       ├── friends/requests.tsx  # Demandes d'amitié
-│       ├── profile/index.tsx     # Profil + stats
-│       └── profile/settings.tsx  # Paramètres + toggle dark/light + suppression compte
+│       └── profile/index.tsx     # Profil + stats + toggle thème + email/mdp/delete (settings fusionné)
 ├── components/
 │   ├── map/
-│   │   ├── AppMapView.tsx        # Carte mobile (react-native-maps)
+│   │   ├── AppMapView.tsx        # Carte mobile (@rnmapbox/maps — MapboxGL.MapView + Camera)
 │   │   ├── AppMapView.web.tsx    # Placeholder web
-│   │   ├── PointMarker.tsx       # Marker mobile
+│   │   ├── PointMarker.tsx       # Marker mobile (MapboxGL.MarkerView)
 │   │   ├── PointMarker.web.tsx   # Stub web (null)
-│   │   ├── HeatmapLayer.tsx      # Heatmap mobile
+│   │   ├── HeatmapLayer.tsx      # Heatmap mobile (MapboxGL.ShapeSource + HeatmapLayer)
 │   │   ├── HeatmapLayer.web.tsx  # Stub web (null)
 │   │   ├── MapHeader.tsx         # Toggle pins/heatmap
 │   │   └── FriendSelector.tsx    # Sélecteur d'ami pour filtre carte
-│   ├── point/                    # PointForm, PointListItem, PhotoPicker, FiltersBottomSheet
+│   ├── point/                    # PointForm, PointListItem (PressableScale), PhotoPicker, FiltersBottomSheet
 │   ├── friends/                  # FriendItem, FriendRequestItem
 │   └── ui/
 │       ├── Button.tsx            # Pill button custom (primary/ghost)
 │       ├── Input.tsx             # Input avec tokens Bold
-│       └── SkeletonItem.tsx      # Skeleton loader animé (SkeletonItem + SkeletonRow)
+│       ├── SkeletonItem.tsx      # Skeleton loader animé (SkeletonItem + SkeletonRow)
+│       ├── PressableScale.tsx    # Animated.spring scale on press (remplace TouchableOpacity)
+│       └── PageHeader.tsx        # Header réutilisable (eyebrow + titre + back + slot droit)
 ├── constants/
-│   ├── config.ts                 # MIN_AGE = 18
+│   ├── config.ts                 # MIN_AGE, APP_NAME, MAPBOX_STYLE, COLORS (palette fixe)
 │   └── theme.ts                  # Design tokens Bold (T.bg, T.primary, T.pill…)
 ├── lib/
 │   ├── supabase.ts               # Client Supabase initialisé + typé
 │   ├── notifications.ts          # Helpers Expo Push
-│   └── react-native-maps.web.js  # Stub complet react-native-maps pour web
-├── metro.config.js               # Alias react-native-maps → stub sur platform=web
+│   ├── react-native-maps.web.js  # Stub react-native-maps pour web (conservé pour metro compat)
+│   └── rnmapbox-maps.web.js      # Stub @rnmapbox/maps pour web
+├── metro.config.js               # Alias react-native-maps + @rnmapbox/maps → stubs sur platform=web
 ├── stores/                       # Zustand
 │   ├── authStore.ts              # session, user, profile (ageVerified supprimé — géré dans register.tsx)
 │   ├── mapStore.ts               # points, viewMode (pins/heatmap)
@@ -128,7 +132,9 @@ lovemap/
 │   ├── 001_initial_schema.sql    # Schéma complet + RLS
 │   ├── 002_partner_edit.sql
 │   ├── 003_point_photos.sql
-│   └── 004_point_address.sql
+│   ├── 004_point_address.sql
+│   ├── 005_age_check_trigger.sql # Trigger âge ≥ 18 côté serveur
+│   └── 006_profiles_pending_rls.sql # profiles_select élargi à status IN ('pending','accepted')
 └── CLAUDE.md                     # Ce fichier — à consulter et maintenir
 ```
 
@@ -182,7 +188,7 @@ Les familles de polices sont dans `constants/fonts.ts` (objet `F`). **Ne pas har
 const T = useTheme();
 const styles = useMemo(() => makeStyles(T), [T]);
 ```
-Le toggle dark/light est dans `app/(app)/profile/settings.tsx` via `useThemeStore`.
+Le toggle dark/light est dans `app/(app)/profile/index.tsx` via `useThemeStore` (switch IcoSun/IcoMoon). `settings.tsx` **n'existe plus** — tout est fusionné dans `profile/index.tsx`.
 
 | Token | Dark | Light | Usage |
 |-------|------|-------|-------|
@@ -239,8 +245,9 @@ Le toggle dark/light est dans `app/(app)/profile/settings.tsx` via `useThemeStor
 | MAJ | ✅ Terminé | Grosse mise à jour finale — Blocs A+C+D+E (voir détail ci-dessous) |
 | TF1 | ✅ Terminé | Bugfix TestFlight — age gate bypass (index.tsx + trigger SQL), network request failed (timeout + ATS), bouton retour login/register |
 | TF2 | ✅ Terminé | Round 2 — age gate dans register (stepper 2 étapes), null guards requests.tsx, filtres bottom sheet list.tsx, profil amélioré (avatar 80px, édition inline, section actions) |
+| R3 | ✅ Terminé | Round 3 — C1: RLS profiles pending + fix requête requests.tsx · C2: profil unifié (settings fusionné, toggle thème IcoSun/IcoMoon) · C3: migration @rnmapbox/maps (AppMapView + PointMarker + HeatmapLayer + point/new + point/[id]) · C4: BlurView tab bar, PressableScale, PageHeader, COLORS, expo-haptics |
 | 8 | 🔲 À faire | Audit sécurité |
-| 9 | 🔲 À faire | Déploiement EAS |
+| 9 | 🔲 À faire | Build EAS natif (nécessaire pour @rnmapbox/maps — voir variables d'env ci-dessous) |
 
 > Mettre à jour ce tableau à chaque phase complétée.
 
@@ -287,10 +294,17 @@ Le toggle dark/light est dans `app/(app)/profile/settings.tsx` via `useThemeStor
 ```
 EXPO_PUBLIC_SUPABASE_URL=https://xxxx.supabase.co
 EXPO_PUBLIC_SUPABASE_ANON_KEY=eyJhbGc...
-EXPO_PUBLIC_GOOGLE_MAPS_API_KEY=AIzaSy...
+EXPO_PUBLIC_MAPBOX_TOKEN=pk.eyJ1...          # Token public Mapbox (affiché dans la carte)
+EXPO_PUBLIC_MAPBOX_STYLE=mapbox://styles/mapbox/dark-v11  # Optionnel — style de carte personnalisé
 ```
 
 Fichier : `.env.local` à la racine (jamais commité — présent dans `.gitignore`)
+
+**Secret EAS requis pour le build natif :**
+```bash
+eas secret:create --scope project --name MAPBOX_DOWNLOAD_TOKEN --value "sk.eyJ1..."
+```
+Le `MAPBOX_DOWNLOAD_TOKEN` (`sk.xxx`) est le token secret Mapbox pour télécharger le SDK natif pendant le build EAS. À faire une seule fois avant `eas build`.
 
 ---
 
