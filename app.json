@@ -62,7 +62,8 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "LoveMap accède à votre galerie pour choisir un portrait."
+          "photosPermission": "LoveMap accède à votre galerie pour choisir un portrait.",
+          "cameraPermission": "LoveMap accède à votre appareil photo pour prendre un portrait."
         }
       ]
     ],

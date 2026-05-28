@@ -12,6 +12,7 @@ import {
   Platform,
   Switch,
   Alert,
+  Linking,
 } from 'react-native';
 import { router } from 'expo-router';
 import { Snackbar } from 'react-native-paper';
@@ -118,7 +119,17 @@ export default function ProfileScreen() {
   async function handlePickAvatar() {
     if (!ImagePicker) { setSnackbar('Galerie non disponible dans ce build.'); return; }
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== 'granted') { setSnackbar('Permission galerie refusée.'); return; }
+    if (status !== 'granted') {
+      Alert.alert(
+        'Accès galerie refusé',
+        'Pour choisir un portrait, autorisez l\'accès à la galerie dans les réglages.',
+        [
+          { text: 'Annuler', style: 'cancel' },
+          { text: 'Ouvrir les réglages', onPress: () => Linking.openSettings() },
+        ],
+      );
+      return;
+    }
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ['images'],
       allowsEditing: true,
