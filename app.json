@@ -51,6 +51,12 @@
       "expo-router",
       "expo-location",
       [
+        "@rnmapbox/maps",
+        {
+          "RNMapboxMapsDownloadToken": "$(MAPBOX_DOWNLOAD_TOKEN)"
+        }
+      ],
+      [
         "expo-notifications",
         {
           "icon": "./assets/images/notification-icon.png",

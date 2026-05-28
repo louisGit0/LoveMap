@@ -1,119 +1,146 @@
-import React, { useRef, useState, useEffect } from 'react';
-import { StyleSheet, Platform, TouchableOpacity, Text, View } from 'react-native';
-import MapView, { PROVIDER_GOOGLE, Region } from 'react-native-maps';
+import React, { useRef, useState, useEffect, useMemo } from 'react';
+import { StyleSheet, TouchableOpacity, Text, View } from 'react-native';
+import MapboxGL from '@rnmapbox/maps';
 import * as Location from 'expo-location';
-import { Linking } from 'react-native';
+import { useTheme } from '@/hooks/useTheme';
+import { F } from '@/constants/fonts';
+import { APP_CONFIG } from '@/constants/config';
+import type { Theme } from '@/constants/theme';
 
-const PARIS = { latitude: 48.8566, longitude: 2.3522, latitudeDelta: 0.05, longitudeDelta: 0.05 };
-const DISTANCE_THRESHOLD = 0.1; // degrés — ~10 km
+// Initialiser le token public Mapbox (clé pk.xxx depuis .env.local)
+MapboxGL.setAccessToken(process.env.EXPO_PUBLIC_MAPBOX_TOKEN as string ?? '');
+
+const PARIS: [number, number] = [2.3522, 48.8566]; // [longitude, latitude] — ordre GeoJSON
+const DEFAULT_ZOOM = 12;
+const DISTANCE_THRESHOLD = 0.1; // degrés ≈ 10 km
 
 interface Props {
   children?: React.ReactNode;
   onLongPress?: (coords: { latitude: number; longitude: number }) => void;
   onCenterChange?: (coords: { latitude: number; longitude: number }) => void;
   scrollEnabled?: boolean;
-  initialRegion?: Region;
+  initialRegion?: { latitude: number; longitude: number; latitudeDelta?: number; longitudeDelta?: number };
 }
 
-export function AppMapView({ children, onLongPress, onCenterChange, scrollEnabled = true, initialRegion }: Props) {
-  const mapRef = useRef<MapView>(null);
-  const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
-  const [region, setRegion] = useState<Region>(initialRegion ?? PARIS);
+export function AppMapView({
+  children,
+  onLongPress,
+  onCenterChange,
+  scrollEnabled = true,
+  initialRegion,
+}: Props) {
+  const T = useTheme();
+  const styles = useMemo(() => makeStyles(T), [T]);
+  const cameraRef = useRef<MapboxGL.Camera>(null);
+  const [userCoords, setUserCoords] = useState<[number, number] | null>(null);
+  const [initialCenter] = useState<[number, number]>(
+    initialRegion
+      ? [initialRegion.longitude, initialRegion.latitude]
+      : PARIS,
+  );
   const [showRecenter, setShowRecenter] = useState(false);
 
   useEffect(() => {
     (async () => {
       const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') {
-        // Pas de localisation — on reste sur Paris
-        return;
-      }
-      const location = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
-      const coords = {
-        latitude: location.coords.latitude,
-        longitude: location.coords.longitude,
-      };
-      setUserLocation(coords);
+      if (status !== 'granted') return;
+      const loc = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.Balanced,
+      });
+      const coords: [number, number] = [loc.coords.longitude, loc.coords.latitude];
+      setUserCoords(coords);
       if (!initialRegion) {
-        const newRegion = { ...coords, latitudeDelta: 0.02, longitudeDelta: 0.02 };
-        setRegion(newRegion);
-        mapRef.current?.animateToRegion(newRegion, 800);
+        cameraRef.current?.setCamera({
+          centerCoordinate: coords,
+          zoomLevel: DEFAULT_ZOOM,
+          animationDuration: 800,
+          animationMode: 'flyTo',
+        });
       }
     })();
   }, []);
 
-  function handleRegionChange(r: Region) {
-    setRegion(r);
-    onCenterChange?.({ latitude: r.latitude, longitude: r.longitude });
-    if (userLocation) {
-      const latDiff = Math.abs(r.latitude - userLocation.latitude);
-      const lngDiff = Math.abs(r.longitude - userLocation.longitude);
-      setShowRecenter(latDiff > DISTANCE_THRESHOLD || lngDiff > DISTANCE_THRESHOLD);
+  function handleCameraChanged(state: { properties: { center: [number, number] } }) {
+    const [lng, lat] = state.properties.center;
+    onCenterChange?.({ latitude: lat, longitude: lng });
+    if (userCoords) {
+      const dLat = Math.abs(lat - userCoords[1]);
+      const dLng = Math.abs(lng - userCoords[0]);
+      setShowRecenter(dLat > DISTANCE_THRESHOLD || dLng > DISTANCE_THRESHOLD);
+    }
+  }
+
+  function handleLongPress(feature: { geometry: { type: string; coordinates: number[] } }) {
+    if (feature?.geometry?.type === 'Point') {
+      const [lng, lat] = feature.geometry.coordinates;
+      onLongPress?.({ latitude: lat, longitude: lng });
     }
   }
 
   function handleRecenter() {
-    if (userLocation) {
-      const newRegion = { ...userLocation, latitudeDelta: 0.02, longitudeDelta: 0.02 };
-      mapRef.current?.animateToRegion(newRegion, 600);
-      setShowRecenter(false);
-    }
+    if (!userCoords) return;
+    cameraRef.current?.setCamera({
+      centerCoordinate: userCoords,
+      zoomLevel: DEFAULT_ZOOM,
+      animationDuration: 600,
+      animationMode: 'flyTo',
+    });
+    setShowRecenter(false);
   }
 
   return (
     <View style={StyleSheet.absoluteFillObject}>
-      <MapView
-        ref={mapRef}
+      <MapboxGL.MapView
         style={StyleSheet.absoluteFillObject}
-        provider={Platform.OS === 'android' ? PROVIDER_GOOGLE : undefined}
-        showsUserLocation
-        showsMyLocationButton={false}
-        initialRegion={region}
-        onRegionChangeComplete={handleRegionChange}
-        onLongPress={(e) => onLongPress?.(e.nativeEvent.coordinate)}
+        styleURL={APP_CONFIG.MAPBOX_STYLE}
         scrollEnabled={scrollEnabled}
-        customMapStyle={darkMapStyle}
+        onCameraChanged={handleCameraChanged as any}
+        onLongPress={handleLongPress as any}
+        compassEnabled={false}
+        logoEnabled={false}
+        attributionEnabled={false}
       >
+        <MapboxGL.Camera
+          ref={cameraRef}
+          zoomLevel={DEFAULT_ZOOM}
+          centerCoordinate={initialCenter}
+          animationMode="none"
+          animationDuration={0}
+        />
+        <MapboxGL.UserLocation visible renderMode="native" />
         {children}
-      </MapView>
+      </MapboxGL.MapView>
 
       {showRecenter && (
-        <TouchableOpacity style={styles.recenterButton} onPress={handleRecenter} activeOpacity={0.8}>
-          <Text style={styles.recenterText}>📍 Recentrer</Text>
+        <TouchableOpacity
+          style={styles.recenterButton}
+          onPress={handleRecenter}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.recenterText}>Recentrer</Text>
         </TouchableOpacity>
       )}
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  recenterButton: {
-    position: 'absolute',
-    bottom: 100,
-    alignSelf: 'center',
-    backgroundColor: '#1a1a1a',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: '#e91e8c',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.4,
-    shadowRadius: 4,
-    elevation: 5,
-  },
-  recenterText: {
-    color: '#e91e8c',
-    fontWeight: '600',
-    fontSize: 13,
-  },
-});
-
-const darkMapStyle = [
-  { elementType: 'geometry', stylers: [{ color: '#1a1a2e' }] },
-  { elementType: 'labels.text.fill', stylers: [{ color: '#8ec3b9' }] },
-  { elementType: 'labels.text.stroke', stylers: [{ color: '#1a3646' }] },
-  { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#304a7d' }] },
-  { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#0d2137' }] },
-];
+const makeStyles = (T: Theme) =>
+  StyleSheet.create({
+    recenterButton: {
+      position: 'absolute',
+      bottom: 100,
+      alignSelf: 'center',
+      backgroundColor: T.surface,
+      borderWidth: 1,
+      borderColor: T.primary,
+      paddingHorizontal: 16,
+      paddingVertical: 10,
+    },
+    recenterText: {
+      fontFamily: F.mono,
+      fontSize: 10,
+      letterSpacing: 2,
+      textTransform: 'uppercase',
+      color: T.primary,
+    },
+  });

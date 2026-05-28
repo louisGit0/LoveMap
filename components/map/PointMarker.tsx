@@ -7,7 +7,7 @@ import {
   TouchableOpacity,
   TouchableWithoutFeedback,
 } from 'react-native';
-import { Marker } from 'react-native-maps';
+import MapboxGL from '@rnmapbox/maps';
 import { router } from 'expo-router';
 import Svg, { Circle, Line } from 'react-native-svg';
 import { useTheme } from '@/hooks/useTheme';
@@ -69,13 +69,15 @@ export function PointMarker({ point, isOwner = false, onDelete }: Props) {
 
   return (
     <>
-      <Marker
-        coordinate={{ latitude: point.latitude, longitude: point.longitude }}
-        onPress={() => setModalVisible(true)}
+      <MapboxGL.MarkerView
+        id={point.id}
+        coordinate={[point.longitude, point.latitude]}
         anchor={{ x: 0.5, y: 1 }}
       >
-        <PinIcon T={T} />
-      </Marker>
+        <TouchableOpacity onPress={() => setModalVisible(true)} activeOpacity={0.8}>
+          <PinIcon T={T} />
+        </TouchableOpacity>
+      </MapboxGL.MarkerView>
 
       <Modal
         visible={modalVisible}
