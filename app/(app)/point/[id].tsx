@@ -16,6 +16,7 @@ import { DatePickerModal } from 'react-native-paper-dates';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import MapboxGL from '@rnmapbox/maps';
 import { supabase } from '@/lib/supabase';
+import { haptics } from '@/lib/haptics';
 import { APP_CONFIG } from '@/constants/config';
 import { useAuth } from '@/hooks/useAuth';
 import { usePoints } from '@/hooks/usePoints';
@@ -105,8 +106,8 @@ export default function PointDetail() {
         style: 'destructive',
         onPress: async () => {
           const ok = await deletePoint(point.id);
-          if (ok) router.replace('/(app)/map');
-          else setSnackbar('Erreur lors de la suppression.');
+          if (ok) { haptics.warn(); router.replace('/(app)/map'); }
+          else { haptics.error(); setSnackbar('Erreur lors de la suppression.'); }
         },
       },
     ]);
@@ -142,7 +143,8 @@ export default function PointDetail() {
       status: accept ? 'accepted' : 'rejected',
       responded_at: new Date().toISOString(),
     }).eq('id', partnerRecord.id);
-    if (error) { setSnackbar('Erreur lors de la réponse.'); return; }
+    if (error) { haptics.error(); setSnackbar('Erreur lors de la réponse.'); return; }
+    if (accept) haptics.success(); else haptics.warn();
     setSnackbar(accept ? 'Page scellée.' : 'Taguage refusé.');
     await loadPoint();
   }

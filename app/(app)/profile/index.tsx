@@ -23,6 +23,7 @@ import { useTheme } from '@/hooks/useTheme';
 import { useThemeStore } from '@/stores/themeStore';
 import { useAuthStore } from '@/stores/authStore';
 import { supabase } from '@/lib/supabase';
+import { haptics } from '@/lib/haptics';
 import { Input } from '@/components/ui/Input';
 import { F } from '@/constants/fonts';
 import type { Theme } from '@/constants/theme';
@@ -241,7 +242,8 @@ export default function ProfileScreen() {
           style: 'destructive',
           onPress: async () => {
             const { error } = await supabase.functions.invoke('delete-account', { body: { userId: user.id } });
-            if (error) { setSnackbar('Erreur lors de la suppression.'); return; }
+            if (error) { haptics.error(); setSnackbar('Erreur lors de la suppression.'); return; }
+            haptics.warn();
             reset();
             router.replace('/(auth)/login');
           },

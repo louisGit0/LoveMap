@@ -14,7 +14,7 @@ import { Snackbar } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import MapboxGL from '@rnmapbox/maps';
 import * as Location from 'expo-location';
-import * as Haptics from 'expo-haptics';
+import { haptics } from '@/lib/haptics';
 import { APP_CONFIG } from '@/constants/config';
 import { useAuth } from '@/hooks/useAuth';
 import { usePoints } from '@/hooks/usePoints';
@@ -118,12 +118,14 @@ export default function NewPoint() {
   async function handleSubmit() {
     if (!user) return;
     if (!selectedPartnerId) {
+      haptics.warn();
       setSnackbar('Vous devez taguer un partenaire pour sceller ce moment.');
       return;
     }
 
     // Vérification coordonnées avant soumission
     if (!latitude || !longitude || isNaN(latitude) || isNaN(longitude)) {
+      haptics.warn();
       setSnackbar('Position GPS manquante. Autorisez la localisation et réessayez.');
       return;
     }
@@ -151,6 +153,7 @@ export default function NewPoint() {
       });
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
+      haptics.error();
       setSnackbar('Erreur : ' + msg);
       setSubmitting(false);
       return;
@@ -163,7 +166,7 @@ export default function NewPoint() {
     }
 
     setSubmitting(false);
-    await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    haptics.success();
     router.replace('/(app)/map');
   }
 
