@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { View, ActivityIndicator } from 'react-native';
 import { Stack, router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { PaperProvider, MD3DarkTheme, MD3LightTheme } from 'react-native-paper';
 import { fr, registerTranslation } from 'react-native-paper-dates';
 import * as Notifications from 'expo-notifications';
@@ -26,6 +27,7 @@ import { useAuthStore } from '@/stores/authStore';
 import { useThemeStore } from '@/stores/themeStore';
 import { darkTheme, lightTheme } from '@/constants/theme';
 import { registerForPushNotificationsAsync, savePushToken } from '@/lib/notifications';
+import { ReanimatedSmokeTest } from '@/components/dev/ReanimatedSmokeTest';
 
 registerTranslation('fr', fr);
 
@@ -103,9 +105,12 @@ export default function RootLayout() {
   }
 
   return (
-    <PaperProvider theme={paperTheme}>
-      <StatusBar style={isDark ? 'light' : 'dark'} />
-      <Stack screenOptions={{ headerShown: false }} />
-    </PaperProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <PaperProvider theme={paperTheme}>
+        <StatusBar style={isDark ? 'light' : 'dark'} />
+        <Stack screenOptions={{ headerShown: false }} />
+        {__DEV__ ? <ReanimatedSmokeTest /> : null}
+      </PaperProvider>
+    </GestureHandlerRootView>
   );
 }
