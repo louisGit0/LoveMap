@@ -71,33 +71,33 @@ Quelles phases couvrent quels requirements. Rempli pendant la création de la ro
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| STAB-01 | — | Pending |
-| STAB-02 | — | Pending |
-| STAB-03 | — | Pending |
-| FOND-01 | — | Pending |
-| FOND-02 | — | Pending |
-| FOND-03 | — | Pending |
-| FOND-04 | — | Pending |
-| MAP-01 | — | Pending |
-| MAP-02 | — | Pending |
-| MAP-03 | — | Pending |
-| IOS-01 | — | Pending |
-| IOS-02 | — | Pending |
-| IOS-03 | — | Pending |
-| IOS-04 | — | Pending |
-| UI-01 | — | Pending |
-| UI-02 | — | Pending |
-| UI-03 | — | Pending |
-| UI-04 | — | Pending |
-| UI-05 | — | Pending |
-| UI-06 | — | Pending |
-| UI-07 | — | Pending |
-| UI-08 | — | Pending |
+| STAB-01 | Phase 1 | Pending |
+| STAB-02 | Phase 1 | Pending |
+| STAB-03 | Phase 1 | Pending |
+| FOND-01 | Phase 1 | Pending |
+| FOND-02 | Phase 1 | Pending |
+| FOND-03 | Phase 1 | Pending |
+| FOND-04 | Phase 1 | Pending |
+| IOS-03 | Phase 1 | Pending |
+| MAP-01 | Phase 2 | Pending |
+| MAP-02 | Phase 2 | Pending |
+| MAP-03 | Phase 2 | Pending |
+| UI-02 | Phase 2 | Pending |
+| IOS-01 | Phase 3 | Pending |
+| IOS-02 | Phase 3 | Pending |
+| UI-03 | Phase 3 | Pending |
+| UI-04 | Phase 3 | Pending |
+| UI-05 | Phase 4 | Pending |
+| UI-06 | Phase 4 | Pending |
+| UI-07 | Phase 4 | Pending |
+| UI-01 | Phase 5 | Pending |
+| UI-08 | Phase 5 | Pending |
+| IOS-04 | Phase 5 | Pending |
 
 **Coverage:**
 - v1 requirements: 22 total
-- Mapped to phases: 0 (à mapper par la roadmap)
-- Unmapped: 22 ⚠️
+- Mapped to phases: 22
+- Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-05-29*
