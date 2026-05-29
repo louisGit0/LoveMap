@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { router } from 'expo-router';
-import * as Haptics from 'expo-haptics';
+import { haptics } from '@/lib/haptics';
 import { useTheme } from '@/hooks/useTheme';
 import { F } from '@/constants/fonts';
 import type { Theme } from '@/constants/theme';
@@ -26,7 +26,7 @@ export function PointListItem({ point, index }: Props) {
     <PressableScale
       style={styles.container}
       onPress={() => {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        haptics.tap();
         router.push(`/(app)/point/${point.id}`);
       }}
     >
