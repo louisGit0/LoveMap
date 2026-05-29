@@ -39,7 +39,12 @@ See: .planning/PROJECT.md (updated 2026-05-29)
 
 ## Next Step
 
-`/gsd:plan-phase 1` — planifier la phase Stabilisation & Fondations.
+`/gsd:plan-phase 1` — planifier la phase Stabilisation & Fondations (CONTEXT.md prêt).
+
+## Session
+
+- **Stopped at:** Phase 1 context gathered
+- **Resume file:** `.planning/phases/01-stabilisation-fondations/01-CONTEXT.md`
 
 ---
-*Last updated: 2026-05-29 after initialization*
+*Last updated: 2026-05-29 after Phase 1 discuss-phase*
