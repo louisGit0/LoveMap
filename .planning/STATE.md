@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to execute
-stopped_at: Phase 1 planned (4 plans)
-last_updated: "2026-05-29T18:45:11.231Z"
+stopped_at: Phase 1 planifiée (4 plans prêts à exécuter)
+last_updated: "2026-05-29T19:32:43.807Z"
 progress:
   total_phases: 5
   completed_phases: 0
@@ -20,7 +20,7 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-29)
 
 **Core value:** L'expérience visuelle et tactile doit donner l'impression d'un produit iOS premium, beau, fluide et stable sur iPhone.
-**Current focus:** Phase 1 — Stabilisation & Fondations
+**Current focus:** Phase 01 — stabilisation-fondations
 
 ## Milestone
 

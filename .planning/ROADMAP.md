@@ -18,10 +18,10 @@ Chaque phase livre une tranche visible bout-en-bout. Les fondations techniques s
 4. `lib/haptics.ts` existe et déclenche le bon feedback sur les actions existantes (création, consentement, navigation, suppression).
 5. Le composant `AppText` borne le Dynamic Type et est prêt à remplacer les `Text` dans les écrans refondus.
 
-**Plans:** 4 plans
+**Plans:** 2/4 plans executed
 - [ ] 01-01-PLAN.md — Checklist de validation STAB-01/02/03 sur TestFlight (#15/#16)
-- [ ] 01-02-PLAN.md — Primitives JS : lib/haptics.ts + composant AppText (Dynamic Type borné)
-- [ ] 01-03-PLAN.md — Câblage haptique des actions clés existantes (IOS-03) + centralisation expo-haptics
+- [x] 01-02-PLAN.md — Primitives JS : lib/haptics.ts + composant AppText (Dynamic Type borné)
+- [x] 01-03-PLAN.md — Câblage haptique des actions clés existantes (IOS-03) + centralisation expo-haptics
 - [ ] 01-04-PLAN.md — Socle natif (reanimated v4 + gesture-handler + GestureHandlerRootView), runtimeVersion fingerprint, build #17
 
 ### Phase 2: Carte stylisée
