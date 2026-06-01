@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -42,26 +42,72 @@ function formatDateRelative(dateStr: string): string {
 
 /**
  * Pin View sans SVG — compatible PointAnnotation (rendu natif Mapbox, snapshot RN view).
- * Cercle extérieur + cercle intérieur rose + tige + point bas.
+ * Pin au repos raffiné (D-05) : tête 24, point intérieur 9, tige 8, point bas 4,
+ * halo statique léger (capturé dans le snapshot, pas une transform animée).
  */
 function PinIcon({ T }: { T: Theme }) {
   return (
-    <View style={{ width: 28, height: 38, alignItems: 'center' }}>
+    <View style={{ width: 28, height: 36, alignItems: 'center' }}>
       {/* Tête */}
       <View style={{
-        width: 26,
-        height: 26,
-        borderRadius: 13,
+        width: 24,
+        height: 24,
+        borderRadius: 12,
         backgroundColor: T.bg,
         borderWidth: 2,
         borderColor: T.primary,
         alignItems: 'center',
         justifyContent: 'center',
+        // Halo statique léger — figé dans le snapshot natif (pas d'animation)
+        shadowColor: T.primary,
+        shadowRadius: 6,
+        shadowOpacity: 0.5,
+        shadowOffset: { width: 0, height: 0 },
       }}>
-        <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: T.primary }} />
+        <View style={{ width: 9, height: 9, borderRadius: 4.5, backgroundColor: T.primary }} />
       </View>
       {/* Tige */}
-      <View style={{ width: 2, height: 9, backgroundColor: T.primary }} />
+      <View style={{ width: 2, height: 8, backgroundColor: T.primary }} />
+      {/* Point bas */}
+      <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: T.primary }} />
+    </View>
+  );
+}
+
+/**
+ * Variante sélectionnée (D-06) : tête agrandie (~×1.25) + anneau halo rose derrière.
+ * Rendue par RE-SNAPSHOT (toggle de variante + refresh()), JAMAIS par une transform
+ * animée sur les enfants de PointAnnotation (le snapshot natif gèlerait l'animation).
+ */
+function PinIconSelected({ T }: { T: Theme }) {
+  return (
+    <View style={{ width: 44, height: 56, alignItems: 'center' }}>
+      {/* Anneau halo + tête agrandie */}
+      <View style={{
+        width: 44,
+        height: 44,
+        borderRadius: 22,
+        backgroundColor: 'rgba(255,45,135,0.12)',
+        borderWidth: 1,
+        borderColor: 'rgba(255,45,135,0.45)',
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}>
+        <View style={{
+          width: 30,
+          height: 30,
+          borderRadius: 15,
+          backgroundColor: T.bg,
+          borderWidth: 2,
+          borderColor: T.primary,
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}>
+          <View style={{ width: 11, height: 11, borderRadius: 5.5, backgroundColor: T.primary }} />
+        </View>
+      </View>
+      {/* Tige */}
+      <View style={{ width: 2, height: 8, backgroundColor: T.primary }} />
       {/* Point bas */}
       <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: T.primary }} />
     </View>
@@ -72,21 +118,33 @@ export function PointMarker({ point, isOwner = false, onDelete }: Props) {
   const T = useTheme();
   const styles = useMemo(() => makeStyles(T), [T]);
   const [modalVisible, setModalVisible] = useState(false);
+  const [selected, setSelected] = useState(false);
+  const annRef = useRef<MapboxGL.PointAnnotation>(null);
+
+  // Sélection = re-snapshot (Pitfall 2) : refresh() obligatoire après le swap de variante.
+  // Sans refresh(), un simple changement d'état React ne re-déclenche pas toujours le snapshot natif.
+  useEffect(() => {
+    annRef.current?.refresh();
+  }, [selected]);
 
   return (
     <>
       {/*
        * PointAnnotation (annotation native Mapbox) — toujours visible quel que soit le zoom.
-       * MarkerView était une overlay RN qui disparaissait lors du re-rendu des tiles.
-       * onSelected remplace le TouchableOpacity interne.
+       * MarkerView était une overlay RN qui disparaissait lors du re-rendu des tiles (régression).
+       * Sélection : swap de variante (PinIcon ↔ PinIconSelected) + refresh() — PAS de transform
+       * animée sur les enfants (le snapshot natif la gèlerait → no-op).
        */}
       <MapboxGL.PointAnnotation
+        ref={annRef}
         id={point.id}
         coordinate={[point.longitude, point.latitude]}
         anchor={{ x: 0.5, y: 1 }}
-        onSelected={() => setModalVisible(true)}
+        selected={selected}
+        onSelected={() => { setSelected(true); setModalVisible(true); }}
+        onDeselected={() => setSelected(false)}
       >
-        <PinIcon T={T} />
+        {selected ? <PinIconSelected T={T} /> : <PinIcon T={T} />}
       </MapboxGL.PointAnnotation>
 
       <Modal
