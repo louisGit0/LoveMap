@@ -25,7 +25,7 @@ Validation manuelle uniquement (D-08) : aucun test automatisé. Cocher chaque it
 Résultat attendu : la galerie s'ouvre sans planter et l'avatar reflète la nouvelle image.
 
 - [ ] STAB-01 PASS
-- Anomalie observée : _______________________________________________
+- Anomalie observée : Crash au dès le clic sur l'avatar
 
 ---
 
@@ -41,7 +41,7 @@ Résultat attendu : la galerie s'ouvre sans planter et l'avatar reflète la nouv
 Résultat attendu : les pins restent visibles à tous les niveaux de dézoom (aucun pin ne disparaît au dézoom).
 
 - [ ] STAB-02 PASS
-- Anomalie observée : _______________________________________________
+- Anomalie observée : message d'erreur quand je clique sur sceller la page après avoir rentré tous les points donc je ne peux pas créer de point pour tester
 
 ---
 
@@ -60,11 +60,11 @@ Note : ce scénario nécessite **2 comptes** (testeur 1 et testeur 2). À défau
 Résultat attendu : le taguage en attente est visible côté testeur 2, qui peut le sceller ou le refuser.
 
 - [ ] STAB-03 PASS
-- Anomalie observée : _______________________________________________
+- Anomalie observée : message d'erreur quand je clique sur sceller la page après avoir rentré tous les points donc je ne peux pas créer de point pour tester
 
 ---
 
 ## Verdict global
 
 - [ ] Les 3 items passent → la séquence native D-07 est débloquée, le build #17 peut être produit (plan 01-04).
-- [ ] Au moins un item échoue → **blocage** : un correctif est nécessaire AVANT de lancer le build #17. Décrire l'anomalie par item ci-dessus.
+- [ X ] Au moins un item échoue → **blocage** : un correctif est nécessaire AVANT de lancer le build #17. Décrire l'anomalie par item ci-dessus.
