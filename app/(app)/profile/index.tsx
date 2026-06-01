@@ -142,8 +142,10 @@ export default function ProfileScreen() {
       const asset = result.assets[0];
       const ext = asset.uri.split('.').pop()?.toLowerCase() ?? 'jpg';
       const fileName = `${user!.id}.${ext}`;
-      let FileSystem: typeof import('expo-file-system') | null = null;
-      try { FileSystem = require('expo-file-system'); } catch { FileSystem = null; }
+      // SDK 54 : readAsStringAsync / EncodingType ont migré vers l'API legacy.
+      // L'import principal ne les expose plus (readAsStringAsync = undefined a l'exécution).
+      let FileSystem: typeof import('expo-file-system/legacy') | null = null;
+      try { FileSystem = require('expo-file-system/legacy'); } catch { FileSystem = null; }
       if (!FileSystem) {
         setSnackbar('Impossible de lire le fichier image.');
         return;
