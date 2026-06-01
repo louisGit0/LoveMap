@@ -4,7 +4,7 @@ milestone: v1.0
 milestone_name: milestone
 status: Phase 01 complete
 stopped_at: Phase 2 planifiée (5 plans, 2 vagues) — vérifiée 14/14
-last_updated: "2026-06-01T18:10:14.066Z"
+last_updated: "2026-06-01T18:13:04.281Z"
 progress:
   total_phases: 5
   completed_phases: 1
@@ -20,7 +20,7 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-29)
 
 **Core value:** L'expérience visuelle et tactile doit donner l'impression d'un produit iOS premium, beau, fluide et stable sur iPhone.
-**Current focus:** Phase 1 terminée → prochaine : Phase 2 (Carte stylisée)
+**Current focus:** Phase 02 — carte-stylis-e
 
 ## Milestone
 
