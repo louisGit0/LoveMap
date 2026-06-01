@@ -24,8 +24,9 @@ Validation manuelle uniquement (D-08) : aucun test automatisé. Cocher chaque it
 
 Résultat attendu : la galerie s'ouvre sans planter et l'avatar reflète la nouvelle image.
 
-- [ ] STAB-01 PASS
-- Anomalie observée : Crash au dès le clic sur l'avatar
+- [ ] STAB-01 PASS — EN ATTENTE du build #17 (correctif client, OTA inopérant)
+- Anomalie observée : Crash dès le clic sur l'avatar.
+- Correctif appliqué (code) : `expo-file-system` → API legacy (SDK 54 a déplacé `readAsStringAsync`/`EncodingType` vers `expo-file-system/legacy`). À valider sur le build #17. Si un crash natif du picker subsiste, fournir le log de crash device.
 
 ---
 
@@ -40,8 +41,8 @@ Résultat attendu : la galerie s'ouvre sans planter et l'avatar reflète la nouv
 
 Résultat attendu : les pins restent visibles à tous les niveaux de dézoom (aucun pin ne disparaît au dézoom).
 
-- [ ] STAB-02 PASS
-- Anomalie observée : message d'erreur quand je clique sur sceller la page après avoir rentré tous les points donc je ne peux pas créer de point pour tester
+- [X] STAB-02 PASS (re-testé sur #16 après correctif serveur)
+- Anomalie initiale (RÉSOLUE) : erreur au clic sur « sceller » — cause = récursion RLS `42P17` sur `points` (introduite par migration 010). Corrigée par migration 011 (fonction `SECURITY DEFINER is_pending_partner`). Re-test #16 : création de point OK, pins visibles au dézoom.
 
 ---
 
@@ -59,12 +60,12 @@ Note : ce scénario nécessite **2 comptes** (testeur 1 et testeur 2). À défau
 
 Résultat attendu : le taguage en attente est visible côté testeur 2, qui peut le sceller ou le refuser.
 
-- [ ] STAB-03 PASS
-- Anomalie observée : message d'erreur quand je clique sur sceller la page après avoir rentré tous les points donc je ne peux pas créer de point pour tester
+- [X] STAB-03 PASS (re-testé sur #16 après correctif serveur)
+- Anomalie initiale (RÉSOLUE) : même cause (récursion RLS `42P17`), corrigée par migration 011. Création + taguage partenaire fonctionnels sur #16.
 
 ---
 
 ## Verdict global
 
-- [ ] Les 3 items passent → la séquence native D-07 est débloquée, le build #17 peut être produit (plan 01-04).
-- [ X ] Au moins un item échoue → **blocage** : un correctif est nécessaire AVANT de lancer le build #17. Décrire l'anomalie par item ci-dessus.
+- [X] STAB-02 + STAB-03 corrigés (migration 011) et re-validés sur #16. STAB-01 corrigé en code (expo-file-system legacy) — validation finale sur le build #17.
+- Verdict initial : « Au moins un item échoue » → les correctifs ont été appliqués. Le build #17 est produit avec le correctif avatar + les fondations natives ; STAB-01 sera validé dessus.

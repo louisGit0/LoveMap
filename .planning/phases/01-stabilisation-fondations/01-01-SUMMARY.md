@@ -2,9 +2,12 @@
 phase: 01-stabilisation-fondations
 plan: 01
 status: complete-with-blockage
-verdict: FAIL
+verdict: FAIL-then-fixed
 requirements: [STAB-01, STAB-02, STAB-03]
 ---
+
+> **MISE À JOUR (résolution) :** les deux bugs bloquants ont été corrigés (voir section « Résolution » en bas).
+> STAB-02/03 re-validés PASS sur #16 (correctif serveur live). STAB-01 corrigé en code, validation finale sur le build #17 (en production au moment de l'écriture).
 
 # Summary 01-01 — Validation STAB (verdict : BLOCAGE)
 
@@ -41,4 +44,18 @@ Note : ces bugs préexistent dans les binaires #15/#16 et sont indépendants du 
 - `point/new.tsx handleSubmit` → `usePoints.createPoint` → RPC `supabase.rpc('create_point', {...})`. En cas d'erreur RPC, le message Supabase remonte tel quel au snackbar.
 - **Message d'erreur exact non capturé** par l'utilisateur — requis pour un diagnostic ferme. Hypothèses : mismatch de signature `create_point` après migrations 009/010, type de `p_happened_at`, ou RLS. À inspecter via le RPC réel (MCP Supabase) + le message device.
 
-## Self-Check: PASSED (deliverable produit, verdict capturé) — mais PHASE BLOQUÉE
+## Résolution (cycle de correctif gap-closure)
+
+### Bug B — STAB-02/03 (création de point) : CORRIGÉ + VALIDÉ
+- **Cause exacte** (message device fourni) : `[42P17] infinite recursion detected in policy for relation "points"`.
+- Récursion : `points_select` (migration 010) sous-requête `point_partners` ⟷ `point_partners_select` (001) sous-requête `points`. Le RPC `create_point` (SECURITY DEFINER) réussissait, mais le SELECT de relecture côté client déclenchait la récursion.
+- **Correctif** : migration `011_fix_points_rls_recursion.sql` — déplace la vérification « partenaire en attente » dans `is_pending_partner(uuid)` (SECURITY DEFINER, `search_path` épinglé, EXECUTE limité à `authenticated`), brisant le cycle. Appliquée en production via MCP + vérifiée (SELECT authentifié sur `points`/`point_partners` ne récurse plus).
+- **Validation** : utilisateur a re-testé sur #16 → « Ça marche maintenant ». STAB-02/03 PASS.
+- Note : correctif **serveur** → effectif immédiatement sur les builds existants, sans rebuild.
+
+### Bug A — STAB-01 (avatar) : CORRIGÉ (validation sur #17)
+- **Cause** : SDK 54 a déplacé `readAsStringAsync`/`EncodingType` vers `expo-file-system/legacy` ; l'import principal les expose plus → upload avatar cassé (et 1 erreur tsc baseline).
+- **Correctif** : `app/(app)/profile/index.tsx` require `expo-file-system/legacy`. tsc baseline 40 → 39.
+- **Validation** : correctif **client** → nécessite le build #17 (en cours). Réserve : si crash natif du picker subsiste, log device requis.
+
+## Self-Check: PASSED — bugs bloquants corrigés ; STAB-01 en validation finale sur #17
