@@ -27,7 +27,6 @@ import { useAuthStore } from '@/stores/authStore';
 import { useThemeStore } from '@/stores/themeStore';
 import { darkTheme, lightTheme } from '@/constants/theme';
 import { registerForPushNotificationsAsync, savePushToken } from '@/lib/notifications';
-import { ReanimatedSmokeTest } from '@/components/dev/ReanimatedSmokeTest';
 
 registerTranslation('fr', fr);
 
@@ -109,7 +108,6 @@ export default function RootLayout() {
       <PaperProvider theme={paperTheme}>
         <StatusBar style={isDark ? 'light' : 'dark'} />
         <Stack screenOptions={{ headerShown: false }} />
-        {__DEV__ ? <ReanimatedSmokeTest /> : null}
       </PaperProvider>
     </GestureHandlerRootView>
   );
