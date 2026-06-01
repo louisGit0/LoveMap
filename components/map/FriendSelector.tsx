@@ -13,6 +13,7 @@ import { useFriendStore } from '@/stores/friendStore';
 import { useTheme } from '@/hooks/useTheme';
 import { F } from '@/constants/fonts';
 import { IcoUser } from '@/components/icons';
+import { haptics } from '@/lib/haptics';
 import type { Theme } from '@/constants/theme';
 import type { FriendWithProfile } from '@/types/app.types';
 
@@ -30,6 +31,7 @@ export function FriendSelector({ onSelectFriend, onSelectSelf, isViewingFriend }
   const friends = useFriendStore((s) => s.friends);
 
   function handleSelect(friend: FriendWithProfile) {
+    haptics.select();
     setVisible(false);
     onSelectFriend(friend.profile.id, friend.profile.display_name ?? friend.profile.username);
   }
@@ -42,7 +44,7 @@ export function FriendSelector({ onSelectFriend, onSelectSelf, isViewingFriend }
         activeOpacity={0.7}
       >
         <IcoUser size={14} color={isViewingFriend ? T.primary : T.textFaint} />
-        <Text style={[styles.triggerText, isViewingFriend && styles.triggerTextActive]}>Maps</Text>
+        <Text style={[styles.triggerText, isViewingFriend && styles.triggerTextActive]}>Vue</Text>
       </TouchableOpacity>
 
       <Modal visible={visible} transparent animationType="slide" onRequestClose={() => setVisible(false)}>
@@ -107,11 +109,13 @@ const makeStyles = (T: Theme) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    backgroundColor: T.surface + 'f0',
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    backgroundColor: T.surface + 'eb',
     borderWidth: 1,
     borderColor: T.border,
+    borderRadius: T.radiusXs,
+    borderCurve: 'continuous',
   },
   triggerActive: {
     borderColor: T.primary,
