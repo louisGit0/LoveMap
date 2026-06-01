@@ -295,6 +295,7 @@ Le toggle dark/light est dans `app/(app)/profile/index.tsx` via `useThemeStore` 
 | 17 | ✅ Terminé | Build EAS #17 — socle natif validé device (worklets reanimated v4 OK, aucun gesture mort) ; STAB-01 encore KO (mismatch image-picker non encore corrigé) |
 | 18 | ✅ Terminé | Build EAS #18 — fix expo-image-picker 17.0.11 + retrait smoke test reanimated. STAB-01 validé device (« Ça marche » : galerie OK, upload OK après migration 012). **Phase 1 terminée et vérifiée (8/8).** |
 | GSD-P2 | 🔄 En cours | Phase 2 (Carte stylisée) — pivot design D-12 (formes iOS arrondies, FAB squircle), heatmap rose→ambre, markers raffinés + animation, bandeau de contrôles éditorial, style Mapbox Studio (checkpoint humain). Détail : .planning/phases/02-carte-stylis-e/ |
+| 19 | ✅ Terminé | Build EAS #19 — code Phase 2 complet + style Mapbox Studio custom `eloso/cmpvltt03…` (noir/rose enrichi : parcs, relief, 3D, halo rose, POI) injecté via EXPO_PUBLIC_MAPBOX_STYLE (env EAS + .env.local). Submit TestFlight OK. En attente validation device (checklist 02-MANUAL-CHECKLIST.md). |
 
 > Mettre à jour ce tableau à chaque phase complétée.
 
