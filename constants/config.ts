@@ -14,3 +14,10 @@ export const COLORS = {
   black: '#000000',
   white: '#ffffff',
 } as const;
+
+/** Constantes data-viz carte (D-08/D-09) — hors tokens de thème (invariantes dark/light) */
+export const MAP_COLORS = {
+  emberAmber: '#ffb020', // heatmap — densité forte (cœur des zones intenses)
+  emberGold: '#ffc24d', // heatmap — densité maximale
+  mapBaseDark: '#08080a', // base anthracite du style Mapbox Studio (référence, non rendue côté RN)
+} as const;
