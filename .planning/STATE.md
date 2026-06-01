@@ -59,7 +59,9 @@ See: .planning/PROJECT.md (updated 2026-05-29)
 
 ## Next Step
 
-`/gsd:ui-phase 2` (recommandé — verrouiller le langage iOS arrondi D-12 : échelle de rayons, forme FAB, look bandeau) **puis** `/gsd:plan-phase 2`. Contexte prêt : `.planning/phases/02-carte-stylis-e/02-CONTEXT.md`.
+`/gsd:plan-phase 2` — le planner utilisera le CONTEXT.md (D-01..D-12) ET le UI-SPEC.md approuvé (6/6) comme contexte de design. Prêts : `.planning/phases/02-carte-stylis-e/02-CONTEXT.md` + `02-UI-SPEC.md`.
+
+Note planner : MAP-01 (style Mapbox Studio) = checkpoint humain — l'URL `mapbox://styles/...` doit être créée par l'utilisateur (recette complète dans le UI-SPEC) avant vérif end-to-end.
 
 ## Session
 
