@@ -35,6 +35,13 @@ Chaque phase livre une tranche visible bout-en-bout. Les fondations techniques s
 3. Les markers ont un design retravaillé avec état sélectionné et animation d'apparition.
 4. L'écran carte et son FAB sont refondus dans l'esprit éditorial (contrôles flottants, FAB non-Material) avec haptics au tap.
 
+**Plans:** 5 plans
+- [ ] 02-01-PLAN.md — Pivot tokens de rayon D-12 (theme.ts) + révision CLAUDE.md §Identité visuelle
+- [ ] 02-02-PLAN.md — Heatmap rose→ambre + opacité décroissante au zoom (MAP-02)
+- [ ] 02-03-PLAN.md — Markers raffinés + sélection + cascade + FAB squircle animé (MAP-03, UI-02)
+- [ ] 02-04-PLAN.md — Bandeau de contrôles éditorial + sélecteur d'ami + recentrer (UI-02)
+- [ ] 02-05-PLAN.md — Style Mapbox Studio sur-mesure (checkpoint humain, MAP-01)
+
 ### Phase 3: Création & Détail de point (sheets natifs)
 **Goal:** Faire vivre le flux cœur (créer / consulter un moment) dans de vraies bottom sheets iOS, archétype « page de carnet ».
 **Mode:** mvp
