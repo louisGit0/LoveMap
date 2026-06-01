@@ -133,7 +133,8 @@ export default function ProfileScreen() {
         quality: 0.7,
       });
     } catch (e) {
-      setSnackbar('Impossible d\'ouvrir la galerie.');
+      // Surface l'erreur réelle au lieu de la masquer (a caché le mismatch de version expo-image-picker).
+      setSnackbar('Galerie : ' + (e instanceof Error ? e.message : String(e)));
       return;
     }
     if (result.canceled || !result.assets?.[0]) return;
