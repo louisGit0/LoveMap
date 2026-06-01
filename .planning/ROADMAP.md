@@ -25,7 +25,8 @@ Chaque phase livre une tranche visible bout-en-bout. Les fondations techniques s
 - [x] 01-03-PLAN.md — Câblage haptique des actions clés existantes (IOS-03) + centralisation expo-haptics
 - [x] 01-04-PLAN.md — Socle natif (reanimated v4 + gesture-handler + GestureHandlerRootView), runtimeVersion fingerprint, build #17
 
-### Phase 2: Carte stylisée
+### Phase 2: Carte stylisée ✅ COMPLETE
+**Status:** ✅ Terminé et vérifié (4/4, gsd-verifier PASS) — validé device sur build #19. Style Mapbox Studio custom + heatmap rose→ambre + markers raffinés/animés + bandeau éditorial + pivot iOS arrondi (D-12).
 **Goal:** Transformer l'écran carte en surface éditoriale signature (style sur-mesure, heatmap raffinée, markers retravaillés).
 **Mode:** mvp
 **Requirements:** MAP-01, MAP-02, MAP-03, UI-02

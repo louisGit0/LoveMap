@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: Phase 02 en cours (4/5 plans)
-stopped_at: 02-04 exécuté (bandeau éditorial flottant + toggle Points/Heatmap + pill ami + Recentrer squircle 40×40) — tsc 38/38, validation device en attente
-last_updated: "2026-06-01T20:15:00.000Z"
+status: Phase 02 complete
+stopped_at: Phase 2 terminée, vérifiée (4/4) et validée device build #19 — style Mapbox custom + heatmap + markers + bandeau + pivot D-12
+last_updated: "2026-06-01T20:35:05.765Z"
 progress:
   total_phases: 5
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 9
-  completed_plans: 8
-  percent: 89
+  completed_plans: 9
+  percent: 40
 ---
 
 # STATE — LoveMap (Refonte UI/UX iOS)
@@ -20,7 +20,7 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-29)
 
 **Core value:** L'expérience visuelle et tactile doit donner l'impression d'un produit iOS premium, beau, fluide et stable sur iPhone.
-**Current focus:** Phase 02 — carte-stylis-e
+**Current focus:** Phase 2 terminée → prochaine : Phase 3 (Création & Détail de point, sheets natifs)
 
 ## Milestone
 
@@ -31,12 +31,12 @@ See: .planning/PROJECT.md (updated 2026-05-29)
 | Phase | Name | Status |
 |-------|------|--------|
 | 1 | Stabilisation & Fondations | ✅ Terminé — 8/8 req · builds #17/#18 · migrations 011+012 |
-| 2 | Carte stylisée | 🚧 En cours — 4/5 plans (02-01 tokens · 02-02 heatmap · 02-03 markers+FAB · 02-04 bandeau+contrôles) |
+| 2 | Carte stylisée | ✅ Terminé — 4/4 req · vérifié 4/4 · validé device #19 · style Mapbox custom + pivot D-12 |
 | 3 | Création & Détail de point (sheets natifs) | ⬜ Not started |
 | 4 | Listes & Cercle | ⬜ Not started |
 | 5 | Auth, Profil & Finitions | ⬜ Not started |
 
-**Requirements:** 10 / 22 complete (Phase 1 : STAB-01/02/03, FOND-01/02/03/04, IOS-03 · Phase 2 : MAP-03, UI-02 — UI-02 couvert par 02-01+02-03+02-04)
+**Requirements:** 12 / 22 complete (Phase 1 : STAB-01/02/03, FOND-01/02/03/04, IOS-03 · Phase 2 : MAP-01, MAP-02, MAP-03, UI-02)
 
 ## Config
 
@@ -57,18 +57,17 @@ See: .planning/PROJECT.md (updated 2026-05-29)
 - Nouvelles règles CLAUDE.md 16-18 (alignement paquets Expo/SDK, API file-system legacy, récursion RLS).
 - Dette connue : ~39 erreurs tsc baseline préexistantes (types Supabase `never`, etc.) — hors périmètre Phase 1, 0 nouvelle erreur introduite. `expo install --check` signale d'autres paquets en léger retard (patch).
 
+- **Phase 2 terminée, vérifiée (gsd-verifier 4/4) et validée device (build #19).** Style Mapbox Studio custom enrichi (29 calques : parcs, relief, 3D, halo rose, POI) injecté via `EXPO_PUBLIC_MAPBOX_STYLE` (.env.local + env EAS). Pivot design **D-12** (formes iOS arrondies, FAB squircle, design system theme.ts + CLAUDE.md révisés) appliqué — s'étend aux Phases 3-5. 0 nouvelle erreur tsc.
+- Style JSON versionné : `.planning/phases/02-carte-stylis-e/lovemap-noir-rose.style.json`. Ajustable dans Studio sans rebuild (re-publier, URL inchangée).
+
 ## Next Step
 
-Phase 2 en cours — reste **02-05** (style Mapbox Studio sur-mesure, checkpoint humain MAP-01). 02-01/02/03/04 exécutés (tokens D-12 · heatmap rose→ambre · markers raffinés + sélection `refresh()` + cascade staggered + FAB squircle reanimated · bandeau éditorial flottant + toggle Points/Heatmap + pill ami + Recentrer squircle 40×40). UI-02 désormais entièrement couvert (02-01+02-03+02-04).
-
-Validation device en attente (gate de phase, TestFlight) : pins visibles à tous les zooms (STAB-02), tap → agrandissement+halo, cascade au chargement, FAB squircle + scale-on-press + haptique medium.
-
-Note : MAP-01 (style Mapbox Studio) = checkpoint humain — tu crées l'URL `mapbox://styles/...` dans Studio (recette complète dans `02-UI-SPEC.md §Mapbox Studio`) et la mets dans `EXPO_PUBLIC_MAPBOX_STYLE`. Le code (02-01..04) tourne sur le fallback dark-v11 en attendant. Animation markers : swap enfant + `refresh()` (jamais reanimated dans PointAnnotation).
+`/gsd:discuss-phase 3` (ou `/gsd:ui-phase 3` puis plan) — **Phase 3 : Création & Détail de point (sheets natifs)** : IOS-01 (bottom sheets natifs formSheet), IOS-02 (swipe-back), UI-03/UI-04 (archétype « page de carnet »). Le pivot iOS arrondi D-12 s'y applique.
 
 ## Session
 
-- **Stopped at:** 02-04 exécuté (bandeau éditorial flottant + toggle Points/Heatmap + pill ami + Recentrer squircle 40×40 + IcoTarget) — tsc 38/38, 0 nouvelle erreur
-- **Resume file:** .planning/phases/02-carte-stylis-e/02-05-PLAN.md
+- **Stopped at:** Phase 2 terminée, vérifiée et validée device (#19). Prêt pour Phase 3.
+- **Resume file:** .planning/phases/02-carte-stylis-e/VERIFICATION.md
 
 ---
-*Last updated: 2026-06-01 after 02-04 execution (bandeau de contrôles éditorial, UI-02)*
+*Last updated: 2026-06-01 after Phase 2 completion (build #19, custom Mapbox style, D-12 pivot)*
