@@ -33,6 +33,10 @@ AS $$
 $$;
 
 REVOKE ALL ON FUNCTION public.is_pending_partner(uuid) FROM public;
+-- Supabase accorde EXECUTE par défaut à anon/authenticated sur les fonctions public :
+-- on retire explicitement anon (la fonction n'est utile qu'aux utilisateurs connectés,
+-- et n'est appelée que depuis la policy RLS points_select qui tourne en rôle authenticated).
+REVOKE EXECUTE ON FUNCTION public.is_pending_partner(uuid) FROM anon;
 GRANT EXECUTE ON FUNCTION public.is_pending_partner(uuid) TO authenticated;
 
 DROP POLICY IF EXISTS "points_select" ON points;
