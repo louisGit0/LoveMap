@@ -1,10 +1,12 @@
 import React, { useRef, useState, useEffect, useMemo } from 'react';
-import { StyleSheet, TouchableOpacity, Text, View } from 'react-native';
+import { StyleSheet, TouchableOpacity, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import MapboxGL from '@rnmapbox/maps';
 import * as Location from 'expo-location';
 import { useTheme } from '@/hooks/useTheme';
-import { F } from '@/constants/fonts';
 import { APP_CONFIG } from '@/constants/config';
+import { IcoTarget } from '@/components/icons';
+import { haptics } from '@/lib/haptics';
 import type { Theme } from '@/constants/theme';
 
 // Initialiser le token public Mapbox (clé pk.xxx depuis .env.local)
@@ -30,6 +32,7 @@ export function AppMapView({
   initialRegion,
 }: Props) {
   const T = useTheme();
+  const insets = useSafeAreaInsets();
   const styles = useMemo(() => makeStyles(T), [T]);
   const cameraRef = useRef<MapboxGL.Camera>(null);
   const [userCoords, setUserCoords] = useState<[number, number] | null>(null);
@@ -79,6 +82,7 @@ export function AppMapView({
 
   function handleRecenter() {
     if (!userCoords) return;
+    haptics.tap();
     cameraRef.current?.setCamera({
       centerCoordinate: userCoords,
       zoomLevel: DEFAULT_ZOOM,
@@ -113,11 +117,13 @@ export function AppMapView({
 
       {showRecenter && (
         <TouchableOpacity
-          style={styles.recenterButton}
+          style={[styles.recenterButton, { bottom: insets.bottom + 144 }]}
           onPress={handleRecenter}
           activeOpacity={0.8}
+          accessibilityRole="button"
+          accessibilityLabel="Recentrer sur ma position"
         >
-          <Text style={styles.recenterText}>Recentrer</Text>
+          <IcoTarget size={20} color={T.primary} />
         </TouchableOpacity>
       )}
     </View>
@@ -126,21 +132,18 @@ export function AppMapView({
 
 const makeStyles = (T: Theme) =>
   StyleSheet.create({
+    // Squircle 40×40 détaché, bas-droite, centré au-dessus du FAB (right:20, w:56)
     recenterButton: {
       position: 'absolute',
-      bottom: 100,
-      alignSelf: 'center',
-      backgroundColor: T.surface,
+      right: 28,
+      width: 40,
+      height: 40,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: T.surface + 'eb',
       borderWidth: 1,
-      borderColor: T.primary,
-      paddingHorizontal: 16,
-      paddingVertical: 10,
-    },
-    recenterText: {
-      fontFamily: F.mono,
-      fontSize: 10,
-      letterSpacing: 2,
-      textTransform: 'uppercase',
-      color: T.primary,
+      borderColor: T.border,
+      borderRadius: T.radiusSm,
+      borderCurve: 'continuous',
     },
   });

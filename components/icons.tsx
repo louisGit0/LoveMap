@@ -51,6 +51,19 @@ export function IcoPlus({ size = 18, color = T.textFaint }: IcoProps) {
   );
 }
 
+export function IcoTarget({ size = 18, color = T.textFaint }: IcoProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Circle cx="12" cy="12" r="5" stroke={color} strokeWidth="1.5" />
+      <Circle cx="12" cy="12" r="1.6" fill={color} />
+      <Line x1="12" y1="2" x2="12" y2="5" stroke={color} strokeWidth="1.5" strokeLinecap="round" />
+      <Line x1="12" y1="19" x2="12" y2="22" stroke={color} strokeWidth="1.5" strokeLinecap="round" />
+      <Line x1="2" y1="12" x2="5" y2="12" stroke={color} strokeWidth="1.5" strokeLinecap="round" />
+      <Line x1="19" y1="12" x2="22" y2="12" stroke={color} strokeWidth="1.5" strokeLinecap="round" />
+    </Svg>
+  );
+}
+
 export function IcoArrow({ size = 18, color = T.textFaint, dir = 'left' }: IcoProps & { dir?: 'left' | 'right' }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" style={dir === 'right' ? { transform: [{ scaleX: -1 }] } : undefined}>
