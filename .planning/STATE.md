@@ -62,7 +62,7 @@ See: .planning/PROJECT.md (updated 2026-05-29)
 
 ## Next Step
 
-`/gsd:discuss-phase 3` (ou `/gsd:ui-phase 3` puis plan) — **Phase 3 : Création & Détail de point (sheets natifs)** : IOS-01 (bottom sheets natifs formSheet), IOS-02 (swipe-back), UI-03/UI-04 (archétype « page de carnet »). Le pivot iOS arrondi D-12 s'y applique.
+`/gsd:ui-phase 3` (recommandé — figer le rendu « page de carnet » création/détail, place de la note serif, métadonnées, boutons d'action dans le sheet) **puis** `/gsd:plan-phase 3`. Contexte prêt : `.planning/phases/03-cr-ation-d-tail-de-point-sheets-natifs/03-CONTEXT.md` (D-01..D-10). Form sheet natif Expo Router, zéro dépendance (recherche ARCHITECTURE.md §Bottom Sheets).
 
 ## Session
 
