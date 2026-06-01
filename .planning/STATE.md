@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: Phase 01 complete
-stopped_at: Phase 2 planifiée (5 plans, 2 vagues) — vérifiée 14/14
-last_updated: "2026-06-01T18:13:04.281Z"
+status: Phase 02 en cours (3/5 plans)
+stopped_at: 02-03 exécuté (markers raffinés + sélection refresh() + cascade + FAB squircle) — tsc 38/38, validation device en attente
+last_updated: "2026-06-01T19:30:00.000Z"
 progress:
   total_phases: 5
   completed_phases: 1
   total_plans: 9
-  completed_plans: 4
-  percent: 20
+  completed_plans: 7
+  percent: 78
 ---
 
 # STATE — LoveMap (Refonte UI/UX iOS)
@@ -31,12 +31,12 @@ See: .planning/PROJECT.md (updated 2026-05-29)
 | Phase | Name | Status |
 |-------|------|--------|
 | 1 | Stabilisation & Fondations | ✅ Terminé — 8/8 req · builds #17/#18 · migrations 011+012 |
-| 2 | Carte stylisée | 📋 Planifiée (5 plans, 2 vagues — vérifiée 14/14) |
+| 2 | Carte stylisée | 🚧 En cours — 3/5 plans (02-01 tokens · 02-02 heatmap · 02-03 markers+FAB) |
 | 3 | Création & Détail de point (sheets natifs) | ⬜ Not started |
 | 4 | Listes & Cercle | ⬜ Not started |
 | 5 | Auth, Profil & Finitions | ⬜ Not started |
 
-**Requirements:** 8 / 22 complete (Phase 1 : STAB-01/02/03, FOND-01/02/03/04, IOS-03)
+**Requirements:** 9 / 22 complete (Phase 1 : STAB-01/02/03, FOND-01/02/03/04, IOS-03 · Phase 2 : MAP-03)
 
 ## Config
 
@@ -59,14 +59,16 @@ See: .planning/PROJECT.md (updated 2026-05-29)
 
 ## Next Step
 
-`/gsd:execute-phase 2` — 5 plans en 2 vagues. Vague 1 : 02-01 (tokens rayons D-12) · 02-02 (heatmap) · 02-05 (style Studio, checkpoint humain). Vague 2 : 02-03 (markers + FAB squircle) · 02-04 (bandeau de contrôles). 02-03/04 dépendent de 02-01.
+Phase 2 en cours — restent **02-04** (bandeau de contrôles éditorial + sélecteur d'ami + recentrer, UI-02) et **02-05** (style Mapbox Studio, checkpoint humain MAP-01). 02-01/02/03 exécutés (tokens D-12 · heatmap rose→ambre · markers raffinés + sélection `refresh()` + cascade staggered + FAB squircle reanimated).
+
+Validation device en attente (gate de phase, TestFlight) : pins visibles à tous les zooms (STAB-02), tap → agrandissement+halo, cascade au chargement, FAB squircle + scale-on-press + haptique medium.
 
 Note : MAP-01 (style Mapbox Studio) = checkpoint humain — tu crées l'URL `mapbox://styles/...` dans Studio (recette complète dans `02-UI-SPEC.md §Mapbox Studio`) et la mets dans `EXPO_PUBLIC_MAPBOX_STYLE`. Le code (02-01..04) tourne sur le fallback dark-v11 en attendant. Animation markers : swap enfant + `refresh()` (jamais reanimated dans PointAnnotation).
 
 ## Session
 
-- **Stopped at:** Phase 2 planifiée (5 plans, 2 vagues) — vérifiée 14/14
-- **Resume file:** .planning/phases/02-carte-stylis-e/02-01-PLAN.md
+- **Stopped at:** 02-03 exécuté (markers raffinés + sélection refresh() + cascade staggered + FAB squircle reanimated) — tsc 38/38, 0 nouvelle erreur
+- **Resume file:** .planning/phases/02-carte-stylis-e/02-04-PLAN.md
 
 ---
-*Last updated: 2026-06-01 after Phase 1 execution + STAB fix cycle (builds #17/#18, migrations 011/012)*
+*Last updated: 2026-06-01 after 02-03 execution (markers + FAB squircle, MAP-03/UI-02)*

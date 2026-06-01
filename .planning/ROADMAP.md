@@ -35,10 +35,10 @@ Chaque phase livre une tranche visible bout-en-bout. Les fondations techniques s
 3. Les markers ont un design retravaillé avec état sélectionné et animation d'apparition.
 4. L'écran carte et son FAB sont refondus dans l'esprit éditorial (contrôles flottants, FAB non-Material) avec haptics au tap.
 
-**Plans:** 2/5 plans executed
+**Plans:** 3/5 plans executed
 - [x] 02-01-PLAN.md — Pivot tokens de rayon D-12 (theme.ts) + révision CLAUDE.md §Identité visuelle
 - [x] 02-02-PLAN.md — Heatmap rose→ambre + opacité décroissante au zoom (MAP-02)
-- [ ] 02-03-PLAN.md — Markers raffinés + sélection + cascade + FAB squircle animé (MAP-03, UI-02)
+- [x] 02-03-PLAN.md — Markers raffinés + sélection + cascade + FAB squircle animé (MAP-03, UI-02)
 - [ ] 02-04-PLAN.md — Bandeau de contrôles éditorial + sélecteur d'ami + recentrer (UI-02)
 - [ ] 02-05-PLAN.md — Style Mapbox Studio sur-mesure (checkpoint humain, MAP-01)
 

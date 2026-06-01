@@ -24,7 +24,7 @@ Requirements pour ce cap (stabilisation + refonte UI/UX). Chacun mappé à une p
 
 - [ ] **MAP-01**: La carte utilise un style Mapbox sur-mesure noir/rose (créé via Mapbox Studio, injecté via `EXPO_PUBLIC_MAPBOX_STYLE`) avec labels minimalistes
 - [ ] **MAP-02**: La heatmap utilise un dégradé rose→ambre cohérent avec l'identité, avec opacité décroissante aux zooms élevés
-- [ ] **MAP-03**: Les markers de points ont un design retravaillé avec état sélectionné et animation d'apparition (sur `PointAnnotation`)
+- [x] **MAP-03**: Les markers de points ont un design retravaillé avec état sélectionné et animation d'apparition (sur `PointAnnotation`)
 
 ### Patterns iOS natifs
 
@@ -81,7 +81,7 @@ Quelles phases couvrent quels requirements. Rempli pendant la création de la ro
 | IOS-03 | Phase 1 | Pending |
 | MAP-01 | Phase 2 | Pending |
 | MAP-02 | Phase 2 | Pending |
-| MAP-03 | Phase 2 | Pending |
+| MAP-03 | Phase 2 | Complete |
 | UI-02 | Phase 2 | Pending |
 | IOS-01 | Phase 3 | Pending |
 | IOS-02 | Phase 3 | Pending |
