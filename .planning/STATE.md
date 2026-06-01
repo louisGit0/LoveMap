@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Phase 01 complete
-stopped_at: Phase 1 terminée et vérifiée (8/8 requirements, builds #17/#18, migrations 011+012)
-last_updated: "2026-06-01T16:48:08.968Z"
+stopped_at: Phase 2 context gathered (carte stylisée + pivot design iOS arrondi)
+last_updated: "2026-06-01T17:18:03.830Z"
 progress:
   total_phases: 5
   completed_phases: 1
@@ -63,8 +63,8 @@ See: .planning/PROJECT.md (updated 2026-05-29)
 
 ## Session
 
-- **Stopped at:** Phase 1 terminée, vérifiée et commitée. Prêt pour Phase 2.
-- **Resume file:** `.planning/phases/01-stabilisation-fondations/VERIFICATION.md`
+- **Stopped at:** Phase 2 context gathered (carte stylisée + pivot design iOS arrondi)
+- **Resume file:** .planning/phases/02-carte-stylis-e/02-CONTEXT.md
 
 ---
 *Last updated: 2026-06-01 after Phase 1 execution + STAB fix cycle (builds #17/#18, migrations 011/012)*
