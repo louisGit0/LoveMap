@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Phase 02 complete
-stopped_at: Phase 2 terminée, vérifiée (4/4) et validée device build #19 — style Mapbox custom + heatmap + markers + bandeau + pivot D-12
-last_updated: "2026-06-01T20:35:05.765Z"
+stopped_at: Phase 3 context gathered (sheets natifs création/détail)
+last_updated: "2026-06-01T20:46:44.314Z"
 progress:
   total_phases: 5
   completed_phases: 2
@@ -66,8 +66,8 @@ See: .planning/PROJECT.md (updated 2026-05-29)
 
 ## Session
 
-- **Stopped at:** Phase 2 terminée, vérifiée et validée device (#19). Prêt pour Phase 3.
-- **Resume file:** .planning/phases/02-carte-stylis-e/VERIFICATION.md
+- **Stopped at:** Phase 3 context gathered (sheets natifs création/détail)
+- **Resume file:** .planning/phases/03-cr-ation-d-tail-de-point-sheets-natifs/03-CONTEXT.md
 
 ---
 *Last updated: 2026-06-01 after Phase 2 completion (build #19, custom Mapbox style, D-12 pivot)*
