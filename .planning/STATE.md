@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Phase 01 complete
-stopped_at: Phase 2 UI-SPEC approved (6/6 dimensions)
-last_updated: "2026-06-01T17:36:33.964Z"
+stopped_at: Phase 2 planifiée (5 plans, 2 vagues) — vérifiée 14/14
+last_updated: "2026-06-01T18:10:14.066Z"
 progress:
   total_phases: 5
   completed_phases: 1
-  total_plans: 4
+  total_plans: 9
   completed_plans: 4
   percent: 20
 ---
@@ -31,7 +31,7 @@ See: .planning/PROJECT.md (updated 2026-05-29)
 | Phase | Name | Status |
 |-------|------|--------|
 | 1 | Stabilisation & Fondations | ✅ Terminé — 8/8 req · builds #17/#18 · migrations 011+012 |
-| 2 | Carte stylisée | ⬜ Not started |
+| 2 | Carte stylisée | 📋 Planifiée (5 plans, 2 vagues — vérifiée 14/14) |
 | 3 | Création & Détail de point (sheets natifs) | ⬜ Not started |
 | 4 | Listes & Cercle | ⬜ Not started |
 | 5 | Auth, Profil & Finitions | ⬜ Not started |
@@ -59,14 +59,14 @@ See: .planning/PROJECT.md (updated 2026-05-29)
 
 ## Next Step
 
-`/gsd:plan-phase 2` — le planner utilisera le CONTEXT.md (D-01..D-12) ET le UI-SPEC.md approuvé (6/6) comme contexte de design. Prêts : `.planning/phases/02-carte-stylis-e/02-CONTEXT.md` + `02-UI-SPEC.md`.
+`/gsd:execute-phase 2` — 5 plans en 2 vagues. Vague 1 : 02-01 (tokens rayons D-12) · 02-02 (heatmap) · 02-05 (style Studio, checkpoint humain). Vague 2 : 02-03 (markers + FAB squircle) · 02-04 (bandeau de contrôles). 02-03/04 dépendent de 02-01.
 
-Note planner : MAP-01 (style Mapbox Studio) = checkpoint humain — l'URL `mapbox://styles/...` doit être créée par l'utilisateur (recette complète dans le UI-SPEC) avant vérif end-to-end.
+Note : MAP-01 (style Mapbox Studio) = checkpoint humain — tu crées l'URL `mapbox://styles/...` dans Studio (recette complète dans `02-UI-SPEC.md §Mapbox Studio`) et la mets dans `EXPO_PUBLIC_MAPBOX_STYLE`. Le code (02-01..04) tourne sur le fallback dark-v11 en attendant. Animation markers : swap enfant + `refresh()` (jamais reanimated dans PointAnnotation).
 
 ## Session
 
-- **Stopped at:** Phase 2 UI-SPEC approved (6/6 dimensions)
-- **Resume file:** .planning/phases/02-carte-stylis-e/02-UI-SPEC.md
+- **Stopped at:** Phase 2 planifiée (5 plans, 2 vagues) — vérifiée 14/14
+- **Resume file:** .planning/phases/02-carte-stylis-e/02-01-PLAN.md
 
 ---
 *Last updated: 2026-06-01 after Phase 1 execution + STAB fix cycle (builds #17/#18, migrations 011/012)*
