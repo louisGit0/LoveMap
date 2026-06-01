@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StyleSheet, ActivityIndicator, Pressable, Alert } from 'react-native';
+import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
 import { router } from 'expo-router';
 import { Snackbar } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -64,6 +65,10 @@ export default function MapScreen() {
   // Cascade au montage — révèle progressivement les premiers markers.
   const visibleCount = useStaggeredVisible(points.length);
 
+  // Micro-anim FAB (D-11) — reanimated sur transform: scale uniquement (compositor-friendly).
+  const fabScale = useSharedValue(1);
+  const fabAnimStyle = useAnimatedStyle(() => ({ transform: [{ scale: fabScale.value }] }));
+
   useEffect(() => { if (user) fetchFriends(user.id); }, [user]);
 
   const loadPoints = useCallback(async () => {
@@ -83,6 +88,7 @@ export default function MapScreen() {
   }
 
   function handleFabPress() {
+    haptics.press();
     router.push({ pathname: '/(app)/point/new', params: { latitude: centerCoords.latitude.toString(), longitude: centerCoords.longitude.toString() } });
   }
 
@@ -126,15 +132,19 @@ export default function MapScreen() {
         </View>
       )}
 
-      {/* FAB carré */}
+      {/* FAB squircle (D-11/D-12) — non Material, micro-anim spring + haptic */}
       {!viewingFriendId && (
-        <TouchableOpacity
-          onPress={handleFabPress}
-          style={[styles.fab, { bottom: insets.bottom + 80 }]}
-          activeOpacity={0.88}
-        >
-          <IcoPlus size={22} color={T.text} />
-        </TouchableOpacity>
+        <Animated.View style={[styles.fabWrap, { bottom: insets.bottom + 80 }, fabAnimStyle]}>
+          <Pressable
+            onPress={handleFabPress}
+            onPressIn={() => { fabScale.value = withSpring(0.92); }}
+            onPressOut={() => { fabScale.value = withSpring(1, { damping: 14, stiffness: 220 }); }}
+            accessibilityLabel="Inscrire un moment"
+            style={styles.fab}
+          >
+            <IcoPlus size={24} color={T.text} />
+          </Pressable>
+        </Animated.View>
       )}
 
       {/* Hint discret quand aucun point — non bloquant */}
@@ -175,19 +185,22 @@ const makeStyles = (T: Theme) => StyleSheet.create({
     textAlign: 'center',
     paddingHorizontal: 40,
   },
-  fab: {
+  fabWrap: {
     position: 'absolute',
     right: 20,
-    width: 52,
-    height: 52,
+  },
+  fab: {
+    width: 56,
+    height: 56,
     backgroundColor: T.primary,
-    borderRadius: 0,
+    borderRadius: T.fab,
+    borderCurve: 'continuous',
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: T.primary,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.4,
-    shadowRadius: 20,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.35,
+    shadowRadius: 16,
     elevation: 8,
   },
   snackbar: { backgroundColor: T.surface2 },
