@@ -59,7 +59,7 @@ See: .planning/PROJECT.md (updated 2026-05-29)
 
 ## Next Step
 
-`/gsd:discuss-phase 2` (ou `/gsd:plan-phase 2`) — Phase 2 : Carte stylisée.
+`/gsd:ui-phase 2` (recommandé — verrouiller le langage iOS arrondi D-12 : échelle de rayons, forme FAB, look bandeau) **puis** `/gsd:plan-phase 2`. Contexte prêt : `.planning/phases/02-carte-stylis-e/02-CONTEXT.md`.
 
 ## Session
 
