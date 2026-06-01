@@ -10,8 +10,15 @@ export type Theme = {
   secondary: string;
   success: string;
   danger: string;
+  // Échelle de rayons iOS arrondis (pivot D-12) — identiques dark/light
   cardRadius: number;
   pill: number;
+  radiusXs: number;
+  radiusSm: number;
+  radiusMd: number;
+  radiusLg: number;
+  radiusXl: number;
+  fab: number;
 };
 
 export const darkTheme: Theme = {
@@ -26,8 +33,14 @@ export const darkTheme: Theme = {
   secondary: '#ff6aa8',
   success: '#ff2d87',
   danger: '#a91860',
-  cardRadius: 4,
-  pill: 4,
+  cardRadius: 16,
+  pill: 999,
+  radiusXs: 8,
+  radiusSm: 12,
+  radiusMd: 16,
+  radiusLg: 22,
+  radiusXl: 28,
+  fab: 18,
 };
 
 export const lightTheme: Theme = {
@@ -42,8 +55,14 @@ export const lightTheme: Theme = {
   secondary: '#ff6aa8',
   success: '#ff2d87',
   danger: '#c41960',
-  cardRadius: 4,
-  pill: 4,
+  cardRadius: 16,
+  pill: 999,
+  radiusXs: 8,
+  radiusSm: 12,
+  radiusMd: 16,
+  radiusLg: 22,
+  radiusXl: 28,
+  fab: 18,
 };
 
 // Rétrocompatibilité pour les valeurs par défaut des icônes
