@@ -46,5 +46,5 @@ Cocher chaque ligne qui passe ; décrire toute anomalie.
 
 ## Verdict global Phase 2
 
-- [ ] Les 4 requirements visuels passent sur device → Phase 2 validée.
-- [ ] Au moins un échoue → décrire l'anomalie ci-dessus (correctif avant clôture).
+- [X] **Les 4 requirements visuels passent sur device (build #19) → Phase 2 validée.** (« Validé » utilisateur, 2026-06-01)
+- MAP-01 ✓ · MAP-02 ✓ · MAP-03 ✓ (pins tous zooms, STAB-02 OK) · UI-02 ✓ (FAB squircle + haptique).
