@@ -16,6 +16,37 @@ import { HeatmapLayer } from '@/components/map/HeatmapLayer';
 import { F } from '@/constants/fonts';
 import type { Theme } from '@/constants/theme';
 import { IcoPlus } from '@/components/icons';
+import { haptics } from '@/lib/haptics';
+
+// Cascade d'apparition (D-07) : montage STAGGERED des markers.
+// La cascade vient du MONTAGE échelonné (le pin « pop in » en étant monté),
+// PAS d'une opacité animée à l'intérieur du snapshot natif (qui serait gelée).
+const STAGGER_MS = 40;
+const CAP_MS = 320;
+const MAX_STAGGERED = 30;
+
+function useStaggeredVisible(count: number): number {
+  const [visible, setVisible] = useState(0);
+  useEffect(() => {
+    if (count === 0) { setVisible(0); return; }
+    const timers: ReturnType<typeof setTimeout>[] = [];
+    const staggered = Math.min(count, MAX_STAGGERED);
+    for (let i = 0; i < staggered; i++) {
+      timers.push(
+        setTimeout(
+          () => setVisible((v) => Math.max(v, i + 1)),
+          Math.min(i * STAGGER_MS, CAP_MS),
+        ),
+      );
+    }
+    // Le reste (au-delà du plafond) est monté d'un coup à CAP_MS — pas de longue traîne.
+    if (count > staggered) {
+      timers.push(setTimeout(() => setVisible(count), CAP_MS));
+    }
+    return () => timers.forEach(clearTimeout);
+  }, [count]);
+  return visible;
+}
 
 export default function MapScreen() {
   const insets = useSafeAreaInsets();
@@ -30,6 +61,9 @@ export default function MapScreen() {
   const [snackbar, setSnackbar] = useState<string | null>(null);
   const [centerCoords, setCenterCoords] = useState({ latitude: 48.8566, longitude: 2.3522 });
 
+  // Cascade au montage — révèle progressivement les premiers markers.
+  const visibleCount = useStaggeredVisible(points.length);
+
   useEffect(() => { if (user) fetchFriends(user.id); }, [user]);
 
   const loadPoints = useCallback(async () => {
@@ -39,7 +73,7 @@ export default function MapScreen() {
       ? await fetchFriendPoints(viewingFriendId)
       : await fetchMyPoints(user.id);
     setLoading(false);
-    if (!ok) setSnackbar('Erreur de chargement. Vérifiez votre connexion.');
+    if (!ok) { haptics.error(); setSnackbar('Erreur de chargement. Vérifiez votre connexion.'); }
   }, [user, viewingFriendId]);
 
   useEffect(() => { loadPoints(); }, [loadPoints]);
@@ -65,7 +99,7 @@ export default function MapScreen() {
   return (
     <View style={styles.container}>
       <AppMapView onLongPress={viewingFriendId ? undefined : handleLongPress} onCenterChange={setCenterCoords}>
-        {viewMode === 'pins' && points.map((p) => (
+        {viewMode === 'pins' && points.slice(0, visibleCount).map((p) => (
           <PointMarker key={p.id} point={p} isOwner={p.creator_id === user?.id} onDelete={handleDelete} />
         ))}
         {viewMode === 'heatmap' && <HeatmapLayer points={points} />}
