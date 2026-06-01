@@ -27,7 +27,8 @@ Résultat attendu : la galerie s'ouvre sans planter et l'avatar reflète la nouv
 - [ ] STAB-01 PASS — EN ATTENTE du build #18 (correctif natif, OTA inopérant)
 - Anomalie observée : « Impossible d'ouvrir la galerie » puis crash, au clic sur l'avatar (toujours présent sur #17).
 - **Cause racine (confirmée)** : `expo-image-picker` épinglé en **16.0.6** alors que SDK 54 attend **17.0.11** → mismatch d'interface JS/natif → `launchImageLibraryAsync` rejette et l'app crashe. Présent depuis #15.
-- Correctifs appliqués : (1) `expo-image-picker` 16.0.6 → 17.0.11 (correctif racine) ; (2) `expo-file-system` → API legacy (nécessaire pour l'upload) ; (3) message d'erreur réel surfacé dans le catch. À valider sur le build #18.
+- Correctifs appliqués : (1) `expo-image-picker` 16.0.6 → 17.0.11 (correctif racine du crash) ; (2) `expo-file-system` → API legacy (lecture base64) ; (3) message d'erreur réel surfacé dans le catch ; (4) **migration 012** — policies RLS Storage sur le bucket `avatars` (storage.objects avait RLS sans aucune policy → upload refusé « new row violates RLS »). Correctif serveur live.
+- Statut #18 : crash RÉSOLU (galerie s'ouvre). Upload débloqué par migration 012 (serveur, sans rebuild). À re-tester sur #18 : la photo doit se sauvegarder et l'avatar se mettre à jour.
 
 ---
 
