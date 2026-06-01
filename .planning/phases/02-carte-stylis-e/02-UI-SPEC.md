@@ -204,7 +204,7 @@ Refonte des contrôles flottants (toggle pins/heatmap, sélecteur d'ami, recentr
 3. **Toggle segmenté** (sous le titre) : segmented control pill, deux segments **Points** / **Heatmap** ; segment actif = fond `T.primary`, texte `T.text` ; inactif = texte `T.textFaint`. Coins du conteneur `radiusSm`, segments `radiusXs`, `borderCurve:'continuous'`.
 
 ### Bouton Recentrer (D-10)
-Détaché du bandeau, flottant bas-droite **au-dessus du FAB** : petit bouton squircle (40×40, `radiusSm`, `borderCurve:'continuous'`), fond `T.surface` semi-opaque, bord `1px T.border`, label mono `Recentrer` OU icône. Affiché conditionnellement (déjà géré : `showRecenter`).
+Détaché du bandeau, flottant bas-droite **au-dessus du FAB** : petit bouton squircle (40×40, `radiusSm`, `borderCurve:'continuous'`), fond `T.surface` semi-opaque, bord `1px T.border`, label mono `Recentrer` OU icône. Affiché conditionnellement (déjà géré : `showRecenter`). **a11y :** `accessibilityLabel="Recentrer sur ma position"` (parité avec le label a11y du FAB ; le label visible reste court tandis que le label a11y porte le noun explicite).
 
 ### Haptiques des contrôles (D-10, discrétion fine)
 | Contrôle | Haptique |
@@ -218,19 +218,24 @@ Détaché du bandeau, flottant bas-droite **au-dessus du FAB** : petit bouton sq
 
 ## Spacing Scale
 
-Échelle canonique (multiples de 4) :
+Échelle canonique (set standard {4, 8, 16, 24, 32, 48, 64}) :
 
 | Token | Value | Usage |
 |-------|-------|-------|
 | xs | 4px | Gaps d'icônes, padding inline |
-| sm | 8px | Espacement compact (gap segments, marge eyebrow) |
-| md | 12px | Espacement intermédiaire (padding pill, gaps bandeau) |
+| sm | 8px | Espacement compact (gap segments, marge eyebrow, **gaps du bandeau de contrôles**) |
 | lg | 16px | Espacement par défaut / marges latérales bandeau |
 | xl | 24px | Padding de section (preview Modal) |
 | 2xl | 32px | Ruptures majeures |
 | 3xl | 48px | Espacement de niveau écran |
 
-**Exceptions :** touch targets iOS — FAB 56, Recenter 40, deleteBtn 52 (≥44 garanti). Micro-spacings typographiques existants (letterSpacing eyebrow 2–2.5, gaps note-bar 3px) conservés. Insets via `useSafeAreaInsets()` (jamais valeurs en dur).
+**Remapping (suppression de l'ancien `md = 12px`) :** l'ancien token `md = 12px` est **retiré de l'échelle principale** (hors set standard). Ses usages sont réaffectés : **gaps du bandeau de contrôles → `sm` (8px)** ; **padding horizontal des pills → exception `pillPadX = 12px`** (ci-dessous).
+
+**Exceptions :**
+- `pillPadX = 12px` — **iOS intermediate, 3×4px**, justifié pour le **padding horizontal des pills uniquement** (FriendSelector, segment de toggle) : 8px serre trop le label mono, 16px casse la compacité du cluster. Hors échelle principale.
+- Touch targets iOS — FAB 56, Recenter 40, deleteBtn 52 (≥44 garanti).
+- Micro-spacings typographiques existants (letterSpacing eyebrow 2–2.5, gaps note-bar 3px) conservés.
+- Insets via `useSafeAreaInsets()` (jamais valeurs en dur).
 
 ---
 
@@ -276,10 +281,10 @@ Tous en français (règle 6). Ton éditorial « journal intime ».
 | Toggle — mode heatmap | « Heatmap » |
 | Titre bandeau (soi) | « mes moments · {NN} » (compteur 2 chiffres) |
 | Titre bandeau (ami) | « carte de {nom} » |
-| Bouton recentrer | « Recentrer » |
+| Bouton recentrer | label visible « Recentrer » · a11y : « Recentrer sur ma position » |
 | Empty state (aucun point, non bloquant) | « Appuyez sur + pour inscrire votre premier moment » |
 | Error state (chargement) | « Erreur de chargement. Vérifiez votre connexion. » + `haptics.error()` |
-| Destructive — suppression de point | Titre « Effacer cette page » · corps « Cette action est irréversible. » · actions [ Annuler · Effacer ] · `haptics.warn()` à la confirmation |
+| Destructive — suppression de point | Titre « Effacer cette page » · corps « Cette action est irréversible. » · actions [ Garder la page · Effacer ] · `haptics.warn()` à la confirmation |
 
 > Note : la suppression vit dans la preview Modal existante (conservée cette phase — la migration vers sheet natif est Phase 3, IOS-01).
 
