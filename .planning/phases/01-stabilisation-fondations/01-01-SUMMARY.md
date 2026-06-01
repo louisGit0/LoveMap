@@ -6,8 +6,7 @@ verdict: FAIL-then-fixed
 requirements: [STAB-01, STAB-02, STAB-03]
 ---
 
-> **MISE À JOUR (résolution) :** les deux bugs bloquants ont été corrigés (voir section « Résolution » en bas).
-> STAB-02/03 re-validés PASS sur #16 (correctif serveur live). STAB-01 corrigé en code, validation finale sur le build #17 (en production au moment de l'écriture).
+> **MISE À JOUR FINALE : les 3 items STAB passent.** STAB-02/03 validés sur #16 (migration 011, RLS 42P17). STAB-01 validé sur #18 (« Ça marche ») après : expo-image-picker 16→17 (fix crash) + migration 012 (RLS Storage avatars, l'upload était refusé). Voir section « Résolution » en bas.
 
 # Summary 01-01 — Validation STAB (verdict : BLOCAGE)
 
@@ -60,7 +59,8 @@ Note : ces bugs préexistent dans les binaires #15/#16 et sont indépendants du 
   1. `expo-image-picker` 16.0.6 → **17.0.11** (`npx expo install`) — correctif racine.
   2. `expo-file-system` → API legacy (déjà appliqué — nécessaire pour l'upload base64, indépendant).
   3. Catch de `launchImageLibraryAsync` surface désormais l'erreur réelle (au lieu de la masquer).
-- **Validation** : correctif **natif** → build #18 (en cours). tsc : aucune nouvelle erreur (39 baseline).
+- **Couche suivante révélée par le fix du crash** : une fois la galerie ouverte, l'upload échouait avec « new row violates RLS ». Cause : `storage.objects` avait RLS activé mais **zéro policy** → tout upload refusé (bucket public = lecture seule). Corrigé par **migration 012** (policies `avatars_insert_own` / `avatars_update_own` scopées à `<uid>.<ext>` + `avatars_select_public`). Serveur, live.
+- **Validation finale** : utilisateur sur #18 → « Ça marche » (galerie ouverte, photo uploadée, avatar à jour). **STAB-01 PASS.** tsc : aucune nouvelle erreur (39 baseline).
 - Note dette : `expo install --check` révèle d'autres paquets en léger retard (patch). Non bloquants ; alignement complet hors périmètre Phase 1.
 
 ## Self-Check: PASSED — bugs bloquants corrigés ; STAB-01 en validation finale sur #17

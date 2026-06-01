@@ -24,7 +24,7 @@ Validation manuelle uniquement (D-08) : aucun test automatisé. Cocher chaque it
 
 Résultat attendu : la galerie s'ouvre sans planter et l'avatar reflète la nouvelle image.
 
-- [ ] STAB-01 PASS — EN ATTENTE du build #18 (correctif natif, OTA inopérant)
+- [X] STAB-01 PASS — validé sur #18 (« Ça marche » : galerie s'ouvre, photo uploadée, avatar mis à jour)
 - Anomalie observée : « Impossible d'ouvrir la galerie » puis crash, au clic sur l'avatar (toujours présent sur #17).
 - **Cause racine (confirmée)** : `expo-image-picker` épinglé en **16.0.6** alors que SDK 54 attend **17.0.11** → mismatch d'interface JS/natif → `launchImageLibraryAsync` rejette et l'app crashe. Présent depuis #15.
 - Correctifs appliqués : (1) `expo-image-picker` 16.0.6 → 17.0.11 (correctif racine du crash) ; (2) `expo-file-system` → API legacy (lecture base64) ; (3) message d'erreur réel surfacé dans le catch ; (4) **migration 012** — policies RLS Storage sur le bucket `avatars` (storage.objects avait RLS sans aucune policy → upload refusé « new row violates RLS »). Correctif serveur live.
@@ -69,5 +69,5 @@ Résultat attendu : le taguage en attente est visible côté testeur 2, qui peut
 
 ## Verdict global
 
-- [X] STAB-02 + STAB-03 corrigés (migration 011) et re-validés sur #16. STAB-01 corrigé en code (expo-file-system legacy) — validation finale sur le build #17.
-- Verdict initial : « Au moins un item échoue » → les correctifs ont été appliqués. Le build #17 est produit avec le correctif avatar + les fondations natives ; STAB-01 sera validé dessus.
+- [X] **Les 3 items STAB passent.** STAB-02/03 corrigés par migration 011 (RLS 42P17), validés sur #16. STAB-01 corrigé par expo-image-picker 17.0.11 (#18) + migration 012 (RLS Storage avatars), validé sur #18.
+- Parcours : verdict initial « échec » → diagnostic + correctifs (2 migrations serveur + 1 upgrade natif + 1 API legacy) → tous validés device/serveur. La phase Stabilisation a rempli son rôle : les régressions #15/#16 ont été isolées et corrigées avant la suite de la refonte.
