@@ -198,6 +198,12 @@ async function handlePickAvatar() {
 ```
 Ne jamais écrire `import * as ImagePicker from 'expo-image-picker'` ni `import * as FileSystem from 'expo-file-system'` — confirmé par builds #8, #11, #13 : la static import crashe l'onglet "Moi" sans message d'erreur.
 
+16. **Aligner les paquets natifs Expo sur la version du SDK — vérifier avec `npx expo install --check`** — Un paquet natif épinglé à une version d'un SDK antérieur provoque un mismatch d'interface JS↔natif qui fait crasher la fonctionnalité dans un build natif (invisible en JS/OTA). Confirmé build #17 : `expo-image-picker@16.0.6` sous SDK 54 (qui attend `17.0.11`) → `launchImageLibraryAsync` rejette (« Impossible d'ouvrir la galerie ») puis crash, présent depuis #15. Toujours installer les modules natifs via `npx expo install <pkg>` (jamais `npm install <pkg>@x`) et lancer `npx expo install --check` avant chaque build de production. Cause racine STAB-01.
+
+17. **SDK 54 : API fichier legacy** — `expo-file-system` a déplacé `readAsStringAsync` et `EncodingType` vers `expo-file-system/legacy` en SDK 54 ; l'import principal ne les expose plus. Pour lire un fichier en base64 (upload avatar), importer depuis `expo-file-system/legacy`.
+
+18. **RLS Supabase : pas de récursion croisée entre policies** — Une policy SELECT sur `points` qui sous-requête `point_partners` ⟷ une policy SELECT sur `point_partners` qui sous-requête `points` = récursion infinie PostgreSQL `42P17`. Pour une vérification cross-table dans une policy, utiliser une fonction `SECURITY DEFINER` (avec `SET search_path`, EXECUTE limité à `authenticated`) qui contourne la RLS de la table interrogée. Cf. migration 011 (`is_pending_partner`). Cause racine STAB-02/03.
+
 ---
 
 ## Identité visuelle — Design Éditorial Noir/Rose + Light Mode
@@ -280,6 +286,10 @@ Le toggle dark/light est dans `app/(app)/profile/index.tsx` via `useThemeStore` 
 | TF6 | ✅ Terminé | Build #14 — fix définitif : ImagePicker dynamic require dans fonction + createPoint robuste aux deux signatures RPC (007 TABLE / 008 UUID) + erreurs Supabase visibles dans snackbar |
 | TF7 | ✅ Terminé | Build #15 — migration 009 (colonnes address+happened_at + create_point UUID définitif) + suppression requestMediaLibraryPermissionsAsync() crash avatar |
 | TF8 | ✅ Terminé | Build #16 — zoom : MarkerView→PointAnnotation (pins toujours visibles) · mention : migration 010 RLS + section taguages en attente dans requests.tsx |
+| GSD-P1 | ✅ Code | Milestone Refonte UI/UX — Phase 1 (Stabilisation & Fondations) via GSD : lib/haptics.ts (FOND-03), AppText (FOND-04), câblage haptique sceller/consentement/suppression (IOS-03), socle natif reanimated v4 + gesture-handler + GestureHandlerRootView racine + runtimeVersion fingerprint (FOND-01/02). Détail : .planning/phases/01-stabilisation-fondations/ |
+| STAB-fix | ✅ Terminé | Correctifs régressions #15/#16 : migration 011 (récursion RLS `42P17` sur `points` → STAB-02/03, fonction SECURITY DEFINER `is_pending_partner`) · expo-file-system legacy + expo-image-picker 16.0.6→17.0.11 (crash avatar STAB-01, mismatch SDK 54) |
+| 17 | ✅ Terminé | Build EAS #17 — socle natif validé device (worklets reanimated v4 OK, aucun gesture mort) ; STAB-01 encore KO (mismatch image-picker non encore corrigé) |
+| 18 | 🔄 En cours | Build EAS #18 — fix expo-image-picker 17.0.11 (STAB-01) + retrait smoke test reanimated. En attente validation avatar device. |
 
 > Mettre à jour ce tableau à chaque phase complétée.
 

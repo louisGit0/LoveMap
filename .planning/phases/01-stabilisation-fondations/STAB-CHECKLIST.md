@@ -24,9 +24,10 @@ Validation manuelle uniquement (D-08) : aucun test automatisé. Cocher chaque it
 
 Résultat attendu : la galerie s'ouvre sans planter et l'avatar reflète la nouvelle image.
 
-- [ ] STAB-01 PASS — EN ATTENTE du build #17 (correctif client, OTA inopérant)
-- Anomalie observée : Crash dès le clic sur l'avatar.
-- Correctif appliqué (code) : `expo-file-system` → API legacy (SDK 54 a déplacé `readAsStringAsync`/`EncodingType` vers `expo-file-system/legacy`). À valider sur le build #17. Si un crash natif du picker subsiste, fournir le log de crash device.
+- [ ] STAB-01 PASS — EN ATTENTE du build #18 (correctif natif, OTA inopérant)
+- Anomalie observée : « Impossible d'ouvrir la galerie » puis crash, au clic sur l'avatar (toujours présent sur #17).
+- **Cause racine (confirmée)** : `expo-image-picker` épinglé en **16.0.6** alors que SDK 54 attend **17.0.11** → mismatch d'interface JS/natif → `launchImageLibraryAsync` rejette et l'app crashe. Présent depuis #15.
+- Correctifs appliqués : (1) `expo-image-picker` 16.0.6 → 17.0.11 (correctif racine) ; (2) `expo-file-system` → API legacy (nécessaire pour l'upload) ; (3) message d'erreur réel surfacé dans le catch. À valider sur le build #18.
 
 ---
 

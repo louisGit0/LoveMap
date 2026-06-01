@@ -53,9 +53,14 @@ Note : ces bugs préexistent dans les binaires #15/#16 et sont indépendants du 
 - **Validation** : utilisateur a re-testé sur #16 → « Ça marche maintenant ». STAB-02/03 PASS.
 - Note : correctif **serveur** → effectif immédiatement sur les builds existants, sans rebuild.
 
-### Bug A — STAB-01 (avatar) : CORRIGÉ (validation sur #17)
-- **Cause** : SDK 54 a déplacé `readAsStringAsync`/`EncodingType` vers `expo-file-system/legacy` ; l'import principal les expose plus → upload avatar cassé (et 1 erreur tsc baseline).
-- **Correctif** : `app/(app)/profile/index.tsx` require `expo-file-system/legacy`. tsc baseline 40 → 39.
-- **Validation** : correctif **client** → nécessite le build #17 (en cours). Réserve : si crash natif du picker subsiste, log device requis.
+### Bug A — STAB-01 (avatar) : CAUSE RACINE TROUVÉE (validation sur #18)
+- **Symptôme #17** : « Impossible d'ouvrir la galerie » puis crash (le catch JS de `launchImageLibraryAsync` se déclenchait — donc pas un crash natif inattrapable, mais le module natif rejetait l'appel).
+- **Cause racine (confirmée via `expo install --check`)** : `expo-image-picker@16.0.6` alors que SDK 54 attend `~17.0.11`. Mismatch majeur d'interface JS↔natif → l'appel rejette et l'app meurt. Présent depuis #15 — explique la persistance du crash à travers tous les builds.
+- **Correctifs** :
+  1. `expo-image-picker` 16.0.6 → **17.0.11** (`npx expo install`) — correctif racine.
+  2. `expo-file-system` → API legacy (déjà appliqué — nécessaire pour l'upload base64, indépendant).
+  3. Catch de `launchImageLibraryAsync` surface désormais l'erreur réelle (au lieu de la masquer).
+- **Validation** : correctif **natif** → build #18 (en cours). tsc : aucune nouvelle erreur (39 baseline).
+- Note dette : `expo install --check` révèle d'autres paquets en léger retard (patch). Non bloquants ; alignement complet hors périmètre Phase 1.
 
 ## Self-Check: PASSED — bugs bloquants corrigés ; STAB-01 en validation finale sur #17
