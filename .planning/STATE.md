@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: Phase 02 en cours (3/5 plans)
-stopped_at: 02-03 exécuté (markers raffinés + sélection refresh() + cascade + FAB squircle) — tsc 38/38, validation device en attente
-last_updated: "2026-06-01T19:30:00.000Z"
+status: Phase 02 en cours (4/5 plans)
+stopped_at: 02-04 exécuté (bandeau éditorial flottant + toggle Points/Heatmap + pill ami + Recentrer squircle 40×40) — tsc 38/38, validation device en attente
+last_updated: "2026-06-01T20:15:00.000Z"
 progress:
   total_phases: 5
   completed_phases: 1
   total_plans: 9
-  completed_plans: 7
-  percent: 78
+  completed_plans: 8
+  percent: 89
 ---
 
 # STATE — LoveMap (Refonte UI/UX iOS)
@@ -31,12 +31,12 @@ See: .planning/PROJECT.md (updated 2026-05-29)
 | Phase | Name | Status |
 |-------|------|--------|
 | 1 | Stabilisation & Fondations | ✅ Terminé — 8/8 req · builds #17/#18 · migrations 011+012 |
-| 2 | Carte stylisée | 🚧 En cours — 3/5 plans (02-01 tokens · 02-02 heatmap · 02-03 markers+FAB) |
+| 2 | Carte stylisée | 🚧 En cours — 4/5 plans (02-01 tokens · 02-02 heatmap · 02-03 markers+FAB · 02-04 bandeau+contrôles) |
 | 3 | Création & Détail de point (sheets natifs) | ⬜ Not started |
 | 4 | Listes & Cercle | ⬜ Not started |
 | 5 | Auth, Profil & Finitions | ⬜ Not started |
 
-**Requirements:** 9 / 22 complete (Phase 1 : STAB-01/02/03, FOND-01/02/03/04, IOS-03 · Phase 2 : MAP-03)
+**Requirements:** 10 / 22 complete (Phase 1 : STAB-01/02/03, FOND-01/02/03/04, IOS-03 · Phase 2 : MAP-03, UI-02 — UI-02 couvert par 02-01+02-03+02-04)
 
 ## Config
 
@@ -59,7 +59,7 @@ See: .planning/PROJECT.md (updated 2026-05-29)
 
 ## Next Step
 
-Phase 2 en cours — restent **02-04** (bandeau de contrôles éditorial + sélecteur d'ami + recentrer, UI-02) et **02-05** (style Mapbox Studio, checkpoint humain MAP-01). 02-01/02/03 exécutés (tokens D-12 · heatmap rose→ambre · markers raffinés + sélection `refresh()` + cascade staggered + FAB squircle reanimated).
+Phase 2 en cours — reste **02-05** (style Mapbox Studio sur-mesure, checkpoint humain MAP-01). 02-01/02/03/04 exécutés (tokens D-12 · heatmap rose→ambre · markers raffinés + sélection `refresh()` + cascade staggered + FAB squircle reanimated · bandeau éditorial flottant + toggle Points/Heatmap + pill ami + Recentrer squircle 40×40). UI-02 désormais entièrement couvert (02-01+02-03+02-04).
 
 Validation device en attente (gate de phase, TestFlight) : pins visibles à tous les zooms (STAB-02), tap → agrandissement+halo, cascade au chargement, FAB squircle + scale-on-press + haptique medium.
 
@@ -67,8 +67,8 @@ Note : MAP-01 (style Mapbox Studio) = checkpoint humain — tu crées l'URL `map
 
 ## Session
 
-- **Stopped at:** 02-03 exécuté (markers raffinés + sélection refresh() + cascade staggered + FAB squircle reanimated) — tsc 38/38, 0 nouvelle erreur
-- **Resume file:** .planning/phases/02-carte-stylis-e/02-04-PLAN.md
+- **Stopped at:** 02-04 exécuté (bandeau éditorial flottant + toggle Points/Heatmap + pill ami + Recentrer squircle 40×40 + IcoTarget) — tsc 38/38, 0 nouvelle erreur
+- **Resume file:** .planning/phases/02-carte-stylis-e/02-05-PLAN.md
 
 ---
-*Last updated: 2026-06-01 after 02-03 execution (markers + FAB squircle, MAP-03/UI-02)*
+*Last updated: 2026-06-01 after 02-04 execution (bandeau de contrôles éditorial, UI-02)*
