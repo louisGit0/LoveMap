@@ -7,7 +7,8 @@ Chaque phase livre une tranche visible bout-en-bout. Les fondations techniques s
 
 ---
 
-### Phase 1: Stabilisation & Fondations
+### Phase 1: Stabilisation & Fondations ✅ COMPLETE
+**Status:** ✅ Terminé et vérifié (8/8 requirements, gsd-verifier PASS) — validé device sur builds #17 (worklets) et #18 (avatar). Régressions #15/#16 corrigées : migrations 011 (RLS 42P17) + 012 (RLS Storage avatars), expo-image-picker 16→17, expo-file-system legacy.
 **Goal:** Sécuriser la base technique de la refonte et confirmer que les bugs des builds #15/#16 sont réglés sur TestFlight.
 **Mode:** mvp
 **Requirements:** STAB-01, STAB-02, STAB-03, FOND-01, FOND-02, FOND-03, FOND-04, IOS-03

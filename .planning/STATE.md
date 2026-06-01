@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: Ready to execute
-stopped_at: Phase 1 planifiée (4 plans prêts à exécuter)
-last_updated: "2026-05-29T19:32:43.807Z"
+status: Phase 01 complete
+stopped_at: Phase 1 terminée et vérifiée (8/8 requirements, builds #17/#18, migrations 011+012)
+last_updated: "2026-06-01T16:48:08.968Z"
 progress:
   total_phases: 5
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 4
-  completed_plans: 0
-  percent: 0
+  completed_plans: 4
+  percent: 20
 ---
 
 # STATE — LoveMap (Refonte UI/UX iOS)
@@ -20,7 +20,7 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-29)
 
 **Core value:** L'expérience visuelle et tactile doit donner l'impression d'un produit iOS premium, beau, fluide et stable sur iPhone.
-**Current focus:** Phase 01 — stabilisation-fondations
+**Current focus:** Phase 1 terminée → prochaine : Phase 2 (Carte stylisée)
 
 ## Milestone
 
@@ -30,13 +30,13 @@ See: .planning/PROJECT.md (updated 2026-05-29)
 
 | Phase | Name | Status |
 |-------|------|--------|
-| 1 | Stabilisation & Fondations | 📋 Planifiée (4 plans, 3 vagues) |
+| 1 | Stabilisation & Fondations | ✅ Terminé — 8/8 req · builds #17/#18 · migrations 011+012 |
 | 2 | Carte stylisée | ⬜ Not started |
 | 3 | Création & Détail de point (sheets natifs) | ⬜ Not started |
 | 4 | Listes & Cercle | ⬜ Not started |
 | 5 | Auth, Profil & Finitions | ⬜ Not started |
 
-**Requirements:** 0 / 22 complete
+**Requirements:** 8 / 22 complete (Phase 1 : STAB-01/02/03, FOND-01/02/03/04, IOS-03)
 
 ## Config
 
@@ -52,15 +52,19 @@ See: .planning/PROJECT.md (updated 2026-05-29)
 - Phase 1 planifiée : 4 plans en 3 vagues. Vague 1 = 01-01 (checklist STAB, manuel) + 01-02 (lib/haptics.ts + AppText) · Vague 2 = 01-03 (câblage haptique IOS-03) · Vague 3 = 01-04 (socle natif reanimated/gesture-handler + runtimeVersion fingerprint + build #17, manuel). Recherche projet réutilisée (pas de RESEARCH.md de phase). Couverture : 8/8 requirements, 10/10 décisions.
 - Pièges critiques connus : runtimeVersion statique (TestFlight), imports dynamiques expo-image-picker/file-system, OTA inopérants chez l'utilisateur (builds natifs requis).
 - Migrations Supabase 009 + 010 appliquées manuellement par l'utilisateur (confirmé).
+- **Phase 1 exécutée et vérifiée (8/8, gsd-verifier PASS).** Code : lib/haptics.ts, AppText, câblage haptique, socle natif reanimated v4 + gesture-handler + GestureHandlerRootView + runtimeVersion fingerprint.
+- **Cycle de correctif STAB (régressions #15/#16 révélées par la validation)** : migration **011** (récursion RLS `42P17` sur points → STAB-02/03), migration **012** (RLS Storage bucket avatars), upgrade `expo-image-picker` 16→17.0.11 + `expo-file-system` legacy (crash avatar STAB-01). Migrations 011/012 appliquées en prod via MCP + vérifiées. Validé device sur builds #17 (worklets) et #18 (avatar).
+- Nouvelles règles CLAUDE.md 16-18 (alignement paquets Expo/SDK, API file-system legacy, récursion RLS).
+- Dette connue : ~39 erreurs tsc baseline préexistantes (types Supabase `never`, etc.) — hors périmètre Phase 1, 0 nouvelle erreur introduite. `expo install --check` signale d'autres paquets en léger retard (patch).
 
 ## Next Step
 
-`/gsd:execute-phase 1` — exécuter les 4 plans de la phase Stabilisation & Fondations.
+`/gsd:discuss-phase 2` (ou `/gsd:plan-phase 2`) — Phase 2 : Carte stylisée.
 
 ## Session
 
-- **Stopped at:** Phase 1 planifiée (4 plans prêts à exécuter)
-- **Resume file:** `.planning/phases/01-stabilisation-fondations/01-01-PLAN.md`
+- **Stopped at:** Phase 1 terminée, vérifiée et commitée. Prêt pour Phase 2.
+- **Resume file:** `.planning/phases/01-stabilisation-fondations/VERIFICATION.md`
 
 ---
-*Last updated: 2026-05-29 after Phase 1 plan-phase (4 plans)*
+*Last updated: 2026-06-01 after Phase 1 execution + STAB fix cycle (builds #17/#18, migrations 011/012)*

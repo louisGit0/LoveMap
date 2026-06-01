@@ -287,9 +287,9 @@ Le toggle dark/light est dans `app/(app)/profile/index.tsx` via `useThemeStore` 
 | TF7 | ✅ Terminé | Build #15 — migration 009 (colonnes address+happened_at + create_point UUID définitif) + suppression requestMediaLibraryPermissionsAsync() crash avatar |
 | TF8 | ✅ Terminé | Build #16 — zoom : MarkerView→PointAnnotation (pins toujours visibles) · mention : migration 010 RLS + section taguages en attente dans requests.tsx |
 | GSD-P1 | ✅ Code | Milestone Refonte UI/UX — Phase 1 (Stabilisation & Fondations) via GSD : lib/haptics.ts (FOND-03), AppText (FOND-04), câblage haptique sceller/consentement/suppression (IOS-03), socle natif reanimated v4 + gesture-handler + GestureHandlerRootView racine + runtimeVersion fingerprint (FOND-01/02). Détail : .planning/phases/01-stabilisation-fondations/ |
-| STAB-fix | ✅ Terminé | Correctifs régressions #15/#16 : migration 011 (récursion RLS `42P17` sur `points` → STAB-02/03, fonction SECURITY DEFINER `is_pending_partner`) · expo-file-system legacy + expo-image-picker 16.0.6→17.0.11 (crash avatar STAB-01, mismatch SDK 54) |
+| STAB-fix | ✅ Terminé | Correctifs régressions #15/#16 : migration 011 (récursion RLS `42P17` sur `points` → STAB-02/03, fonction SECURITY DEFINER `is_pending_partner`) · migration 012 (RLS Storage bucket `avatars` — storage.objects sans policy → upload refusé) · expo-image-picker 16.0.6→17.0.11 (crash avatar) + expo-file-system legacy (lecture base64) → STAB-01 |
 | 17 | ✅ Terminé | Build EAS #17 — socle natif validé device (worklets reanimated v4 OK, aucun gesture mort) ; STAB-01 encore KO (mismatch image-picker non encore corrigé) |
-| 18 | 🔄 En cours | Build EAS #18 — fix expo-image-picker 17.0.11 (STAB-01) + retrait smoke test reanimated. En attente validation avatar device. |
+| 18 | ✅ Terminé | Build EAS #18 — fix expo-image-picker 17.0.11 + retrait smoke test reanimated. STAB-01 validé device (« Ça marche » : galerie OK, upload OK après migration 012). **Phase 1 terminée et vérifiée (8/8).** |
 
 > Mettre à jour ce tableau à chaque phase complétée.
 
