@@ -229,7 +229,10 @@ Le toggle dark/light est dans `app/(app)/profile/index.tsx` via `useThemeStore` 
 | `T.textFaint` | `#8a8a8a` | `#7a7a7a` | Texte tertiaire / inactif |
 | `T.primary` | `#ff2d87` | `#ff2d87` | Accent rose (identique) |
 | `T.danger` | `#a91860` | `#c41960` | Danger/erreur |
-| `T.cardRadius` | `4` | `4` | Radius max (angles francs) |
+| `T.cardRadius` | `16` | `16` | Radius cards/surfaces (formes iOS arrondies — D-12) |
+| `T.radiusXs/Sm/Md/Lg/Xl` | `8/12/16/22/28` | idem | Échelle de rayons iOS (D-12) |
+| `T.fab` | `18` | `18` | Rayon du FAB squircle (D-12) |
+| `T.pill` | `999` | `999` | Pills / toggles entièrement arrondis (D-12) |
 
 | Token (`F.xxx`) | Police | Usage |
 |-----------------|--------|-------|
@@ -252,6 +255,7 @@ Le toggle dark/light est dans `app/(app)/profile/index.tsx` via `useThemeStore` 
 - **useSafeAreaInsets()** pour les insets — jamais SafeAreaView
 - **Copie éditoriale** : ton journal intime, "Sceller la page", "Page effacée", "le carnet", "le cercle", "Zone irréversible", EFFACER
 - **Eyebrows** : F.mono, fontSize 9–10, letterSpacing 2–2.5, textTransform:'uppercase', color T.textFaint/T.primary
+- **Formes (pivot D-12 — « éditorial sombre × iOS arrondi », Phases 2→5)** : cards, boutons, contrôles flottants et FAB adoptent des coins arrondis iOS via l'échelle de rayons (`radiusXs..Xl`, `cardRadius=16`, `pill=999`, `fab=18`). **Tout `borderRadius ≥ radiusSm` s'accompagne de `borderCurve:'continuous'`** (squircle iOS — prop per-style, pas un token). Le **FAB est un squircle** (`fab=18`), fini le carré. Les anciens « angles francs / `borderRadius:0` » ne sont plus la règle pour ces surfaces. **Exceptions inchangées cette phase** : « Avatars : carrés (borderRadius:0) » et « Inputs : underline only » restent tels quels (réévaluation Phases 5/3).
 
 ---
 
@@ -290,6 +294,7 @@ Le toggle dark/light est dans `app/(app)/profile/index.tsx` via `useThemeStore` 
 | STAB-fix | ✅ Terminé | Correctifs régressions #15/#16 : migration 011 (récursion RLS `42P17` sur `points` → STAB-02/03, fonction SECURITY DEFINER `is_pending_partner`) · migration 012 (RLS Storage bucket `avatars` — storage.objects sans policy → upload refusé) · expo-image-picker 16.0.6→17.0.11 (crash avatar) + expo-file-system legacy (lecture base64) → STAB-01 |
 | 17 | ✅ Terminé | Build EAS #17 — socle natif validé device (worklets reanimated v4 OK, aucun gesture mort) ; STAB-01 encore KO (mismatch image-picker non encore corrigé) |
 | 18 | ✅ Terminé | Build EAS #18 — fix expo-image-picker 17.0.11 + retrait smoke test reanimated. STAB-01 validé device (« Ça marche » : galerie OK, upload OK après migration 012). **Phase 1 terminée et vérifiée (8/8).** |
+| GSD-P2 | 🔄 En cours | Phase 2 (Carte stylisée) — pivot design D-12 (formes iOS arrondies, FAB squircle), heatmap rose→ambre, markers raffinés + animation, bandeau de contrôles éditorial, style Mapbox Studio (checkpoint humain). Détail : .planning/phases/02-carte-stylis-e/ |
 
 > Mettre à jour ce tableau à chaque phase complétée.
 
