@@ -10,10 +10,11 @@ import { PressableScale } from '@/components/ui/PressableScale';
 
 interface Props {
   point: MapPoint;
-  index: number;
+  /** @deprecated N°00X supprimé (D-01) — conservé transitoirement, retiré en 04-01 Task 3 */
+  index?: number;
 }
 
-export function PointListItem({ point, index }: Props) {
+export function PointListItem({ point }: Props) {
   const T = useTheme();
   const styles = useMemo(() => makeStyles(T), [T]);
 
@@ -30,13 +31,13 @@ export function PointListItem({ point, index }: Props) {
         router.push(`/(app)/point/${point.id}`);
       }}
     >
-      {/* Numéro */}
-      <Text style={styles.number}>N°{String(index + 1).padStart(3, '0')}</Text>
+      {/* Ancre — note /10 en Display 44 (T.text, pas rose) */}
+      <View style={styles.anchor}>
+        <Text style={styles.note}>{point.note}</Text>
+        <Text style={styles.denom}>/10</Text>
+      </View>
 
-      {/* Note grande */}
-      <Text style={styles.note}>{point.note}</Text>
-
-      {/* Commentaire */}
+      {/* Corps — commentaire serif + méta mono */}
       <View style={styles.body}>
         {point.comment ? (
           <Text style={styles.comment} numberOfLines={1}>
@@ -65,24 +66,26 @@ const makeStyles = (T: Theme) => StyleSheet.create({
     paddingHorizontal: 0,
     borderBottomWidth: 1,
     borderBottomColor: T.border,
-    gap: 14,
+    gap: 12,
   },
-  number: {
-    fontFamily: F.mono,
-    fontSize: 9,
-    letterSpacing: 1.5,
-    color: T.textFaint,
-    width: 38,
-    textTransform: 'uppercase',
+  anchor: {
+    width: 64,
+    alignItems: 'center',
   },
   note: {
     fontFamily: F.serifLight,
     fontStyle: 'italic',
-    fontSize: 36,
-    lineHeight: 36,
-    color: T.primary,
-    minWidth: 28,
+    fontSize: 44,
+    lineHeight: 44,
+    color: T.text,
     textAlign: 'center',
+  },
+  denom: {
+    fontFamily: F.mono,
+    fontSize: 10,
+    letterSpacing: 1,
+    color: T.textFaint,
+    marginTop: 2,
   },
   body: {
     flex: 1,
@@ -90,27 +93,27 @@ const makeStyles = (T: Theme) => StyleSheet.create({
   comment: {
     fontFamily: F.serif,
     fontStyle: 'italic',
-    fontSize: 17,
+    fontSize: 20,
     color: T.text,
-    lineHeight: 22,
+    lineHeight: 26,
   },
   commentEmpty: {
     fontFamily: F.serif,
     fontStyle: 'italic',
-    fontSize: 17,
+    fontSize: 20,
     color: T.textFaint,
-    lineHeight: 22,
+    lineHeight: 26,
   },
   meta: {
     fontFamily: F.mono,
-    fontSize: 9,
+    fontSize: 10,
     letterSpacing: 1,
     color: T.textFaint,
     textTransform: 'uppercase',
     marginTop: 4,
   },
   arrow: {
-    fontFamily: F.sansLight,
+    fontFamily: F.mono,
     color: T.textFaint,
     fontSize: 20,
   },
