@@ -33,6 +33,11 @@ Refonte **visuelle** des 3 écrans de listing / social selon l'archétype **« t
 ### Demandes (`friends/requests`) — UI-07
 - **D-07 :** **Deux sections** à eyebrow mono : « DEMANDES REÇUES » (amitié) et « TAGUAGES EN ATTENTE » (consentement partenaire, migration 010). Chaque ligne = entrée éditoriale avec actions **Accepter/Refuser** en boutons texte (solid / ghost), ton « sceller / décliner ». État vide « Pas de page en attente ».
 
+### Résolutions post-recherche (2026-06-02, après 04-RESEARCH.md)
+- **D-08 :** Sur l'écran Demandes, répondre à un **taguage partenaire en attente se fait INLINE** (boutons « Sceller » / « Décliner » sur la ligne). Ajouter une petite méthode hook `respondToTag(pointPartnerId, accept)` dans `useFriends` (ou hook dédié) — mono-table `point_partners`, RLS-safe (mig 010/011, règle 18), pas d'appel Supabase dans le composant. Ne PAS naviguer vers le détail du point pour cette action.
+- **D-09 :** L'écran Demandes **conserve une 3e section « Envoyées »** (demandes d'amitié envoyées en attente), discrète sous les deux sections principales (« Demandes reçues », « Taguages en attente »). Les eyebrows mono des deux sections principales restent l'accent éditorial ; « Envoyées » est secondaire.
+- **D-10 :** Le composant `components/point/FiltersBottomSheet.tsx` devient **orphelin** après le passage aux filtres inline (D-03) → **le supprimer** (et nettoyer tout import résiduel).
+
 ### Claude's Discretion
 - Tailles/espacements exacts (taille du numéro de note, hauteur des lignes, gaps) → UI-SPEC / planner.
 - Implémentation du retrait d'ami (signature de la méthode `useFriends`, opération Supabase delete/blocked, mise à jour `friendStore`) → researcher/planner. Respecter RLS et règle 18 (pas de récursion croisée).
