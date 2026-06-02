@@ -66,7 +66,12 @@ See: .planning/PROJECT.md (updated 2026-05-29)
 
 Plus de phase planifiée. Options : définir un nouveau jalon (`/gsd:new-milestone`), ou traiter la dette connue ci-dessous lors d'une passe dédiée.
 
-**Dette connue laissée (hors périmètre, documentée) :** `requests.tsx handleCancel` (section « Envoyées ») + `friends/index.tsx loadFriends` gardent un appel Supabase direct (déviation rule-4 pré-existante) — à router via hook si souhaité. Baseline tsc = **20** (erreurs pré-existantes types Supabase `never`).
+**Dette rule-4 (friends) NETTOYÉE (2026-06-02) :** tous les accès données de `friends/index.tsx` + `friends/requests.tsx` passent désormais par `useFriends` (`fetchPendingReceived`, `fetchRequests`, `cancelRequest`, `searchUsers`) — 0 `supabase.` direct dans ces composants. Type `PendingTag` déplacé dans `types/app.types.ts`. tsc 20 (0 nouvelle erreur).
+
+**Reste (intentionnel / pré-existant, à arbitrer lors de la revue écran par écran) :**
+- `profile/index.tsx` : appels Supabase directs **intentionnels** — bloc avatar **verbatim** (règles 14/15/17, NE PAS toucher), `auth.updateUser` (email/mdp), `functions.invoke('delete-account')`, `profiles.update` (display_name). Exceptions documentées.
+- `point/[id].tsx` : `loadPoint` + `handleConsent` en Supabase direct (écran détail, pré-existant, non flaggé) — à router via un hook `usePoint` si souhaité plus tard.
+Baseline tsc = **20** (erreurs pré-existantes types Supabase `never`).
 
 ## Session
 
