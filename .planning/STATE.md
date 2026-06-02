@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Phase 02 complete
-stopped_at: Phase 3 UI-SPEC approved (6/6)
-last_updated: "2026-06-02T05:33:42.760Z"
+stopped_at: Phase 3 planifiée (5 plans, 3 vagues) — vérifiée PASS
+last_updated: "2026-06-02T06:06:34.222Z"
 progress:
   total_phases: 5
   completed_phases: 2
-  total_plans: 9
+  total_plans: 14
   completed_plans: 9
   percent: 40
 ---
@@ -66,8 +66,8 @@ See: .planning/PROJECT.md (updated 2026-05-29)
 
 ## Session
 
-- **Stopped at:** Phase 3 UI-SPEC approved (6/6)
-- **Resume file:** .planning/phases/03-cr-ation-d-tail-de-point-sheets-natifs/03-UI-SPEC.md
+- **Stopped at:** Phase 3 planifiée (5 plans, 3 vagues) — vérifiée PASS
+- **Resume file:** .planning/phases/03-cr-ation-d-tail-de-point-sheets-natifs/03-01-PLAN.md
 
 ---
 *Last updated: 2026-06-01 after Phase 2 completion (build #19, custom Mapbox style, D-12 pivot)*

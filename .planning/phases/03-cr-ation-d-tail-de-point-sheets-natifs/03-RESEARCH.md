@@ -371,7 +371,9 @@ Déjà documenté en détail dans PITFALLS §Redesign 2/3/4. Rappels Phase 3 : t
 
 **Note :** A1–A3 sont des points à **confirmer au `tsc` + test device**, pas des décisions utilisateur. Aucune hypothèse de compliance/sécurité/perfo non vérifiée.
 
-## Open Questions
+## Open Questions (RESOLVED)
+
+> **RESOLVED (2026-06-02) :** Q1 → **Option A acceptée** (edge-case tap-backdrop #3568 documenté, threat model T-03-07). Q2 → **segments JJ/MM/AAAA** (implémenté en 03-04 T1, supprime le risque de freeze #2125).
 
 1. **Mitigation du tap-backdrop (#3568) — décision produit**
    - Ce qu'on sait : swipe-down déclenche la garde ; tap-backdrop non (4.16.0 affecté).
