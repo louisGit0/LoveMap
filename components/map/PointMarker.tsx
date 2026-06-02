@@ -1,7 +1,8 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { View } from 'react-native';
 import MapboxGL from '@rnmapbox/maps';
 import { router } from 'expo-router';
+import { useFocusEffect } from '@react-navigation/native';
 import { useTheme } from '@/hooks/useTheme';
 import type { Theme } from '@/constants/theme';
 import type { MapPoint } from '@/types/app.types';
@@ -98,6 +99,16 @@ export function PointMarker({ point }: Props) {
   useEffect(() => {
     annRef.current?.refresh();
   }, [selected]);
+
+  // De retour sur la carte (le détail s'est fermé), réinitialiser la sélection.
+  // Sinon l'annotation peut rester « selected » (onDeselected non déclenché — quirk iOS),
+  // et re-taper un pin déjà sélectionné ne re-déclenche PAS onSelected → le détail ne s'ouvre pas.
+  useFocusEffect(
+    useCallback(() => {
+      setSelected(false);
+      navigatingRef.current = false;
+    }, [])
+  );
 
   return (
     /*
