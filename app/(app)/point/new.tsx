@@ -8,8 +8,10 @@ import {
   Platform,
   TouchableOpacity,
   TextInput,
+  Alert,
 } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
+import { usePreventRemove, useNavigation } from '@react-navigation/native';
 import { Snackbar } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import MapboxGL from '@rnmapbox/maps';
@@ -31,6 +33,7 @@ export default function NewPoint() {
   const { createPoint } = usePoints();
   const friends = useFriendStore((s) => s.friends);
   const params = useLocalSearchParams<{ latitude: string; longitude: string }>();
+  const navigation = useNavigation();
   const T = useTheme();
   const styles = useMemo(() => makeStyles(T), [T]);
 
@@ -170,14 +173,40 @@ export default function NewPoint() {
     router.replace('/(app)/map');
   }
 
+  // D-04 — garde de fermeture : confirmation si une saisie est en cours.
+  // Couvre le swipe-down natif ET le lien tertiaire « Abandonner la saisie ».
+  // Note : le tap-backdrop ne déclenche pas ce callback (react-native-screens #3568, accepté Option A).
+  const isDirty =
+    comment.trim() !== '' ||
+    durationMinutes !== '' ||
+    note !== 7 ||
+    selectedPartnerId !== null;
+
+  usePreventRemove(isDirty, ({ data }) => {
+    haptics.warn();
+    Alert.alert(
+      'Abandonner ce moment ?',
+      'Votre saisie ne sera pas enregistrée.',
+      [
+        { text: "Continuer l'écriture", style: 'cancel' },
+        { text: 'Abandonner', style: 'destructive', onPress: () => navigation.dispatch(data.action) },
+      ]
+    );
+  });
+
   return (
     <KeyboardAvoidingView
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      keyboardVerticalOffset={0}
     >
-      <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+      <ScrollView
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: insets.bottom + 32 }}
+      >
         {/* Header */}
-        <View style={[styles.header, { paddingTop: insets.top + 24 }]}>
+        <View style={[styles.header, { paddingTop: 24 }]}>
           <View style={styles.innerBorder} pointerEvents="none" />
           <Text style={styles.eyebrow}>N° 001 — Nouveau</Text>
           <Text style={styles.title}>Inscrire{'\n'}un moment.</Text>
