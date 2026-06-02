@@ -37,6 +37,7 @@ export function mapboxStaticUrl(
 ): string {
   const style = APP_CONFIG.MAPBOX_STYLE.replace('mapbox://styles/', '');
   const token = (process.env.EXPO_PUBLIC_MAPBOX_TOKEN as string | undefined) ?? '';
-  const pin = `pin-s+ff2d87(${longitude},${latitude})`;
-  return `https://api.mapbox.com/styles/v1/${style}/static/${pin}/${longitude},${latitude},${zoom}/${width}x${height}@2x?access_token=${token}`;
+  // PAS d'overlay pin-s+...() : les parenthèses cassent le chargement de l'URL par <Image> iOS
+  // (NSURL la rejette) → image noire. Le pin rose est dessiné par-dessus l'image en RN.
+  return `https://api.mapbox.com/styles/v1/${style}/static/${longitude},${latitude},${zoom}/${width}x${height}@2x?access_token=${token}`;
 }

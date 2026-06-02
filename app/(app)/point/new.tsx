@@ -344,6 +344,10 @@ export default function NewPoint() {
               style={StyleSheet.absoluteFillObject}
               resizeMode="cover"
             />
+            {/* Pin rose dessiné en RN (l'overlay Mapbox casserait l'URL iOS) */}
+            <View style={styles.centerPin} pointerEvents="none">
+              <View style={styles.centerPinDot} />
+            </View>
           </View>
 
           {/* Adresse résolue */}

@@ -229,6 +229,10 @@ export default function PointDetail() {
             style={StyleSheet.absoluteFillObject}
             resizeMode="cover"
           />
+          {/* Pin rose dessiné en RN (l'overlay Mapbox casserait l'URL iOS) */}
+          <View style={styles.miniMapPinWrap} pointerEvents="none">
+            <View style={styles.markerDot} />
+          </View>
         </View>
 
         <View style={styles.content}>
@@ -440,6 +444,15 @@ const makeStyles = (T: Theme) => StyleSheet.create({
     textTransform: 'uppercase',
     color: T.primary,
     marginBottom: 16,
+  },
+  miniMapPinWrap: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   markerDot: {
     width: 14,
