@@ -11,7 +11,6 @@ import {
 import { router } from 'expo-router';
 import { Snackbar } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
 import { useFriends } from '@/hooks/useFriends';
 import { useFriendStore } from '@/stores/friendStore';
@@ -29,7 +28,7 @@ import type { Profile } from '@/types/app.types';
 export default function FriendsScreen() {
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
-  const { friends, fetchFriends, sendFriendRequest, unfriend, setPendingReceived } = useFriends();
+  const { friends, fetchFriends, fetchPendingReceived, searchUsers, sendFriendRequest, unfriend, setPendingReceived } = useFriends();
   const pendingReceived = useFriendStore((s) => s.pendingReceived);
   const { setViewingFriend } = useMapStore();
   const T = useTheme();
@@ -47,16 +46,9 @@ export default function FriendsScreen() {
     setLoading(true);
     const ok = await fetchFriends(user.id);
     if (!ok) { setLoading(false); setSnackbar('Erreur de chargement.'); return; }
-    const { data } = await supabase
-      .from('friendships')
-      .select(`*, requester:profiles!friendships_requester_id_fkey(*), addressee:profiles!friendships_addressee_id_fkey(*)`)
-      .eq('addressee_id', user.id)
-      .eq('status', 'pending');
-    if (data) {
-      setPendingReceived(data.map((f: any) => ({ ...f, profile: f.requester })));
-    }
+    setPendingReceived(await fetchPendingReceived(user.id));
     setLoading(false);
-  }, [user, fetchFriends, setPendingReceived]);
+  }, [user, fetchFriends, fetchPendingReceived, setPendingReceived]);
 
   useEffect(() => { loadFriends(); }, [loadFriends]);
 
@@ -70,12 +62,11 @@ export default function FriendsScreen() {
     if (searchQuery.trim().length < 2) { setSearchResults([]); return; }
     const timer = setTimeout(async () => {
       setSearchLoading(true);
-      const { data } = await supabase.rpc('search_users', { query: searchQuery.trim() });
-      setSearchResults((data ?? []) as Profile[]);
+      setSearchResults(await searchUsers(searchQuery.trim()));
       setSearchLoading(false);
     }, 300);
     return () => clearTimeout(timer);
-  }, [searchQuery]);
+  }, [searchQuery, searchUsers]);
 
   async function handleAdd(profile: Profile) {
     if (!user) return;

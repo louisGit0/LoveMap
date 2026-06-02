@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useFriendStore } from '@/stores/friendStore';
-import type { FriendWithProfile } from '@/types/app.types';
+import type { FriendWithProfile, Profile, PendingTag } from '@/types/app.types';
 
 export function useFriends() {
   const { friends, pendingReceived, pendingSent, setFriends, setPendingReceived, setPendingSent, removeFriend } =
@@ -60,6 +60,85 @@ export function useFriends() {
     return true;
   }, []);
 
+  // Demandes d'amitié reçues en attente (pour le badge / l'aperçu du cercle).
+  const fetchPendingReceived = useCallback(async (userId: string): Promise<FriendWithProfile[]> => {
+    const { data, error } = await supabase
+      .from('friendships')
+      .select(`*, requester:profiles!friendships_requester_id_fkey(*), addressee:profiles!friendships_addressee_id_fkey(*)`)
+      .eq('addressee_id', userId)
+      .eq('status', 'pending');
+    if (error) {
+      console.error('[useFriends] fetchPendingReceived error:', error.message);
+      return [];
+    }
+    return (data ?? []).map((f: any) => ({ ...f, profile: f.requester }));
+  }, []);
+
+  // Écran Demandes : reçues + envoyées (amitié) + taguages en attente (consentement partenaire).
+  const fetchRequests = useCallback(async (
+    userId: string
+  ): Promise<{ received: FriendWithProfile[]; sent: FriendWithProfile[]; pendingTags: PendingTag[] } | null> => {
+    const [receivedRes, sentRes, tagsRes] = await Promise.all([
+      supabase
+        .from('friendships')
+        .select(`
+          id, requester_id, addressee_id, status, created_at, updated_at,
+          profile:profiles!friendships_requester_id_fkey(id, username, display_name, avatar_url)
+        `)
+        .eq('addressee_id', userId)
+        .eq('status', 'pending'),
+      supabase
+        .from('friendships')
+        .select(`
+          id, requester_id, addressee_id, status, created_at, updated_at,
+          profile:profiles!friendships_addressee_id_fkey(id, username, display_name, avatar_url)
+        `)
+        .eq('requester_id', userId)
+        .eq('status', 'pending'),
+      // Taguages en attente (migration 010 : RLS points_select autorise le partenaire tagué)
+      supabase
+        .from('point_partners')
+        .select(`id, point_id, notified_at, points ( note, happened_at, created_at, comment )`)
+        .eq('partner_id', userId)
+        .eq('status', 'pending'),
+    ]);
+
+    if (receivedRes.error || sentRes.error || tagsRes.error) {
+      console.error('[useFriends] fetchRequests error:',
+        receivedRes.error?.message ?? sentRes.error?.message ?? tagsRes.error?.message);
+      return null;
+    }
+
+    return {
+      received: (receivedRes.data ?? []) as unknown as FriendWithProfile[],
+      sent: (sentRes.data ?? []) as unknown as FriendWithProfile[],
+      pendingTags: (tagsRes.data ?? []) as unknown as PendingTag[],
+    };
+  }, []);
+
+  // Annuler une demande d'amitié envoyée (section « Envoyées »).
+  const cancelRequest = useCallback(async (friendshipId: string): Promise<boolean> => {
+    const { error } = await supabase
+      .from('friendships')
+      .delete()
+      .eq('id', friendshipId);
+    if (error) {
+      console.error('[useFriends] cancelRequest error:', error.message);
+      return false;
+    }
+    return true;
+  }, []);
+
+  // Recherche d'utilisateurs (RPC search_users — exclut date_of_birth/push_token côté serveur).
+  const searchUsers = useCallback(async (query: string): Promise<Profile[]> => {
+    const { data, error } = await supabase.rpc('search_users', { query });
+    if (error) {
+      console.error('[useFriends] searchUsers error:', error.message);
+      return [];
+    }
+    return (data ?? []) as Profile[];
+  }, []);
+
   const unfriend = useCallback(async (friendshipId: string) => {
     const { error } = await supabase
       .from('friendships')
@@ -104,9 +183,13 @@ export function useFriends() {
     pendingReceived,
     pendingSent,
     fetchFriends,
+    fetchPendingReceived,
+    fetchRequests,
     sendFriendRequest,
     respondToRequest,
     respondToTag,
+    cancelRequest,
+    searchUsers,
     unfriend,
     setPendingReceived,
     setPendingSent,

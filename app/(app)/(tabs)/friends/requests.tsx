@@ -11,7 +11,6 @@ import { router } from 'expo-router';
 import { Snackbar } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { haptics } from '@/lib/haptics';
-import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
 import { useFriends } from '@/hooks/useFriends';
 import { useTheme } from '@/hooks/useTheme';
@@ -20,19 +19,7 @@ import { Button } from '@/components/ui/Button';
 import { F } from '@/constants/fonts';
 import type { Theme } from '@/constants/theme';
 import { IcoArrow, IcoClose } from '@/components/icons';
-import type { FriendWithProfile } from '@/types/app.types';
-
-interface PendingTag {
-  id: string;
-  point_id: string;
-  notified_at: string | null;
-  points: {
-    note: number;
-    happened_at: string | null;
-    created_at: string;
-    comment: string | null;
-  } | null;
-}
+import type { FriendWithProfile, PendingTag } from '@/types/app.types';
 
 function formatDate(dateStr: string | null | undefined): string {
   if (!dateStr) return '—';
@@ -46,7 +33,7 @@ function formatDate(dateStr: string | null | undefined): string {
 export default function FriendRequests() {
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
-  const { respondToRequest, respondToTag, setPendingReceived, setPendingSent } = useFriends();
+  const { fetchRequests, respondToRequest, respondToTag, cancelRequest, setPendingReceived, setPendingSent } = useFriends();
   const T = useTheme();
   const styles = useMemo(() => makeStyles(T), [T]);
 
@@ -59,58 +46,14 @@ export default function FriendRequests() {
   const loadRequests = useCallback(async () => {
     if (!user) return;
     setLoading(true);
-
-    const [receivedRes, sentRes, tagsRes] = await Promise.all([
-      // Demandes d'amitié reçues
-      supabase
-        .from('friendships')
-        .select(`
-          id, requester_id, addressee_id, status, created_at, updated_at,
-          profile:profiles!friendships_requester_id_fkey(id, username, display_name, avatar_url)
-        `)
-        .eq('addressee_id', user.id)
-        .eq('status', 'pending'),
-
-      // Demandes d'amitié envoyées
-      supabase
-        .from('friendships')
-        .select(`
-          id, requester_id, addressee_id, status, created_at, updated_at,
-          profile:profiles!friendships_addressee_id_fkey(id, username, display_name, avatar_url)
-        `)
-        .eq('requester_id', user.id)
-        .eq('status', 'pending'),
-
-      // Taguages en attente de consentement (où je suis le partenaire)
-      // Nécessite migration 010 : la RLS points_select autorise désormais le partenaire tagué
-      supabase
-        .from('point_partners')
-        .select(`
-          id,
-          point_id,
-          notified_at,
-          points (
-            note,
-            happened_at,
-            created_at,
-            comment
-          )
-        `)
-        .eq('partner_id', user.id)
-        .eq('status', 'pending'),
-    ]);
-
-    const receivedData = (receivedRes.data ?? []) as unknown as FriendWithProfile[];
-    const sentData = (sentRes.data ?? []) as unknown as FriendWithProfile[];
-    const tagsData = (tagsRes.data ?? []) as unknown as PendingTag[];
-
-    setReceived(receivedData);
-    setSent(sentData);
-    setPendingTags(tagsData);
-    setPendingReceived(receivedData);
-    setPendingSent(sentData);
+    const res = await fetchRequests(user.id);
+    setReceived(res?.received ?? []);
+    setSent(res?.sent ?? []);
+    setPendingTags(res?.pendingTags ?? []);
+    setPendingReceived(res?.received ?? []);
+    setPendingSent(res?.sent ?? []);
     setLoading(false);
-  }, [user, setPendingReceived, setPendingSent]);
+  }, [user, fetchRequests, setPendingReceived, setPendingSent]);
 
   useEffect(() => { loadRequests(); }, [loadRequests]);
 
@@ -149,11 +92,10 @@ export default function FriendRequests() {
   }
 
   // ⚠ Déviation rule-4 existante NON corrigée cette phase : appel Supabase direct dans le composant
-  // pour la section discrète « Envoyées » (annulation d'une demande envoyée). Laissé inchangé pour
-  // ne pas étendre la dette ni élargir le périmètre 04-03 (cf. SUMMARY). À router via un hook ultérieurement.
+  // Annulation d'une demande d'amitié envoyée (section « Envoyées ») — via le hook useFriends.
   async function handleCancel(friendshipId: string) {
-    const { error } = await supabase.from('friendships').delete().eq('id', friendshipId);
-    if (!error) {
+    const ok = await cancelRequest(friendshipId);
+    if (ok) {
       setSnackbar('Demande annulée.');
       await loadRequests();
     } else {

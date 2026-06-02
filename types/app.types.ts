@@ -26,3 +26,16 @@ export interface PointPhoto {
   position: number;
   created_at: string;
 }
+
+// Taguage partenaire en attente de consentement (écran Demandes)
+export interface PendingTag {
+  id: string;
+  point_id: string;
+  notified_at: string | null;
+  points: {
+    note: number;
+    happened_at: string | null;
+    created_at: string;
+    comment: string | null;
+  } | null;
+}
