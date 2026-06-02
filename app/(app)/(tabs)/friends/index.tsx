@@ -6,7 +6,6 @@ import {
   FlatList,
   TouchableOpacity,
   ActivityIndicator,
-  TextInput,
   RefreshControl,
 } from 'react-native';
 import { router } from 'expo-router';
@@ -18,11 +17,13 @@ import { useFriends } from '@/hooks/useFriends';
 import { useFriendStore } from '@/stores/friendStore';
 import { useMapStore } from '@/stores/mapStore';
 import { useTheme } from '@/hooks/useTheme';
+import { haptics } from '@/lib/haptics';
 import { FriendItem } from '@/components/friends/FriendItem';
+import { Input } from '@/components/ui/Input';
 import { SkeletonRow } from '@/components/ui/SkeletonItem';
 import { F } from '@/constants/fonts';
 import type { Theme } from '@/constants/theme';
-import { IcoSearch, IcoPlus } from '@/components/icons';
+import { IcoPlus } from '@/components/icons';
 import type { Profile } from '@/types/app.types';
 
 export default function FriendsScreen() {
@@ -90,7 +91,12 @@ export default function FriendsScreen() {
 
   async function handleUnfriend(friendshipId: string) {
     const ok = await unfriend(friendshipId);
-    if (!ok) setSnackbar('Erreur lors de la suppression.');
+    if (ok) {
+      setSnackbar('Retiré du cercle.');
+    } else {
+      haptics.error();
+      setSnackbar('Échec — réessayez.');
+    }
   }
 
   const alreadyFriendIds = new Set(friends.map((f) => f.profile.id));
@@ -100,7 +106,7 @@ export default function FriendsScreen() {
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.eyebrow}>Confidents</Text>
-        <Text style={styles.title}>le cercle</Text>
+        <Text style={styles.title}>Le cercle</Text>
         <Text style={styles.subtitle}>
           {friends.length} lien{friends.length > 1 ? 's' : ''} · {pendingReceived.length} demande{pendingReceived.length > 1 ? 's' : ''}
         </Text>
@@ -109,18 +115,14 @@ export default function FriendsScreen() {
       <View style={styles.body}>
         {/* Section inviter */}
         <Text style={styles.sectionLabel}>Inviter quelqu'un</Text>
-        <View style={styles.searchRow}>
-          <IcoSearch size={14} color={T.textFaint} />
-          <TextInput
-            style={styles.searchInput}
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            placeholder="@pseudo ou prénom"
-            placeholderTextColor={T.textFaint}
-            autoCapitalize="none"
-          />
-          {searchLoading && <ActivityIndicator color={T.primary} size="small" />}
-        </View>
+        <Input
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+          placeholder="Rechercher dans le cercle"
+          autoCapitalize="none"
+          containerStyle={styles.searchInputContainer}
+          right={searchLoading ? <ActivityIndicator color={T.primary} size="small" /> : null}
+        />
 
         {/* Section demandes */}
         <TouchableOpacity
@@ -141,6 +143,11 @@ export default function FriendsScreen() {
           </Text>
           <Text style={styles.requestsArrow}>›</Text>
         </TouchableOpacity>
+
+        {/* Recherche sans résultat */}
+        {searchQuery.trim().length >= 2 && !searchLoading && searchResults.length === 0 && (
+          <Text style={styles.searchNoResult}>Aucun nom ne correspond.</Text>
+        )}
 
         {/* Résultats recherche */}
         {searchResults.length > 0 && (
@@ -176,8 +183,8 @@ export default function FriendsScreen() {
           </View>
         ) : friends.length === 0 ? (
           <View style={styles.empty}>
-            <Text style={styles.emptyTitle}>Le cercle est vide.</Text>
-            <Text style={styles.emptySubtitle}>Vous ne pouvez pas cartographier vos moments en étant seul·e. Invitez quelqu'un en qui vous avez confiance.</Text>
+            <Text style={styles.emptyTitle}>Votre cercle est vide.</Text>
+            <Text style={styles.emptySubtitle}>Cherchez un nom pour inviter quelqu'un.</Text>
           </View>
         ) : (
           <>
@@ -239,9 +246,9 @@ const makeStyles = (T: Theme) => StyleSheet.create({
   title: {
     fontFamily: F.serifLight,
     fontStyle: 'italic',
-    fontSize: 56,
-    lineHeight: 54,
-    letterSpacing: -2,
+    fontSize: 36,
+    lineHeight: 40,
+    letterSpacing: -1,
     color: T.text,
     marginBottom: 8,
   },
@@ -288,26 +295,19 @@ const makeStyles = (T: Theme) => StyleSheet.create({
     color: T.text,
   },
   requestsArrow: {
-    fontFamily: F.sansLight,
+    fontFamily: F.mono,
     fontSize: 20,
     color: T.textFaint,
   },
-  searchRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderBottomWidth: 1,
-    borderBottomColor: T.border,
-    paddingBottom: 8,
-    gap: 10,
-    marginBottom: 8,
+  searchInputContainer: {
+    marginBottom: 16,
   },
-  searchInput: {
-    flex: 1,
+  searchNoResult: {
     fontFamily: F.serif,
     fontStyle: 'italic',
-    fontSize: 18,
-    color: T.text,
-    paddingVertical: 6,
+    fontSize: 15,
+    color: T.textFaint,
+    marginBottom: 16,
   },
   searchResults: {
     borderWidth: 1,
@@ -339,8 +339,9 @@ const makeStyles = (T: Theme) => StyleSheet.create({
   },
   searchResultInfo: { flex: 1 },
   resultName: {
-    fontFamily: F.sans,
-    fontSize: 14,
+    fontFamily: F.serif,
+    fontStyle: 'italic',
+    fontSize: 18,
     color: T.text,
   },
   resultUsername: {
@@ -366,9 +367,10 @@ const makeStyles = (T: Theme) => StyleSheet.create({
     gap: 4,
   },
   addBtnText: {
-    fontFamily: F.sansMedium,
-    fontSize: 11,
-    letterSpacing: 0.5,
+    fontFamily: F.mono,
+    fontSize: 10,
+    letterSpacing: 1.5,
+    textTransform: 'uppercase',
     color: T.text,
   },
   loader: { marginTop: 32 },
