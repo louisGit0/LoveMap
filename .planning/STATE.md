@@ -62,9 +62,9 @@ See: .planning/PROJECT.md (updated 2026-05-29)
 
 ## Next Step
 
-**Phase 3 terminée et validée device (#26).** Démarrer **Phase 4 — Listes & Cercle** (`/gsd:discuss-phase 4` → ui → plan → execute).
+**Phase 3 terminée et validée device (#26 + #27).** Démarrer **Phase 4 — Listes & Cercle** (`/gsd:discuss-phase 4` → ui → plan → execute).
 
-Optionnel avant Phase 4 : proposer de **remettre un aperçu carte** dans le détail/création (maintenant que la présentation est un `modal` fiable, un MapView GL ou une image statique pourrait s'afficher — à tester en build dédié).
+Aperçu carte **restauré build #27** (validé device) : `<Image>` statique Mapbox (`mapboxStaticUrl()`) + pin rose RN, dans détail + création — fiable dans le `modal` (le noir d'avant venait du `formSheet`, pas de l'image).
 
 **Cycle de correctifs sheet (builds #20→#26), révélé par la validation device :**
 - #20–#22 : contenu « noir en haut ». Fausse piste « carte noire ».

@@ -32,11 +32,12 @@ poignée et `sheetCornerRadius` supprimés (non applicables au modal). `usePreve
 
 ## Correctifs secondaires (builds #20→#24, conservés)
 
-1. **Aperçu carte retiré des sheets** : un `MapboxGL.MapView` (GL) **et** un
-   `<Image>` Mapbox Static rendent noir dans le contexte sheet → remplacés par
-   un **cartouche de lieu** (pin rose + adresse/coords) en création et l'**adresse
-   en métadonnées** en détail. `mapboxStaticUrl()` conservé dans `constants/config.ts`
-   pour une éventuelle réintroduction (présentation modal désormais fiable).
+1. **Aperçu carte** : dans le `formSheet` cassé, un `MapboxGL.MapView` (GL) **et** un
+   `<Image>` Mapbox Static apparaissaient noirs (en réalité : bug du sheet, contenu
+   hors écran). Après bascule modal, l'**`<Image>` statique** (`mapboxStaticUrl()`,
+   `constants/config.ts`, pin rose RN) a été **restaurée build #27** et **s'affiche
+   correctement** (validé device) en détail + création, avec un cartouche d'adresse
+   sous la carte en création. Un MapView GL reste risqué → image statique préférée.
 2. **Layout clavier** : suppression du `KeyboardAvoidingView` (conflit avec la gestion
    native du sheet) → `ScrollView` avec `contentInsetAdjustmentBehavior="never"`
    + `automaticallyAdjustKeyboardInsets`.
