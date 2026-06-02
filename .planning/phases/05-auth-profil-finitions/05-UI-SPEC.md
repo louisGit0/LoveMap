@@ -1,10 +1,14 @@
 ---
 phase: 5
 slug: auth-profil-finitions
-status: draft
+status: approved
 shadcn_initialized: false
 preset: none
 created: 2026-06-02
+reviewed_at: 2026-06-02
+checker_flags:
+  - "Copywriting: register step 1 CTA « Continuer » est un mot seul sans nom — envisager « Vérifier mon âge » (non bloquant). À traiter en exécution."
+  - "Visuals: le toggle thème (IcoSun/IcoMoon) doit recevoir un accessibilityLabel (« Basculer vers le thème clair »/« …sombre ») au call site (VoiceOver). À ajouter en exécution."
 ---
 
 # Phase 5 — UI Design Contract · Auth, Profil & Finitions
