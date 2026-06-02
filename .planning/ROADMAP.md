@@ -53,11 +53,11 @@ Chaque phase livre une tranche visible bout-en-bout. Les fondations techniques s
 3. Les `Modal` custom de ce flux sont migrés vers des routes Stack (`gestureEnabled`).
 4. Les écrans création et détail suivent l'archétype « page de carnet » (N°00X, note serif géante, pull-quote italic).
 
-**Plans:** 3/5 plans executed
+**Plans:** 4/5 plans executed
 - [x] 03-01-PLAN.md — Restructuration nav : (app) Stack + groupe (tabs) + routes formSheet (point/new, point/[id]) (IOS-01, IOS-02)
 - [x] 03-02-PLAN.md — Suppression Modal PointMarker + tap-pin → détail direct + nettoyage map/index (IOS-02)
 - [x] 03-03-PLAN.md — Refonte création « page de carnet » (note d'abord) + clavier sheet + garde D-04 (UI-03, IOS-01)
-- [ ] 03-04-PLAN.md — Refonte détail « page de carnet » + segments date (anti-freeze #2125) + dismiss natif (UI-04, IOS-02, IOS-01)
+- [x] 03-04-PLAN.md — Refonte détail « page de carnet » + segments date (anti-freeze #2125) + dismiss natif (UI-04, IOS-02, IOS-01)
 - [ ] 03-05-PLAN.md — Gate device : gates statiques + build/OTA + checklist TestFlight iOS 26 (IOS-01, IOS-02, UI-03, UI-04)
 
 ### Phase 4: Listes & Cercle

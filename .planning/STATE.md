@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: Phase 03 en cours (3/5 plans)
-stopped_at: 03-03 terminé — refonte création « page de carnet » (note d'abord) + clavier sheet + garde dismiss D-04, tsc 0 nouvelle erreur
-last_updated: "2026-06-02T08:35:00.000Z"
+status: Phase 03 en cours (4/5 plans)
+stopped_at: 03-04 terminé — refonte détail « page de carnet » lecture (note 80, pull-quote serif, méta mono) + bouton retour supprimé (dismiss natif) + segments date anti-freeze #2125 + destructif T.danger, tsc 0 nouvelle erreur
+last_updated: "2026-06-02T09:16:00.000Z"
 progress:
   total_phases: 5
   completed_phases: 2
   total_plans: 14
-  completed_plans: 13
-  percent: 40
+  completed_plans: 14
+  percent: 43
 ---
 
 # STATE — LoveMap (Refonte UI/UX iOS)
@@ -32,11 +32,11 @@ See: .planning/PROJECT.md (updated 2026-05-29)
 |-------|------|--------|
 | 1 | Stabilisation & Fondations | ✅ Terminé — 8/8 req · builds #17/#18 · migrations 011+012 |
 | 2 | Carte stylisée | ✅ Terminé — 4/4 req · vérifié 4/4 · validé device #19 · style Mapbox custom + pivot D-12 |
-| 3 | Création & Détail de point (sheets natifs) | 🔄 En cours — 3/5 plans (03-01 ✅ restructure nav Stack + (tabs) + formSheet · 03-02 ✅ suppression Modal PointMarker, tap-pin → détail direct · 03-03 ✅ refonte création carnet note-first + clavier sheet + garde D-04) |
+| 3 | Création & Détail de point (sheets natifs) | 🔄 En cours — 4/5 plans (03-01 ✅ restructure nav Stack + (tabs) + formSheet · 03-02 ✅ suppression Modal PointMarker, tap-pin → détail direct · 03-03 ✅ refonte création carnet note-first + clavier sheet + garde D-04 · 03-04 ✅ refonte détail carnet lecture + dismiss natif + segments date anti-freeze #2125 + destructif T.danger) |
 | 4 | Listes & Cercle | ⬜ Not started |
 | 5 | Auth, Profil & Finitions | ⬜ Not started |
 
-**Requirements:** 15 / 22 complete (Phase 1 : STAB-01/02/03, FOND-01/02/03/04, IOS-03 · Phase 2 : MAP-01, MAP-02, MAP-03, UI-02 · Phase 3 : IOS-01, IOS-02, UI-03)
+**Requirements:** 16 / 22 complete (Phase 1 : STAB-01/02/03, FOND-01/02/03/04, IOS-03 · Phase 2 : MAP-01, MAP-02, MAP-03, UI-02 · Phase 3 : IOS-01, IOS-02, UI-03, UI-04)
 
 ## Config
 
@@ -62,7 +62,7 @@ See: .planning/PROJECT.md (updated 2026-05-29)
 
 ## Next Step
 
-Vague 1 terminée (**03-01 ✅**). **Vague 2 terminée** : **03-02 ✅** (suppression Modal PointMarker) + **03-03 ✅** (refonte création « page de carnet » note-first : NOTE serif Display 72 en hero + 10 segments tappables, clavier sheet KAV+ScrollView avec `keyboardVerticalOffset=0` + `paddingBottom insets.bottom+32`, garde dismiss D-04 via `usePreventRemove` → « Abandonner ce moment ? », discipline typo serif+mono {72,24,20,10}, rayons D-12, `innerBorder` supprimé, logique métier `create_point`/partenaire/GPS/date intacte — tsc 0 nouvelle erreur, commits 77ba8bd + e08932d). Prochaine : **03-04** (refonte détail carnet + segments date anti-freeze #2125 + dismiss natif — réutilise le pattern `usePreventRemove` et le stack clavier de 03-03). Vague 3 : 03-05 (gate device, build #20/OTA).
+Vagues 1 & 2 terminées. **03-04 ✅** (refonte détail « page de carnet » lecture : «La page» + NOTE serif Display 80 + pull-quote `«»` serif italic + table méta mono/serif ; **bouton retour flottant supprimé** → dismiss natif ; **`DatePickerModal` → segments JJ/MM/AAAA** dans le mode édition → supprime le gel #2125 avec `usePreventRemove` ET l'usage de `react-native-paper-dates` sur cet écran ; mode édition KAV-wrap + garde dismiss D-04 ; destructif « Effacer cette page » recoloré **T.danger** ; discipline typo serif+mono {80,22,16,9}, rayons D-12 ; logique métier `handleConsent`/`handleDelete`/`handleSaveAndAccept` intacte — tsc 0 nouvelle erreur, commits 644f41c + 94431be). Prochaine : **03-05** (gate device, build #20/OTA) — valider dismiss natif, flux édition sans gel, consentement, suppression.
 
 Note : tap-backdrop dismiss (#3568) **accepté Option A** — au détent 0.92, bande ~8% en haut ; documenté, pas de contournement, à confirmer device (Plan 05). ESLint non configuré au niveau repo (pré-existant) → `expo lint` substitué : 0 nouvelle alerte sur `new.tsx` (seul warning pré-existant `exhaustive-deps` sur le `useEffect` géoloc).
 
@@ -70,8 +70,8 @@ Note : Phase 3 = JS uniquement (zéro dépendance) → potentiellement OTA-compa
 
 ## Session
 
-- **Stopped at:** 03-03 terminé — refonte création « page de carnet » note-first + clavier sheet + garde dismiss D-04, tsc 0 nouvelle erreur
-- **Resume file:** .planning/phases/03-cr-ation-d-tail-de-point-sheets-natifs/03-04-PLAN.md
+- **Stopped at:** 03-04 terminé — refonte détail « page de carnet » lecture + dismiss natif + segments date anti-freeze #2125 + destructif T.danger, tsc 0 nouvelle erreur
+- **Resume file:** .planning/phases/03-cr-ation-d-tail-de-point-sheets-natifs/03-05-PLAN.md
 
 ---
-*Last updated: 2026-06-02 after 03-03 (refonte création carnet note-first + clavier sheet + garde D-04, UI-03/IOS-01)*
+*Last updated: 2026-06-02 after 03-04 (refonte détail carnet lecture + dismiss natif + segments date #2125 + T.danger, UI-04/IOS-02)*
