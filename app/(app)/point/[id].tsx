@@ -211,14 +211,13 @@ export default function PointDetail() {
   const isPending = partnerRecord?.status === 'pending';
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      keyboardVerticalOffset={0}
-    >
+    <View style={styles.container}>
       <ScrollView
+        style={styles.scroll}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
+        automaticallyAdjustKeyboardInsets
+        contentInsetAdjustmentBehavior="never"
         contentContainerStyle={{ paddingBottom: insets.bottom + 32 }}
       >
         {/* Pas d'aperçu carte : MapView GL ET <Image> Mapbox rendent noir dans un
@@ -410,12 +409,13 @@ export default function PointDetail() {
       <Snackbar visible={!!snackbar} onDismiss={() => setSnackbar(null)} duration={3000} style={styles.snackbar}>
         {snackbar}
       </Snackbar>
-    </KeyboardAvoidingView>
+    </View>
   );
 }
 
 const makeStyles = (T: Theme) => StyleSheet.create({
   container: { flex: 1, backgroundColor: T.bg },
+  scroll: { flex: 1 },
   centered: { flex: 1, backgroundColor: T.bg, justifyContent: 'center', alignItems: 'center' },
   errorText: { fontFamily: F.serif, fontStyle: 'italic', fontSize: 16, color: T.text, textAlign: 'center', paddingHorizontal: 32 },
   miniMap: {
