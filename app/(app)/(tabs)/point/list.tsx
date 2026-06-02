@@ -24,6 +24,9 @@ import type { MapPoint } from '@/types/app.types';
 type MinNote = 0 | 5 | 7 | 9;
 type Sort = 'date' | 'note';
 type Dir = 'desc' | 'asc';
+// Statut de consentement : un moment est « validé » dès qu'un partenaire a accepté la mention
+// (is_visible passe à TRUE via le trigger). Sinon il est « en attente ».
+type Status = 'all' | 'pending' | 'validated';
 
 /** Clé de tri consommée par groupByMonth (inlinée depuis l'ancien FiltersBottomSheet) */
 type GroupSort = 'date_desc' | 'date_asc' | 'note_desc' | 'note_asc';
@@ -117,6 +120,7 @@ export default function PointList() {
   const [refreshing, setRefreshing] = useState(false);
   const [snackbar, setSnackbar] = useState<string | null>(null);
   const [minNote, setMinNote] = useState<MinNote>(0);
+  const [status, setStatus] = useState<Status>('all');
   const [sort, setSort] = useState<Sort>('date');
   const [dir, setDir] = useState<Dir>('desc');
 
@@ -141,9 +145,11 @@ export default function PointList() {
   }, [load]);
 
   const sections = useMemo(() => {
-    const filtered = points.filter((p) => p.note >= minNote);
+    let filtered = points.filter((p) => p.note >= minNote);
+    if (status === 'pending') filtered = filtered.filter((p) => !p.is_visible);
+    else if (status === 'validated') filtered = filtered.filter((p) => p.is_visible);
     return groupByMonth(filtered, `${sort}_${dir}` as GroupSort);
-  }, [points, minNote, sort, dir]);
+  }, [points, minNote, status, sort, dir]);
 
   if (loading) {
     return (
@@ -181,6 +187,23 @@ export default function PointList() {
                 />
               ))}
             </View>
+
+            {/* Statut de la mention (en attente / validé) — togglable */}
+            <View style={styles.pillRow}>
+              <FilterPill
+                label="En attente"
+                active={status === 'pending'}
+                onPress={() => setStatus(status === 'pending' ? 'all' : 'pending')}
+                styles={styles}
+              />
+              <FilterPill
+                label="Validé"
+                active={status === 'validated'}
+                onPress={() => setStatus(status === 'validated' ? 'all' : 'validated')}
+                styles={styles}
+              />
+            </View>
+
             <View style={styles.pillRow}>
               {SORT_OPTIONS.map((o) => (
                 <FilterPill
