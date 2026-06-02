@@ -18,13 +18,14 @@ import { Snackbar } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '@/hooks/useAuth';
 import { usePoints } from '@/hooks/usePoints';
-import { useFriends } from '@/hooks/useFriends';
 import { useTheme } from '@/hooks/useTheme';
 import { useThemeStore } from '@/stores/themeStore';
 import { useAuthStore } from '@/stores/authStore';
 import { supabase } from '@/lib/supabase';
 import { haptics } from '@/lib/haptics';
 import { Input } from '@/components/ui/Input';
+import { AppText } from '@/components/ui/AppText';
+import { PressableScale } from '@/components/ui/PressableScale';
 import { F } from '@/constants/fonts';
 import type { Theme } from '@/constants/theme';
 import { IcoPlus, IcoCheck, IcoClose, IcoSun, IcoMoon } from '@/components/icons';
@@ -38,7 +39,6 @@ export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
   const { user, profile, fetchProfile, signOut } = useAuth();
   const { points, fetchMyPoints } = usePoints();
-  const { friends, fetchFriends } = useFriends();
   const T = useTheme();
   const styles = useMemo(() => makeStyles(T), [T]);
   const { isDark, toggleTheme } = useThemeStore();
@@ -75,17 +75,12 @@ export default function ProfileScreen() {
     if (!profile) fetchProfile(user.id);
     (async () => {
       setLoading(true);
-      await Promise.all([fetchMyPoints(user.id), fetchFriends(user.id)]);
+      await fetchMyPoints(user.id);
       setLoading(false);
     })();
   }, [user]);
 
-  /* ── Stats ── */
-  const avgNote =
-    points.length > 0
-      ? (points.reduce((sum, p) => sum + p.note, 0) / points.length).toFixed(1)
-      : '—';
-
+  /* ── Analyse (sources bento — useMemos préservés) ── */
   const noteDistribution = useMemo(() => {
     const counts = Array.from({ length: 10 }, (_, i) =>
       points.filter((p) => Math.round(p.note) === i + 1).length
@@ -110,6 +105,8 @@ export default function ProfileScreen() {
     [points]
   );
 
+  const hasMoments = points.length > 0;
+  const durationLabel = `${Math.floor(totalMinutes / 60)}h${String(totalMinutes % 60).padStart(2, '0')}`;
   const initials = (profile?.display_name ?? profile?.username ?? '?')[0]?.toUpperCase();
 
   /* ── Upload avatar ── */
@@ -270,137 +267,118 @@ export default function ProfileScreen() {
     >
       <ScrollView ref={scrollRef} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
 
-        {/* ── Header identité ── */}
-        <View style={styles.header}>
-          <View style={styles.innerBorder} pointerEvents="none" />
-          <View style={styles.headerTop}>
-            {/* Avatar 80×80 + badge + */}
-            <TouchableOpacity style={styles.avatarWrapper} onPress={handlePickAvatar} activeOpacity={0.8} disabled={uploadingAvatar}>
-              {profile?.avatar_url ? (
-                <Image source={{ uri: profile.avatar_url }} style={styles.avatarImage} />
-              ) : (
-                <View style={styles.avatarBox}>
-                  <Text style={styles.avatarInitial}>{initials}</Text>
-                </View>
-              )}
-              <View style={styles.plusBadge}>
-                {uploadingAvatar ? <ActivityIndicator size="small" color={T.text} /> : <IcoPlus size={10} color={T.text} />}
-              </View>
-            </TouchableOpacity>
+        {/* ── En-tête couverture (D-03) ── */}
+        <View style={styles.cover}>
+          <AppText variant="eyebrow" style={styles.coverEyebrow}>MOI</AppText>
 
-            {/* Identité + édition inline */}
-            <View style={styles.identity}>
-              {isEditingName ? (
-                <View style={styles.editNameBlock}>
-                  <TextInput
-                    value={editName}
-                    onChangeText={setEditName}
-                    style={[styles.editNameInput, { color: T.text }]}
-                    autoFocus
-                    returnKeyType="done"
-                    onSubmitEditing={saveDisplayName}
-                    selectionColor={T.primary}
-                    placeholderTextColor={T.textFaint}
-                  />
-                  <View style={styles.editNameActions}>
-                    {savingName ? (
-                      <ActivityIndicator size="small" color={T.primary} />
-                    ) : (
-                      <>
-                        <TouchableOpacity onPress={saveDisplayName} style={styles.editIconBtn} activeOpacity={0.75}>
-                          <IcoCheck size={14} color={T.primary} />
-                        </TouchableOpacity>
-                        <TouchableOpacity onPress={() => setIsEditingName(false)} style={styles.editIconBtn} activeOpacity={0.75}>
-                          <IcoClose size={14} color={T.textFaint} />
-                        </TouchableOpacity>
-                      </>
-                    )}
-                  </View>
-                </View>
-              ) : (
-                <Text style={styles.displayName}>{profile?.display_name ?? profile?.username ?? '—'}</Text>
-              )}
-              <Text style={styles.username}>@{profile?.username ?? '...'}</Text>
-            </View>
-
-            {/* Toggle thème */}
-            <TouchableOpacity style={styles.themeBtn} onPress={toggleTheme} activeOpacity={0.7}>
-              {isDark ? <IcoSun size={18} color={T.textFaint} /> : <IcoMoon size={18} color={T.textFaint} />}
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* ── Statistiques ── */}
-        <View style={styles.statsRow}>
-          {[
-            { value: String(points.length), label: 'Entrées' },
-            { value: String(friends.length), label: 'Amis' },
-            { value: avgNote, label: 'Moyenne' },
-          ].map((s, i) => (
-            <View key={s.label} style={[styles.statItem, i > 0 && styles.statItemBorder]}>
-              <Text style={styles.statValue}>{s.value}</Text>
-              <Text style={styles.statLabel}>{s.label}</Text>
-            </View>
-          ))}
-        </View>
-
-        {/* ── Anthologie ── */}
-        {points.length > 0 && (
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionEyebrow}>Anthologie</Text>
-              <TouchableOpacity onPress={() => router.push('/(app)/point/list')} activeOpacity={0.7}>
-                <Text style={styles.seeAllLink}>Voir tout →</Text>
-              </TouchableOpacity>
-            </View>
-            {points.slice().sort((a, b) => b.note - a.note).slice(0, 5).map((p, i) => (
-              <TouchableOpacity key={p.id} style={styles.pointRow} onPress={() => router.push(`/(app)/point/${p.id}`)} activeOpacity={0.75}>
-                <Text style={styles.pointIndex}>{String(i + 1).padStart(2, '0')}</Text>
-                <Text style={styles.pointNote}>{p.note}</Text>
-                <Text style={styles.pointComment} numberOfLines={1}>{p.comment ?? 'Sans commentaire'}</Text>
-                <Text style={styles.pointDate}>{new Date(p.created_at).toLocaleDateString('fr-FR')}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        )}
-
-        {/* ── Analyse ── */}
-        {points.length > 0 && (
-          <View style={[styles.section, { paddingTop: 0 }]}>
-            <View style={styles.sectionHeader}><Text style={styles.sectionEyebrow}>Analyse</Text></View>
-            <View style={styles.analyseBlock}>
-              <Text style={styles.analyseTitle}>Distribution des notes</Text>
-              {noteDistribution.map(({ note, count, ratio }) => (
-                <View key={note} style={styles.noteBarRow}>
-                  <Text style={styles.noteBarLabel}>{note}</Text>
-                  <View style={styles.noteBarTrack}>
-                    <View style={[styles.noteBarFill, { flex: ratio }]} />
-                    <View style={{ flex: 1 - ratio }} />
-                  </View>
-                  <Text style={styles.noteBarCount}>{count}</Text>
-                </View>
-              ))}
-            </View>
-            {topMonths.length > 0 && (
-              <View style={styles.analyseBlock}>
-                <Text style={styles.analyseTitle}>Mois les plus actifs</Text>
-                {topMonths.map((m, i) => (
-                  <View key={m.label} style={styles.topMonthRow}>
-                    <Text style={styles.topMonthRank}>{String(i + 1).padStart(2, '0')}</Text>
-                    <Text style={styles.topMonthLabel}>{m.label}</Text>
-                    <Text style={styles.topMonthCount}>{m.count}</Text>
-                  </View>
-                ))}
+          {/* Avatar carré 80px — borderRadius:0 (exception D-12) */}
+          <PressableScale style={styles.avatarWrapper} onPress={() => { haptics.tap(); handlePickAvatar(); }} disabled={uploadingAvatar}>
+            {profile?.avatar_url ? (
+              <Image source={{ uri: profile.avatar_url }} style={styles.avatarImage} />
+            ) : (
+              <View style={styles.avatarBox}>
+                <Text style={styles.avatarInitial}>{initials}</Text>
               </View>
             )}
-            {totalMinutes > 0 && (
-              <View style={styles.analyseBlock}>
-                <Text style={styles.analyseTitle}>Durée totale</Text>
-                <Text style={styles.analyseDuration}>{Math.floor(totalMinutes / 60)}h{String(totalMinutes % 60).padStart(2, '0')}</Text>
+            <View style={styles.plusBadge}>
+              {uploadingAvatar ? <ActivityIndicator size="small" color={T.text} /> : <IcoPlus size={10} color={T.text} />}
+            </View>
+          </PressableScale>
+
+          {/* Nom (Cover 56) + édition inline + @username */}
+          {isEditingName ? (
+            <View style={styles.editNameBlock}>
+              <TextInput
+                value={editName}
+                onChangeText={setEditName}
+                style={[styles.editNameInput, { color: T.text }]}
+                autoFocus
+                returnKeyType="done"
+                onSubmitEditing={saveDisplayName}
+                selectionColor={T.primary}
+                placeholderTextColor={T.textFaint}
+                maxFontSizeMultiplier={1.15}
+              />
+              <View style={styles.editNameActions}>
+                {savingName ? (
+                  <ActivityIndicator size="small" color={T.primary} />
+                ) : (
+                  <>
+                    <TouchableOpacity onPress={saveDisplayName} style={styles.editIconBtn} activeOpacity={0.75} accessibilityLabel="Enregistrer le prénom">
+                      <IcoCheck size={14} color={T.primary} />
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={() => setIsEditingName(false)} style={styles.editIconBtn} activeOpacity={0.75} accessibilityLabel="Annuler">
+                      <IcoClose size={14} color={T.textFaint} />
+                    </TouchableOpacity>
+                  </>
+                )}
               </View>
+            </View>
+          ) : (
+            <TouchableOpacity onPress={startEditingName} activeOpacity={0.75} accessibilityLabel="Modifier le prénom">
+              <AppText variant="display" style={styles.coverName}>
+                {profile?.display_name ?? profile?.username ?? '—'}
+              </AppText>
+            </TouchableOpacity>
+          )}
+          <AppText variant="eyebrow" style={styles.username}>@{profile?.username ?? '...'}</AppText>
+        </View>
+
+        {/* ── Analyse — mini-bento (D-04) ── */}
+        <View style={styles.bentoSection}>
+          <AppText variant="eyebrow" style={styles.bentoEyebrow}>ANALYSE</AppText>
+
+          {/* Tuile A — Pages du carnet (la plus grande, pleine largeur) */}
+          <View style={styles.tileFull}>
+            <AppText variant="display" style={styles.tileNumber}>{String(points.length)}</AppText>
+            <AppText variant="eyebrow" style={styles.tileLabel}>PAGES DU CARNET</AppText>
+            {!hasMoments && (
+              <AppText variant="eyebrow" style={styles.tileHelp}>Le carnet est encore vierge.</AppText>
             )}
           </View>
-        )}
+
+          {hasMoments && (
+            <>
+              {/* Row 2 — Durée totale (B) + Mois les plus actifs (C) */}
+              <View style={styles.bentoRow}>
+                <View style={[styles.tileHalf, styles.tileRowItem]}>
+                  <AppText variant="display" style={styles.tileDuration}>{durationLabel}</AppText>
+                  <AppText variant="eyebrow" style={styles.tileLabel}>DURÉE TOTALE</AppText>
+                </View>
+                <View style={[styles.tileHalf, styles.tileRowItemLast]}>
+                  <AppText variant="eyebrow" style={styles.tileLabel}>MOIS LES PLUS ACTIFS</AppText>
+                  {topMonths.length > 0 ? (
+                    topMonths.map((m) => (
+                      <View key={m.label} style={styles.tileMonthRow}>
+                        <AppText variant="title" style={styles.tileMonthLabel} numberOfLines={1}>{m.label}</AppText>
+                        <AppText variant="eyebrow" style={styles.tileMonthCount}>{m.count}</AppText>
+                      </View>
+                    ))
+                  ) : (
+                    <AppText variant="eyebrow" style={styles.tileHelp}>—</AppText>
+                  )}
+                </View>
+              </View>
+
+              {/* Tuile D — Distribution des notes (pleine largeur) */}
+              <View style={styles.tileFullSlim}>
+                <AppText variant="eyebrow" style={styles.tileLabel}>DISTRIBUTION DES NOTES</AppText>
+                <View style={styles.distribution}>
+                  {noteDistribution.map(({ note, count, ratio }) => (
+                    <View key={note} style={styles.noteBarRow}>
+                      <Text style={styles.noteBarLabel}>{note}</Text>
+                      <View style={styles.noteBarTrack}>
+                        <View style={[styles.noteBarFill, { flex: ratio }]} />
+                        <View style={{ flex: 1 - ratio }} />
+                      </View>
+                      <Text style={styles.noteBarCount}>{count}</Text>
+                    </View>
+                  ))}
+                </View>
+              </View>
+            </>
+          )}
+        </View>
 
         {/* ── Compte ── */}
         <View style={[styles.section, { paddingTop: 0 }]}>
@@ -502,56 +480,55 @@ const makeStyles = (T: Theme) => StyleSheet.create({
   container: { flex: 1, backgroundColor: T.bg },
   centered: { flex: 1, backgroundColor: T.bg, justifyContent: 'center', alignItems: 'center' },
 
-  header: { paddingTop: 24, paddingBottom: 24, paddingHorizontal: 24, position: 'relative' },
-  innerBorder: { position: 'absolute', top: 16, left: 16, right: 16, bottom: 0, borderWidth: 1, borderColor: T.border, borderBottomWidth: 0 },
-  headerTop: { flexDirection: 'row', alignItems: 'center', gap: 16 },
+  /* ── Cover ── */
+  cover: { paddingTop: 24, paddingBottom: 32, paddingHorizontal: 16 },
+  coverEyebrow: { fontSize: 10, letterSpacing: 2.5, textTransform: 'uppercase', color: T.textFaint, marginBottom: 24 },
 
-  avatarWrapper: { position: 'relative' },
+  avatarWrapper: { position: 'relative', width: 80, height: 80 },
   avatarBox: { width: 80, height: 80, backgroundColor: T.surface2, borderWidth: 1, borderColor: T.border, alignItems: 'center', justifyContent: 'center' },
   avatarImage: { width: 80, height: 80 },
   avatarInitial: { fontFamily: F.serif, fontStyle: 'italic', fontSize: 36, color: T.primary },
   plusBadge: { position: 'absolute', bottom: 0, right: 0, width: 20, height: 20, backgroundColor: T.primary, alignItems: 'center', justifyContent: 'center' },
 
-  identity: { flex: 1 },
-  displayName: { fontFamily: F.serifLight, fontStyle: 'italic', fontSize: 28, lineHeight: 30, letterSpacing: -0.5, color: T.text },
-  username: { fontFamily: F.mono, fontSize: 10, letterSpacing: 1.5, color: T.textFaint, marginTop: 4 },
+  coverName: { fontSize: 56, lineHeight: 60, fontStyle: 'italic', letterSpacing: -1, color: T.text, marginTop: 24 },
+  username: { fontSize: 10, letterSpacing: 1.5, color: T.textFaint, marginTop: 8 },
 
-  editNameBlock: { flexDirection: 'row', alignItems: 'center', borderBottomWidth: 1, borderBottomColor: T.primary, paddingBottom: 4, gap: 8 },
-  editNameInput: { flex: 1, fontFamily: F.serifLight, fontStyle: 'italic', fontSize: 24, lineHeight: 28, letterSpacing: -0.5, padding: 0, margin: 0 },
+  editNameBlock: { flexDirection: 'row', alignItems: 'center', borderBottomWidth: 1, borderBottomColor: T.primary, paddingBottom: 4, gap: 8, marginTop: 24 },
+  editNameInput: { flex: 1, fontFamily: F.serifLight, fontStyle: 'italic', fontSize: 40, lineHeight: 46, letterSpacing: -1, padding: 0, margin: 0 },
   editNameActions: { flexDirection: 'row', gap: 4 },
-  editIconBtn: { width: 28, height: 28, borderWidth: 1, borderColor: T.border, alignItems: 'center', justifyContent: 'center' },
+  editIconBtn: { width: 44, height: 44, borderWidth: 1, borderColor: T.border, alignItems: 'center', justifyContent: 'center', borderRadius: T.radiusSm, borderCurve: 'continuous' },
 
-  themeBtn: { width: 40, height: 40, borderWidth: 1, borderColor: T.border, alignItems: 'center', justifyContent: 'center' },
+  /* ── Bento Analyse ── */
+  bentoSection: { paddingHorizontal: 16, paddingBottom: 24 },
+  bentoEyebrow: { fontSize: 10, letterSpacing: 2.5, textTransform: 'uppercase', color: T.textFaint, marginBottom: 16 },
 
-  statsRow: { flexDirection: 'row', borderTopWidth: 1, borderBottomWidth: 1, borderColor: T.border },
-  statItem: { flex: 1, paddingVertical: 20, alignItems: 'center', gap: 4 },
-  statItemBorder: { borderLeftWidth: 1, borderLeftColor: T.border },
-  statValue: { fontFamily: F.serifLight, fontStyle: 'italic', fontSize: 36, lineHeight: 36, color: T.primary, letterSpacing: -1 },
-  statLabel: { fontFamily: F.mono, fontSize: 9, letterSpacing: 2, textTransform: 'uppercase', color: T.textFaint },
+  tileFull: { backgroundColor: T.surface, borderRadius: T.cardRadius, borderCurve: 'continuous', padding: 16, minHeight: 140, justifyContent: 'center', marginBottom: 24 },
+  tileFullSlim: { backgroundColor: T.surface, borderRadius: T.cardRadius, borderCurve: 'continuous', padding: 16 },
+  tileHalf: { backgroundColor: T.surface, borderRadius: T.cardRadius, borderCurve: 'continuous', padding: 16, minHeight: 110, flex: 1 },
+  bentoRow: { flexDirection: 'row', gap: 16, marginBottom: 24 },
+  tileRowItem: { justifyContent: 'center' },
+  tileRowItemLast: {},
 
-  section: { paddingHorizontal: 24, paddingTop: 24, paddingBottom: 0 },
-  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', borderBottomWidth: 1, borderBottomColor: T.border, paddingBottom: 8, marginBottom: 0 },
-  sectionEyebrow: { fontFamily: F.mono, fontSize: 10, letterSpacing: 2.5, textTransform: 'uppercase', color: T.textFaint },
-  seeAllLink: { fontFamily: F.serif, fontStyle: 'italic', fontSize: 14, color: T.primary, textDecorationLine: 'underline' },
+  tileNumber: { fontSize: 56, lineHeight: 60, fontStyle: 'italic', letterSpacing: -1, color: T.text, marginBottom: 4 },
+  tileDuration: { fontSize: 32, lineHeight: 36, fontStyle: 'italic', letterSpacing: -0.5, color: T.text, marginBottom: 4 },
+  tileLabel: { fontSize: 9, letterSpacing: 2, textTransform: 'uppercase', color: T.textFaint },
+  tileHelp: { fontSize: 10, letterSpacing: 1, color: T.textFaint, marginTop: 8 },
 
-  pointRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: T.border, gap: 12 },
-  pointIndex: { fontFamily: F.mono, fontSize: 9, letterSpacing: 1.5, color: T.textFaint, width: 24 },
-  pointNote: { fontFamily: F.serifLight, fontStyle: 'italic', fontSize: 28, lineHeight: 28, color: T.primary, minWidth: 22 },
-  pointComment: { flex: 1, fontFamily: F.serif, fontStyle: 'italic', fontSize: 15, color: T.text },
-  pointDate: { fontFamily: F.mono, fontSize: 9, letterSpacing: 1, color: T.textFaint },
+  tileMonthRow: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', marginTop: 12, gap: 8 },
+  tileMonthLabel: { flex: 1, fontSize: 18, fontStyle: 'italic', color: T.textDim },
+  tileMonthCount: { fontSize: 11, letterSpacing: 1, color: T.primary },
 
-  analyseBlock: { paddingTop: 20, paddingBottom: 8, borderBottomWidth: 1, borderBottomColor: T.border },
-  analyseTitle: { fontFamily: F.mono, fontSize: 9, letterSpacing: 2, textTransform: 'uppercase', color: T.textFaint, marginBottom: 12 },
+  distribution: { marginTop: 16 },
   noteBarRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 6, gap: 8 },
   noteBarLabel: { fontFamily: F.mono, fontSize: 9, letterSpacing: 1, color: T.textFaint, width: 16, textAlign: 'right' },
   noteBarTrack: { flex: 1, flexDirection: 'row', height: 3, backgroundColor: T.surface2 },
   noteBarFill: { height: 3, backgroundColor: T.primary },
   noteBarCount: { fontFamily: F.mono, fontSize: 9, letterSpacing: 1, color: T.textFaint, width: 20, textAlign: 'right' },
-  topMonthRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: T.border, gap: 12 },
-  topMonthRank: { fontFamily: F.mono, fontSize: 9, letterSpacing: 1.5, color: T.textFaint, width: 20 },
-  topMonthLabel: { flex: 1, fontFamily: F.serif, fontStyle: 'italic', fontSize: 16, color: T.text },
-  topMonthCount: { fontFamily: F.mono, fontSize: 11, letterSpacing: 1, color: T.primary },
-  analyseDuration: { fontFamily: F.serifLight, fontStyle: 'italic', fontSize: 48, lineHeight: 48, letterSpacing: -1, color: T.primary, marginTop: 4 },
+
+  /* ── Compte ── */
+  section: { paddingHorizontal: 24, paddingTop: 24, paddingBottom: 0 },
+  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', borderBottomWidth: 1, borderBottomColor: T.border, paddingBottom: 8, marginBottom: 0 },
+  sectionEyebrow: { fontFamily: F.mono, fontSize: 10, letterSpacing: 2.5, textTransform: 'uppercase', color: T.textFaint },
 
   actionRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: T.border },
   switchRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: T.border },
