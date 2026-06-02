@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { useTheme } from '@/hooks/useTheme';
+import { haptics } from '@/lib/haptics';
 import { F } from '@/constants/fonts';
 import type { Theme } from '@/constants/theme';
 import type { FriendWithProfile } from '@/types/app.types';
@@ -16,14 +17,18 @@ export function FriendItem({ friend, onUnfriend, onViewMap }: Props) {
   const styles = useMemo(() => makeStyles(T), [T]);
 
   const { profile } = friend;
-  const initials = (profile.display_name ?? profile.username)[0]?.toUpperCase() ?? '?';
+  if (!profile) return null;
+
+  const displayName = profile.display_name ?? profile.username;
+  const initials = displayName[0]?.toUpperCase() ?? '?';
 
   function handleUnfriend() {
+    haptics.warn();
     Alert.alert(
-      'Retirer du cercle',
-      `Voulez-vous retirer ${profile.display_name ?? profile.username} de votre cercle ?`,
+      'Retirer du cercle ?',
+      `${displayName} ne verra plus vos moments partagés. Cette action est irréversible.`,
       [
-        { text: 'Annuler', style: 'cancel' },
+        { text: 'Garder', style: 'cancel' },
         { text: 'Retirer', style: 'destructive', onPress: onUnfriend },
       ]
     );
@@ -35,17 +40,33 @@ export function FriendItem({ friend, onUnfriend, onViewMap }: Props) {
         <Text style={styles.avatarInitial}>{initials}</Text>
       </View>
       <View style={styles.info}>
-        <Text style={styles.displayName}>{profile.display_name ?? profile.username}</Text>
-        <Text style={styles.username}>@{profile.username}</Text>
+        <Text style={styles.displayName} numberOfLines={1}>
+          {displayName}
+        </Text>
       </View>
-      {onViewMap && (
-        <TouchableOpacity style={styles.mapBtn} onPress={onViewMap} activeOpacity={0.7}>
-          <Text style={styles.mapBtnText}>Carte</Text>
-        </TouchableOpacity>
-      )}
-      <TouchableOpacity style={styles.removeBtn} onPress={handleUnfriend} activeOpacity={0.7}>
-        <Text style={styles.removeBtnText}>Retirer</Text>
-      </TouchableOpacity>
+      <View style={styles.right}>
+        <Text style={styles.username} numberOfLines={1}>
+          @{profile.username}
+        </Text>
+        <View style={styles.actions}>
+          {onViewMap && (
+            <TouchableOpacity
+              onPress={onViewMap}
+              activeOpacity={0.7}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <Text style={styles.mapBtnText}>Carte</Text>
+            </TouchableOpacity>
+          )}
+          <TouchableOpacity
+            onPress={handleUnfriend}
+            activeOpacity={0.7}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <Text style={styles.removeBtnText}>Retirer</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
     </View>
   );
 }
@@ -54,7 +75,7 @@ const makeStyles = (T: Theme) => StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 14,
+    paddingVertical: 16,
     borderBottomWidth: 1,
     borderBottomColor: T.border,
     gap: 12,
@@ -71,46 +92,46 @@ const makeStyles = (T: Theme) => StyleSheet.create({
   avatarInitial: {
     fontFamily: F.serif,
     fontStyle: 'italic',
-    fontSize: 16,
+    fontSize: 20,
     color: T.primary,
   },
   info: { flex: 1 },
   displayName: {
-    fontFamily: F.sans,
-    fontSize: 14,
+    fontFamily: F.serif,
+    fontStyle: 'italic',
+    fontSize: 20,
+    lineHeight: 26,
     color: T.text,
+  },
+  right: {
+    alignItems: 'flex-end',
+    gap: 6,
   },
   username: {
     fontFamily: F.mono,
     fontSize: 10,
     letterSpacing: 1,
     color: T.textFaint,
-    marginTop: 2,
+    textAlign: 'right',
   },
-  mapBtn: {
-    borderWidth: 1,
-    borderColor: T.primary,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
+  actions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
   },
   mapBtnText: {
     fontFamily: F.mono,
-    fontSize: 9,
+    fontSize: 10,
     letterSpacing: 1.5,
     textTransform: 'uppercase',
     color: T.primary,
-  },
-  removeBtn: {
-    borderWidth: 1,
-    borderColor: T.border,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
+    textDecorationLine: 'underline',
   },
   removeBtnText: {
     fontFamily: F.mono,
-    fontSize: 9,
+    fontSize: 10,
     letterSpacing: 1.5,
     textTransform: 'uppercase',
-    color: T.textFaint,
+    color: T.danger,
   },
 });
