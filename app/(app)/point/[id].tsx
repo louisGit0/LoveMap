@@ -5,14 +5,16 @@ import {
   Image,
   StyleSheet,
   ScrollView,
+  KeyboardAvoidingView,
+  Platform,
   TouchableOpacity,
   TextInput,
   Alert,
   ActivityIndicator,
 } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
+import { usePreventRemove, useNavigation } from '@react-navigation/native';
 import { Snackbar } from 'react-native-paper';
-import { DatePickerModal } from 'react-native-paper-dates';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import MapboxGL from '@rnmapbox/maps';
 import { supabase } from '@/lib/supabase';
@@ -52,6 +54,7 @@ function consentLabel(status: string): string {
 export default function PointDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const insets = useSafeAreaInsets();
+  const navigation = useNavigation();
   const { user } = useAuth();
   const { deletePoint, updatePointFields } = usePoints();
   const T = useTheme();
@@ -68,8 +71,9 @@ export default function PointDetail() {
   const [editNote, setEditNote] = useState(5);
   const [editDuration, setEditDuration] = useState('');
   const [editComment, setEditComment] = useState('');
-  const [editDate, setEditDate] = useState(new Date());
-  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [dayStr, setDayStr] = useState('');
+  const [monthStr, setMonthStr] = useState('');
+  const [yearStr, setYearStr] = useState('');
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -118,18 +122,28 @@ export default function PointDetail() {
     setEditNote(point.note);
     setEditDuration(point.duration_minutes?.toString() ?? '');
     setEditComment(point.comment ?? '');
-    setEditDate(point.happened_at ? new Date(point.happened_at) : new Date(point.created_at));
+    const d = point.happened_at ? new Date(point.happened_at) : new Date(point.created_at);
+    setDayStr(String(d.getDate()).padStart(2, '0'));
+    setMonthStr(String(d.getMonth() + 1).padStart(2, '0'));
+    setYearStr(String(d.getFullYear()));
     setEditing(true);
   }
 
   async function handleSaveAndAccept() {
     if (!point || !partnerRecord) return;
     setSaving(true);
+    const d = parseInt(dayStr, 10);
+    const m = parseInt(monthStr, 10);
+    const y = parseInt(yearStr, 10);
+    const parsed = new Date(y, m - 1, d, 12, 0, 0);
+    const happenedAt = !isNaN(parsed.getTime())
+      ? parsed.toISOString()
+      : new Date(point.happened_at ?? point.created_at).toISOString();
     const ok = await updatePointFields(point.id, {
       note: editNote,
       comment: editComment.trim() || null,
       duration_minutes: editDuration ? parseInt(editDuration, 10) : null,
-      happened_at: new Date(editDate.getFullYear(), editDate.getMonth(), editDate.getDate(), 12, 0, 0).toISOString(),
+      happened_at: happenedAt,
     });
     if (!ok) { setSnackbar('Erreur lors de la sauvegarde.'); setSaving(false); return; }
     await handleConsent(true);
@@ -149,9 +163,38 @@ export default function PointDetail() {
     await loadPoint();
   }
 
+  // D-04 — garde de fermeture en mode édition : confirmation si la saisie est modifiée.
+  // La date est désormais en segments (pas de Modal) → aucun risque de gel #2125,
+  // la garde n'a pas besoin d'être conditionnée à un picker ouvert.
+  const originalDate = point ? new Date(point.happened_at ?? point.created_at) : null;
+  const originalDay = originalDate ? String(originalDate.getDate()).padStart(2, '0') : '';
+  const originalMonth = originalDate ? String(originalDate.getMonth() + 1).padStart(2, '0') : '';
+  const originalYear = originalDate ? String(originalDate.getFullYear()) : '';
+  const isEditDirty =
+    editing &&
+    point != null &&
+    (editNote !== point.note ||
+      editComment !== (point.comment ?? '') ||
+      editDuration !== (point.duration_minutes?.toString() ?? '') ||
+      dayStr !== originalDay ||
+      monthStr !== originalMonth ||
+      yearStr !== originalYear);
+
+  usePreventRemove(isEditDirty, ({ data }) => {
+    haptics.warn();
+    Alert.alert(
+      'Abandonner ce moment ?',
+      'Votre saisie ne sera pas enregistrée.',
+      [
+        { text: "Continuer l'écriture", style: 'cancel' },
+        { text: 'Abandonner', style: 'destructive', onPress: () => navigation.dispatch(data.action) },
+      ]
+    );
+  });
+
   if (loading) {
     return (
-      <View style={[styles.centered, { paddingTop: insets.top }]}>
+      <View style={styles.centered}>
         <ActivityIndicator color={T.primary} size="large" />
       </View>
     );
@@ -159,7 +202,7 @@ export default function PointDetail() {
 
   if (!point) {
     return (
-      <View style={[styles.centered, { paddingTop: insets.top }]}>
+      <View style={styles.centered}>
         <Text style={styles.errorText}>Page introuvable.</Text>
       </View>
     );
@@ -170,8 +213,16 @@ export default function PointDetail() {
   const isPending = partnerRecord?.status === 'pending';
 
   return (
-    <View style={styles.container}>
-      <ScrollView showsVerticalScrollIndicator={false}>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      keyboardVerticalOffset={0}
+    >
+      <ScrollView
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: insets.bottom + 32 }}
+      >
         {/* Mini carte statique */}
         <View style={styles.miniMap}>
           <MapboxGL.MapView
@@ -197,11 +248,6 @@ export default function PointDetail() {
               <View style={styles.markerDot} />
             </MapboxGL.MarkerView>
           </MapboxGL.MapView>
-
-          {/* Bouton retour flottant */}
-          <TouchableOpacity style={[styles.backBtn, { top: insets.top + 12 }]} onPress={() => router.back()} activeOpacity={0.8}>
-            <IcoArrow size={16} color={T.text} dir="left" />
-          </TouchableOpacity>
         </View>
 
         <View style={styles.content}>
@@ -310,22 +356,37 @@ export default function PointDetail() {
               />
 
               <Text style={[styles.editLabel, { marginTop: 20 }]}>Date</Text>
-              <TouchableOpacity style={styles.editDateBtn} onPress={() => setShowDatePicker(true)} activeOpacity={0.7}>
-                <Text style={styles.editDateText}>
-                  {editDate.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
-                </Text>
-              </TouchableOpacity>
-              <DatePickerModal
-                locale="fr"
-                mode="single"
-                visible={showDatePicker}
-                onDismiss={() => setShowDatePicker(false)}
-                date={editDate}
-                onConfirm={({ date: picked }) => { setShowDatePicker(false); if (picked) setEditDate(picked); }}
-                validRange={{ endDate: new Date() }}
-                label="Choisir une date"
-                saveLabel="Confirmer"
-              />
+              <View style={styles.dateRow}>
+                <TextInput
+                  style={styles.dateSegment}
+                  value={dayStr}
+                  onChangeText={(v) => setDayStr(v.replace(/[^0-9]/g, '').slice(0, 2))}
+                  keyboardType="numeric"
+                  maxLength={2}
+                  placeholder="JJ"
+                  placeholderTextColor={T.textFaint}
+                />
+                <Text style={styles.dateSep}>/</Text>
+                <TextInput
+                  style={styles.dateSegment}
+                  value={monthStr}
+                  onChangeText={(v) => setMonthStr(v.replace(/[^0-9]/g, '').slice(0, 2))}
+                  keyboardType="numeric"
+                  maxLength={2}
+                  placeholder="MM"
+                  placeholderTextColor={T.textFaint}
+                />
+                <Text style={styles.dateSep}>/</Text>
+                <TextInput
+                  style={[styles.dateSegment, styles.dateSegmentYear]}
+                  value={yearStr}
+                  onChangeText={(v) => setYearStr(v.replace(/[^0-9]/g, '').slice(0, 4))}
+                  keyboardType="numeric"
+                  maxLength={4}
+                  placeholder="AAAA"
+                  placeholderTextColor={T.textFaint}
+                />
+              </View>
 
               <Text style={[styles.editLabel, { marginTop: 20 }]}>Commentaire</Text>
               <TextInput
@@ -355,7 +416,7 @@ export default function PointDetail() {
               </TouchableOpacity>
 
               <TouchableOpacity style={styles.cancelEditBtn} onPress={() => setEditing(false)} activeOpacity={0.7}>
-                <Text style={styles.cancelEditText}>Annuler</Text>
+                <Text style={styles.cancelEditText}>Annuler les modifications</Text>
               </TouchableOpacity>
             </View>
           )}
@@ -373,7 +434,7 @@ export default function PointDetail() {
       <Snackbar visible={!!snackbar} onDismiss={() => setSnackbar(null)} duration={3000} style={styles.snackbar}>
         {snackbar}
       </Snackbar>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -389,17 +450,6 @@ const makeStyles = (T: Theme) => StyleSheet.create({
     backgroundColor: T.primary,
     borderWidth: 2,
     borderColor: T.bg,
-  },
-  backBtn: {
-    position: 'absolute',
-    left: 16,
-    width: 40,
-    height: 40,
-    backgroundColor: T.bg + 'cc',
-    borderWidth: 1,
-    borderColor: T.border,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   content: { padding: 24 },
   noteBlock: {
@@ -628,16 +678,30 @@ const makeStyles = (T: Theme) => StyleSheet.create({
     borderBottomColor: T.border,
     paddingVertical: 8,
   },
-  editDateBtn: {
+  dateRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: 8,
+  },
+  dateSegment: {
+    fontFamily: F.mono,
+    fontSize: 20,
+    letterSpacing: -1,
+    color: T.text,
     borderBottomWidth: 1,
     borderBottomColor: T.border,
-    paddingVertical: 8,
+    paddingVertical: 4,
+    textAlign: 'center',
+    width: 52,
   },
-  editDateText: {
-    fontFamily: F.serif,
-    fontStyle: 'italic',
-    fontSize: 18,
-    color: T.text,
+  dateSegmentYear: {
+    width: 80,
+  },
+  dateSep: {
+    fontFamily: F.mono,
+    fontSize: 20,
+    color: T.textFaint,
+    marginBottom: 4,
   },
   editCommentInput: {
     fontFamily: F.serif,
