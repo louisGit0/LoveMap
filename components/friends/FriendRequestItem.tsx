@@ -1,18 +1,28 @@
 import React, { useMemo } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { useTheme } from '@/hooks/useTheme';
+import { Button } from '@/components/ui/Button';
 import { F } from '@/constants/fonts';
-import { IcoCheck, IcoClose } from '@/components/icons';
 import type { Theme } from '@/constants/theme';
 import type { FriendWithProfile } from '@/types/app.types';
 
 interface Props {
   request: FriendWithProfile;
-  onAccept: () => void;
-  onReject: () => void;
+  /** Label affirmatif rempli — « Accepter » (amitié) ou « Sceller » (taguage). */
+  affirmLabel: string;
+  /** Label négatif bordé — « Refuser » (amitié) ou « Décliner » (taguage). */
+  negativeLabel: string;
+  onAffirm: () => void;
+  onNegative: () => void;
 }
 
-export function FriendRequestItem({ request, onAccept, onReject }: Props) {
+export function FriendRequestItem({
+  request,
+  affirmLabel,
+  negativeLabel,
+  onAffirm,
+  onNegative,
+}: Props) {
   const T = useTheme();
   const styles = useMemo(() => makeStyles(T), [T]);
 
@@ -29,16 +39,18 @@ export function FriendRequestItem({ request, onAccept, onReject }: Props) {
         <Text style={styles.avatarInitial}>{initials}</Text>
       </View>
       <View style={styles.info}>
-        <Text style={styles.displayName}>{profile.display_name ?? profile.username}</Text>
+        <Text style={styles.displayName} numberOfLines={1}>
+          {profile.display_name ?? profile.username}
+        </Text>
         <Text style={styles.username}>@{profile.username}</Text>
       </View>
       <View style={styles.actions}>
-        <TouchableOpacity style={styles.acceptBtn} onPress={onAccept} activeOpacity={0.88}>
-          <IcoCheck size={16} color={T.text} />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.rejectBtn} onPress={onReject} activeOpacity={0.7}>
-          <IcoClose size={14} color={T.textFaint} />
-        </TouchableOpacity>
+        <Button variant="coral" fullWidth={false} onPress={onAffirm} style={styles.affirmBtn}>
+          <Text style={styles.affirmLabel}>{affirmLabel}</Text>
+        </Button>
+        <Button variant="ghost" fullWidth={false} onPress={onNegative} style={styles.negativeBtn}>
+          <Text style={styles.negativeLabel}>{negativeLabel}</Text>
+        </Button>
       </View>
     </View>
   );
@@ -48,7 +60,7 @@ const makeStyles = (T: Theme) => StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 14,
+    paddingVertical: 16,
     borderBottomWidth: 1,
     borderBottomColor: T.border,
     gap: 12,
@@ -65,13 +77,15 @@ const makeStyles = (T: Theme) => StyleSheet.create({
   avatarInitial: {
     fontFamily: F.serif,
     fontStyle: 'italic',
-    fontSize: 16,
+    fontSize: 20,
     color: T.primary,
   },
-  info: { flex: 1 },
+  info: { flex: 1, minWidth: 0 },
   displayName: {
-    fontFamily: F.sans,
-    fontSize: 14,
+    fontFamily: F.serif,
+    fontStyle: 'italic',
+    fontSize: 20,
+    lineHeight: 26,
     color: T.text,
   },
   username: {
@@ -83,21 +97,33 @@ const makeStyles = (T: Theme) => StyleSheet.create({
   },
   actions: {
     flexDirection: 'row',
-    gap: 6,
-  },
-  acceptBtn: {
-    width: 36,
-    height: 36,
-    backgroundColor: T.primary,
     alignItems: 'center',
-    justifyContent: 'center',
+    gap: 8,
   },
-  rejectBtn: {
-    width: 36,
-    height: 36,
-    borderWidth: 1,
-    borderColor: T.border,
-    alignItems: 'center',
-    justifyContent: 'center',
+  // Boutons texte D-12 : override de la base ui/Button (borderRadius:0) → radiusSm + squircle.
+  affirmBtn: {
+    height: 44,
+    paddingHorizontal: 14,
+    borderRadius: T.radiusSm,
+    borderCurve: 'continuous',
+  },
+  affirmLabel: {
+    fontFamily: F.serif,
+    fontStyle: 'italic',
+    fontSize: 18,
+    color: T.text,
+  },
+  negativeBtn: {
+    height: 44,
+    paddingHorizontal: 14,
+    borderRadius: T.radiusSm,
+    borderCurve: 'continuous',
+  },
+  negativeLabel: {
+    fontFamily: F.mono,
+    fontSize: 10,
+    letterSpacing: 1.5,
+    textTransform: 'uppercase',
+    color: T.textDim,
   },
 });
