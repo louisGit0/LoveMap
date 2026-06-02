@@ -1,14 +1,39 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { View } from 'react-native';
+import { View, Text } from 'react-native';
 import MapboxGL from '@rnmapbox/maps';
 import { router } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import { useTheme } from '@/hooks/useTheme';
+import { F } from '@/constants/fonts';
 import type { Theme } from '@/constants/theme';
 import type { MapPoint } from '@/types/app.types';
 
 interface Props {
   point: MapPoint;
+  /** Nombre de moments à ce même lieu (≥ 2 → pastille de compte sur le pin). */
+  count?: number;
+}
+
+// Pastille de compte (plusieurs moments au même endroit) — en haut à droite du pin.
+function CountBadge({ T, count }: { T: Theme; count: number }) {
+  return (
+    <View style={{
+      position: 'absolute',
+      top: 0,
+      right: 0,
+      minWidth: 16,
+      height: 16,
+      borderRadius: 8,
+      paddingHorizontal: 3,
+      backgroundColor: T.primary,
+      borderWidth: 1.5,
+      borderColor: T.bg,
+      alignItems: 'center',
+      justifyContent: 'center',
+    }}>
+      <Text style={{ fontFamily: F.monoMedium, fontSize: 9, color: T.bg }}>{count}</Text>
+    </View>
+  );
 }
 
 /**
@@ -16,9 +41,10 @@ interface Props {
  * Pin au repos raffiné (D-05) : tête 24, point intérieur 9, tige 8, point bas 4,
  * halo statique léger (capturé dans le snapshot, pas une transform animée).
  */
-function PinIcon({ T }: { T: Theme }) {
+function PinIcon({ T, count }: { T: Theme; count?: number }) {
   return (
     <View style={{ width: 28, height: 36, alignItems: 'center' }}>
+      {count && count > 1 ? <CountBadge T={T} count={count} /> : null}
       {/* Tête */}
       <View style={{
         width: 24,
@@ -50,9 +76,10 @@ function PinIcon({ T }: { T: Theme }) {
  * Rendue par RE-SNAPSHOT (toggle de variante + refresh()), JAMAIS par une transform
  * animée sur les enfants de PointAnnotation (le snapshot natif gèlerait l'animation).
  */
-function PinIconSelected({ T }: { T: Theme }) {
+function PinIconSelected({ T, count }: { T: Theme; count?: number }) {
   return (
     <View style={{ width: 44, height: 56, alignItems: 'center' }}>
+      {count && count > 1 ? <CountBadge T={T} count={count} /> : null}
       {/* Anneau halo + tête agrandie */}
       <View style={{
         width: 44,
@@ -85,7 +112,7 @@ function PinIconSelected({ T }: { T: Theme }) {
   );
 }
 
-export function PointMarker({ point }: Props) {
+export function PointMarker({ point, count }: Props) {
   const T = useTheme();
   const [selected, setSelected] = useState(false);
   const annRef = useRef<MapboxGL.PointAnnotation>(null);
@@ -98,7 +125,7 @@ export function PointMarker({ point }: Props) {
   // Sans refresh(), un simple changement d'état React ne re-déclenche pas toujours le snapshot natif.
   useEffect(() => {
     annRef.current?.refresh();
-  }, [selected]);
+  }, [selected, count]);
 
   // De retour sur la carte (le détail s'est fermé), réinitialiser la sélection.
   // Sinon l'annotation peut rester « selected » (onDeselected non déclenché — quirk iOS),
@@ -138,7 +165,7 @@ export function PointMarker({ point }: Props) {
       }}
       onDeselected={() => { setSelected(false); navigatingRef.current = false; }}
     >
-      {selected ? <PinIconSelected T={T} /> : <PinIcon T={T} />}
+      {selected ? <PinIconSelected T={T} count={count} /> : <PinIcon T={T} count={count} />}
     </MapboxGL.PointAnnotation>
   );
 }

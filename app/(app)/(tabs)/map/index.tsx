@@ -18,6 +18,7 @@ import { F } from '@/constants/fonts';
 import type { Theme } from '@/constants/theme';
 import { IcoPlus } from '@/components/icons';
 import { haptics } from '@/lib/haptics';
+import type { MapPoint } from '@/types/app.types';
 
 // Cascade d'apparition (D-07) : montage STAGGERED des markers.
 // La cascade vient du MONTAGE échelonné (le pin « pop in » en étant monté),
@@ -62,8 +63,28 @@ export default function MapScreen() {
   const [snackbar, setSnackbar] = useState<string | null>(null);
   const [centerCoords, setCenterCoords] = useState({ latitude: 48.8566, longitude: 2.3522 });
 
+  // Regroupement des moments par lieu : un seul pin par coordonnée, avec le nombre
+  // de moments à cet endroit (plusieurs moments au même lieu → pin unique + pastille).
+  // Le représentant affiché est le moment le plus récent du lieu.
+  const groupedMarkers = useMemo(() => {
+    const byCoord = new Map<string, { point: MapPoint; count: number }>();
+    for (const p of points) {
+      const key = `${p.longitude.toFixed(5)},${p.latitude.toFixed(5)}`;
+      const g = byCoord.get(key);
+      if (g) {
+        g.count += 1;
+        const pt = new Date(p.happened_at ?? p.created_at).getTime();
+        const et = new Date(g.point.happened_at ?? g.point.created_at).getTime();
+        if (pt > et) g.point = p;
+      } else {
+        byCoord.set(key, { point: p, count: 1 });
+      }
+    }
+    return [...byCoord.values()];
+  }, [points]);
+
   // Cascade au montage — révèle progressivement les premiers markers.
-  const visibleCount = useStaggeredVisible(points.length);
+  const visibleCount = useStaggeredVisible(groupedMarkers.length);
 
   // Micro-anim FAB (D-11) — reanimated sur transform: scale uniquement (compositor-friendly).
   const fabScale = useSharedValue(1);
@@ -109,8 +130,8 @@ export default function MapScreen() {
         showUserLocation={!viewingFriendId}
         focusCoords={friendFocus}
       >
-        {viewMode === 'pins' && points.slice(0, visibleCount).map((p) => (
-          <PointMarker key={p.id} point={p} />
+        {viewMode === 'pins' && groupedMarkers.slice(0, visibleCount).map((m) => (
+          <PointMarker key={m.point.id} point={m.point} count={m.count} />
         ))}
         {viewMode === 'heatmap' && <HeatmapLayer points={points} />}
       </AppMapView>
