@@ -66,9 +66,9 @@ Chaque phase livre une tranche visible bout-en-bout. Les fondations techniques s
 **Goal:** Refondre les écrans de listing et social selon l'archétype « table des matières ».
 **Mode:** mvp
 **Requirements:** UI-05, UI-06, UI-07
-**Plans:** 1/3 plans complete
+**Plans:** 2/3 plans complete
 - [x] 04-01-PLAN.md — Liste « Le carnet » : note Display 44 T.text, pills inline, sticky par mois, suppression FiltersBottomSheet (UI-05)
-- [ ] 04-02-PLAN.md — Le cercle (`friends/index`) (UI-06)
+- [x] 04-02-PLAN.md — Le cercle (`friends/index`) : annuaire éditorial (avatar carré rose, nom serif 20, @username mono, « Carte » underline, recherche underline) + retrait d'ami D-06 (Alert éditoriale + haptics + snackbars) (UI-06)
 - [ ] 04-03-PLAN.md — Demandes (`friends/requests`) (UI-07)
 **Success Criteria**:
 1. La liste des moments (`point/list`) adopte l'archétype « table des matières » (gros numéros, métadonnées mono alignées droite) avec swipe-back.
@@ -102,4 +102,4 @@ Tous les requirements v1 sont mappés à exactement une phase.
 **Total :** 22 / 22 requirements mappés ✓
 
 ---
-*Last updated: 2026-06-02 after 03-02 (PointMarker Modal removal + tap-pin → detail direct, IOS-02/D-06)*
+*Last updated: 2026-06-02 after 04-02 (Le cercle UI-06 — annuaire éditorial + retrait d'ami D-06)*

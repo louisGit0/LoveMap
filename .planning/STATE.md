@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: "Phase 04 en cours (1/3 plans) — 04-01 exécuté (UI-05, code)"
-stopped_at: "Phase 4 plan 04-01 exécuté (UI-05 — liste « Le carnet », pills inline, sticky par mois, FiltersBottomSheet supprimé). 0 nouvelle erreur tsc (21 ≤ baseline 36). Vérif device en attente. Restent 04-02 (cercle) + 04-03 (demandes). Warning à traiter : 04-03 handleRespond refus amitié `haptics.tap()` → `haptics.warn()` (UI-SPEC §Motion)."
-last_updated: "2026-06-02T17:10:00.000Z"
+status: "Phase 04 en cours (2/3 plans) — 04-01 (UI-05) + 04-02 (UI-06) exécutés (code)"
+stopped_at: "Phase 4 plan 04-02 exécuté (UI-06 — « Le cercle » annuaire éditorial : FriendItem avatar carré rose / nom serif 20 / @username mono droite / Carte underline / Retirer T.danger + Alert éditoriale ; friends/index titre serifLight 36, recherche underline ui/Input, snackbars de retrait + haptics.error, empty/no-result states). 0 nouvelle erreur tsc (21). Vérif device en attente. Reste 04-03 (demandes). Warning à traiter : 04-03 handleRespond refus amitié `haptics.tap()` → `haptics.warn()` (UI-SPEC §Motion)."
+last_updated: "2026-06-02T17:40:00.000Z"
 progress:
   total_phases: 5
   completed_phases: 3
   total_plans: 17
-  completed_plans: 15
-  percent: 64
+  completed_plans: 16
+  percent: 68
 ---
 
 # STATE — LoveMap (Refonte UI/UX iOS)
@@ -33,7 +33,7 @@ See: .planning/PROJECT.md (updated 2026-05-29)
 | 1 | Stabilisation & Fondations | ✅ Terminé — 8/8 req · builds #17/#18 · migrations 011+012 |
 | 2 | Carte stylisée | ✅ Terminé — 4/4 req · vérifié 4/4 · validé device #19 · style Mapbox custom + pivot D-12 |
 | 3 | Création & Détail de point (sheets natifs) | ✅ Terminé — 5/5 plans · validé device #26 · **pivot formSheet→modal** (bug iOS 26 RNS 4.16 #3235) · aperçu carte retiré (location stamp) (03-01 nav Stack+(tabs) · 03-02 tap-pin → détail direct · 03-03 création carnet note-first · 03-04 détail carnet lecture + segments date #2125 · 03-05 validation device + correctifs sheet) |
-| 4 | Listes & Cercle | 🔄 En cours — 1/3 plans · 04-01 (UI-05) exécuté, vérif device en attente |
+| 4 | Listes & Cercle | 🔄 En cours — 2/3 plans · 04-01 (UI-05) + 04-02 (UI-06) exécutés, vérif device en attente |
 | 5 | Auth, Profil & Finitions | ⬜ Not started |
 
 **Requirements:** 16 / 22 complete (Phase 1 : STAB-01/02/03, FOND-01/02/03/04, IOS-03 · Phase 2 : MAP-01, MAP-02, MAP-03, UI-02 · Phase 3 : IOS-01, IOS-02, UI-03, UI-04)
@@ -62,7 +62,7 @@ See: .planning/PROJECT.md (updated 2026-05-29)
 
 ## Next Step
 
-**Phase 4 en cours — 04-01 (UI-05) exécuté.** Exécuter **04-02 (Le cercle, UI-06)** puis **04-03 (Demandes, UI-07)**, puis gate device de fin de phase (build natif). Baseline tsc de référence phase 4 = **36** (04-01 a fini à 21 après suppression de FiltersBottomSheet — l'écart vient d'une suppression de fichier, pas d'une correction de dette).
+**Phase 4 en cours — 04-01 (UI-05) + 04-02 (UI-06) exécutés.** Exécuter **04-03 (Demandes, UI-07)**, puis gate device de fin de phase (build natif). Baseline tsc de référence phase 4 = **21** (depuis 04-01, après suppression de FiltersBottomSheet) ; 04-02 a fini à 21 (0 nouvelle erreur).
 
 Aperçu carte **restauré build #27** (validé device) : `<Image>` statique Mapbox (`mapboxStaticUrl()`) + pin rose RN, dans détail + création — fiable dans le `modal` (le noir d'avant venait du `formSheet`, pas de l'image).
 
@@ -76,8 +76,8 @@ Aperçu carte **restauré build #27** (validé device) : `<Image>` statique Mapb
 
 ## Session
 
-- **Stopped at:** Phase 4 plan 04-01 exécuté (UI-05). PointListItem refondu (note Display 44 T.text, /10 mono, sans N°00X, chevron mono) ; list.tsx refondu (« Le carnet », pills inline minNote/sort, sticky par mois) ; FiltersBottomSheet.tsx supprimé. 0 nouvelle erreur tsc. Vérif device en attente. Restent 04-02 + 04-03.
+- **Stopped at:** Phase 4 plan 04-02 exécuté (UI-06). FriendItem refondu en entrée d'annuaire (avatar carré rose, nom serif 20, @username mono droite, « Carte » underline T.primary, « Retirer » T.danger + Alert éditoriale « Retirer du cercle ? » + haptics.warn) ; friends/index « Le cercle » (titre serifLight 36, recherche underline ui/Input, snackbars « Retiré du cercle. »/« Échec — réessayez. » + haptics.error, empty/no-result states) ; purge F.sans* résiduels (Inviter/chevron Demandes). 0 nouvelle erreur tsc (21). Vérif device en attente. Reste 04-03.
 - **Resume file:** .planning/phases/04-listes-cercle/ (execute-phase)
 
 ---
-*Last updated: 2026-06-02 after 03-05 (validation device #26, pivot formSheet→modal #3235, Phase 3 terminée 5/5)*
+*Last updated: 2026-06-02 after 04-02 (UI-06 « Le cercle » annuaire éditorial + retrait d'ami D-06, 0 nouvelle erreur tsc)*
