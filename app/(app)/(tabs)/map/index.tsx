@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator, Pressable, Alert } from 'react-native';
+import { View, Text, StyleSheet, ActivityIndicator, Pressable } from 'react-native';
 import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
 import { router } from 'expo-router';
 import { Snackbar } from 'react-native-paper';
@@ -52,7 +52,7 @@ function useStaggeredVisible(count: number): number {
 export default function MapScreen() {
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
-  const { points, fetchMyPoints, fetchFriendPoints, deletePoint } = usePoints();
+  const { points, fetchMyPoints, fetchFriendPoints } = usePoints();
   const { fetchFriends } = useFriends();
   const { viewMode, setViewMode, viewingFriendId, viewingFriendName, setViewingFriend } = useMapStore();
   const T = useTheme();
@@ -92,21 +92,11 @@ export default function MapScreen() {
     router.push({ pathname: '/(app)/point/new', params: { latitude: centerCoords.latitude.toString(), longitude: centerCoords.longitude.toString() } });
   }
 
-  async function handleDelete(pointId: string) {
-    Alert.alert('Effacer cette page', 'Cette action est irréversible.', [
-      { text: 'Annuler', style: 'cancel' },
-      { text: 'Effacer', style: 'destructive', onPress: async () => {
-        const ok = await deletePoint(pointId);
-        setSnackbar(ok ? 'Page effacée.' : 'Erreur lors de la suppression.');
-      }},
-    ]);
-  }
-
   return (
     <View style={styles.container}>
       <AppMapView onLongPress={viewingFriendId ? undefined : handleLongPress} onCenterChange={setCenterCoords}>
         {viewMode === 'pins' && points.slice(0, visibleCount).map((p) => (
-          <PointMarker key={p.id} point={p} isOwner={p.creator_id === user?.id} onDelete={handleDelete} />
+          <PointMarker key={p.id} point={p} />
         ))}
         {viewMode === 'heatmap' && <HeatmapLayer points={points} />}
       </AppMapView>
