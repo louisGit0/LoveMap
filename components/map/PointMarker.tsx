@@ -88,6 +88,10 @@ export function PointMarker({ point }: Props) {
   const T = useTheme();
   const [selected, setSelected] = useState(false);
   const annRef = useRef<MapboxGL.PointAnnotation>(null);
+  // Garde-fou anti-double-ouverture : `onSelected` peut se déclencher plusieurs fois
+  // pour un seul tap (quirk iOS + re-snapshot via refresh()). On ne pousse la route
+  // qu'une fois par sélection, réarmé au deselect ou après un court délai.
+  const navigatingRef = useRef(false);
 
   // Sélection = re-snapshot (Pitfall 2) : refresh() obligatoire après le swap de variante.
   // Sans refresh(), un simple changement d'état React ne re-déclenche pas toujours le snapshot natif.
@@ -113,8 +117,15 @@ export function PointMarker({ point }: Props) {
       coordinate={[point.longitude, point.latitude]}
       anchor={{ x: 0.5, y: 1 }}
       selected={selected}
-      onSelected={() => { setSelected(true); router.push(`/(app)/point/${point.id}`); }}
-      onDeselected={() => setSelected(false)}
+      onSelected={() => {
+        setSelected(true);
+        if (navigatingRef.current) return;
+        navigatingRef.current = true;
+        router.push(`/(app)/point/${point.id}`);
+        // Réarme après un court délai si onDeselected ne se déclenche pas (quirk iOS).
+        setTimeout(() => { navigatingRef.current = false; }, 1200);
+      }}
+      onDeselected={() => { setSelected(false); navigatingRef.current = false; }}
     >
       {selected ? <PinIconSelected T={T} /> : <PinIcon T={T} />}
     </MapboxGL.PointAnnotation>
