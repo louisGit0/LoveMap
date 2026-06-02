@@ -62,7 +62,7 @@ See: .planning/PROJECT.md (updated 2026-05-29)
 
 ## Next Step
 
-`/gsd:ui-phase 3` (recommandé — figer le rendu « page de carnet » création/détail, place de la note serif, métadonnées, boutons d'action dans le sheet) **puis** `/gsd:plan-phase 3`. Contexte prêt : `.planning/phases/03-cr-ation-d-tail-de-point-sheets-natifs/03-CONTEXT.md` (D-01..D-10). Form sheet natif Expo Router, zéro dépendance (recherche ARCHITECTURE.md §Bottom Sheets).
+`/gsd:plan-phase 3` — le planner utilisera CONTEXT.md (D-01..D-10) + UI-SPEC.md approuvé (6/6). Form sheet natif Expo Router (zéro dépendance), restructuration Tabs→Stack form-sheets, refonte création/détail « page de carnet » (typo serif+mono, note d'abord), suppression de la Modal d'aperçu marker. Prêts : `03-CONTEXT.md` + `03-UI-SPEC.md`.
 
 ## Session
 
