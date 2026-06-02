@@ -63,12 +63,17 @@ export default function MapScreen() {
   const [snackbar, setSnackbar] = useState<string | null>(null);
   const [centerCoords, setCenterCoords] = useState({ latitude: 48.8566, longitude: 2.3522 });
 
+  // La carte n'affiche que les moments VALIDÉS (is_visible=TRUE) : un point apparaît sur la carte
+  // uniquement quand un partenaire mentionné a accepté. Tant qu'aucune mention n'est acceptée,
+  // le moment reste « en attente » et n'est visible que dans le carnet (onglet Moments).
+  const visiblePoints = useMemo(() => points.filter((p) => p.is_visible), [points]);
+
   // Regroupement des moments par lieu : un seul pin par coordonnée, avec le nombre
   // de moments à cet endroit (plusieurs moments au même lieu → pin unique + pastille).
   // Le représentant affiché est le moment le plus récent du lieu.
   const groupedMarkers = useMemo(() => {
     const byCoord = new Map<string, { point: MapPoint; count: number }>();
-    for (const p of points) {
+    for (const p of visiblePoints) {
       const key = `${p.longitude.toFixed(5)},${p.latitude.toFixed(5)}`;
       const g = byCoord.get(key);
       if (g) {
@@ -81,7 +86,7 @@ export default function MapScreen() {
       }
     }
     return [...byCoord.values()];
-  }, [points]);
+  }, [visiblePoints]);
 
   // Cascade au montage — révèle progressivement les premiers markers.
   const visibleCount = useStaggeredVisible(groupedMarkers.length);
@@ -133,7 +138,7 @@ export default function MapScreen() {
         {viewMode === 'pins' && groupedMarkers.slice(0, visibleCount).map((m) => (
           <PointMarker key={m.point.id} point={m.point} count={m.count} />
         ))}
-        {viewMode === 'heatmap' && <HeatmapLayer points={points} />}
+        {viewMode === 'heatmap' && <HeatmapLayer points={visiblePoints} />}
       </AppMapView>
 
       <MapHeader
@@ -141,7 +146,7 @@ export default function MapScreen() {
         onViewModeChange={setViewMode}
         friendName={viewingFriendName}
         onFriendClear={() => setViewingFriend(null)}
-        pointCount={points.length}
+        pointCount={visiblePoints.length}
         leftSlot={
           <FriendSelector
             isViewingFriend={!!viewingFriendId}
@@ -172,10 +177,14 @@ export default function MapScreen() {
         </Animated.View>
       )}
 
-      {/* Hint discret quand aucun point — non bloquant */}
-      {!loading && points.length === 0 && !viewingFriendId && (
+      {/* Hint discret quand aucun point validé sur la carte — non bloquant */}
+      {!loading && visiblePoints.length === 0 && !viewingFriendId && (
         <View style={[styles.emptyHint, { bottom: insets.bottom + 148 }]} pointerEvents="none">
-          <Text style={styles.emptyHintText}>Appuyez sur + pour inscrire votre premier moment</Text>
+          <Text style={styles.emptyHintText}>
+            {points.length === 0
+              ? 'Appuyez sur + pour inscrire votre premier moment'
+              : 'Vos moments apparaissent ici une fois la mention acceptée'}
+          </Text>
         </View>
       )}
 

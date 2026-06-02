@@ -1,8 +1,7 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useRef, useEffect } from 'react';
 import { View, Text } from 'react-native';
 import MapboxGL from '@rnmapbox/maps';
 import { router } from 'expo-router';
-import { useFocusEffect } from '@react-navigation/native';
 import { useTheme } from '@/hooks/useTheme';
 import { F } from '@/constants/fonts';
 import type { Theme } from '@/constants/theme';
@@ -114,58 +113,38 @@ function PinIconSelected({ T, count }: { T: Theme; count?: number }) {
 
 export function PointMarker({ point, count }: Props) {
   const T = useTheme();
-  const [selected, setSelected] = useState(false);
   const annRef = useRef<MapboxGL.PointAnnotation>(null);
-  // Garde-fou anti-double-ouverture : `onSelected` peut se déclencher plusieurs fois
-  // pour un seul tap (quirk iOS + re-snapshot via refresh()). On ne pousse la route
-  // qu'une fois par sélection, réarmé au deselect ou après un court délai.
+  // Garde-fou anti-double-ouverture : `onSelected` peut se déclencher plusieurs fois pour un seul tap.
   const navigatingRef = useRef(false);
 
-  // Sélection = re-snapshot (Pitfall 2) : refresh() obligatoire après le swap de variante.
-  // Sans refresh(), un simple changement d'état React ne re-déclenche pas toujours le snapshot natif.
+  // Re-snapshot après le montage : au 1er snapshot natif, le texte de la pastille n'est pas
+  // toujours mis en page → la pastille de compte n'apparaîtrait pas. Un refresh différé la capture.
   useEffect(() => {
-    annRef.current?.refresh();
-  }, [selected, count]);
+    const t = setTimeout(() => annRef.current?.refresh(), 60);
+    return () => clearTimeout(t);
+  }, [count]);
 
-  // De retour sur la carte (le détail s'est fermé), réinitialiser la sélection.
-  // Sinon l'annotation peut rester « selected » (onDeselected non déclenché — quirk iOS),
-  // et re-taper un pin déjà sélectionné ne re-déclenche PAS onSelected → le détail ne s'ouvre pas.
-  useFocusEffect(
-    useCallback(() => {
-      setSelected(false);
-      navigatingRef.current = false;
-    }, [])
-  );
-
+  /*
+   * PointAnnotation (annotation native Mapbox) — toujours visible quel que soit le zoom.
+   * `selected={false}` constant : on n'utilise PAS l'état sélectionné natif (qui « collait »
+   * en halo rose et empêchait de re-taper le pin — quirk iOS). Le pin garde toujours le même
+   * visuel (PinIcon), et chaque tap re-déclenche onSelected → ouverture fiable du détail.
+   */
   return (
-    /*
-     * PointAnnotation (annotation native Mapbox) — toujours visible quel que soit le zoom.
-     * MarkerView était une overlay RN qui disparaissait lors du re-rendu des tiles (régression).
-     * Sélection : swap de variante (PinIcon ↔ PinIconSelected) + refresh() — PAS de transform
-     * animée sur les enfants (le snapshot natif la gèlerait → no-op).
-     *
-     * onSelected (D-06) : ouvre directement la feuille de détail native (route /(app)/point/[id]).
-     * onDeselected réinitialise l'état sélectionné — mitigation du quirk iOS de re-sélection
-     * (re-taper une PointAnnotation déjà sélectionnée peut ne pas re-déclencher onSelected).
-     * À valider sur appareil (Plan 05).
-     */
     <MapboxGL.PointAnnotation
       ref={annRef}
       id={point.id}
       coordinate={[point.longitude, point.latitude]}
       anchor={{ x: 0.5, y: 1 }}
-      selected={selected}
+      selected={false}
       onSelected={() => {
-        setSelected(true);
         if (navigatingRef.current) return;
         navigatingRef.current = true;
         router.push(`/(app)/point/${point.id}`);
-        // Réarme après un court délai si onDeselected ne se déclenche pas (quirk iOS).
-        setTimeout(() => { navigatingRef.current = false; }, 1200);
+        setTimeout(() => { navigatingRef.current = false; }, 600);
       }}
-      onDeselected={() => { setSelected(false); navigatingRef.current = false; }}
     >
-      {selected ? <PinIconSelected T={T} count={count} /> : <PinIcon T={T} count={count} />}
+      <PinIcon T={T} count={count} />
     </MapboxGL.PointAnnotation>
   );
 }
