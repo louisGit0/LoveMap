@@ -4,11 +4,11 @@ milestone: v1.0
 milestone_name: milestone
 status: "Phase 04 terminée (3/3 plans) — validée device #28"
 stopped_at: Phase 5 contexte capturé
-last_updated: "2026-06-02T17:25:52.980Z"
+last_updated: "2026-06-02T18:10:30.359Z"
 progress:
   total_phases: 5
   completed_phases: 4
-  total_plans: 17
+  total_plans: 21
   completed_plans: 17
   percent: 80
 ---
@@ -20,7 +20,7 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-29)
 
 **Core value:** L'expérience visuelle et tactile doit donner l'impression d'un produit iOS premium, beau, fluide et stable sur iPhone.
-**Current focus:** Phase 5 — Auth, Profil & Finitions (dernière phase)
+**Current focus:** Phase 5 — Auth, Profil & Finitions
 
 ## Milestone
 
