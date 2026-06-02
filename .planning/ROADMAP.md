@@ -75,7 +75,8 @@ Chaque phase livre une tranche visible bout-en-bout. Les fondations techniques s
 2. L'écran amis (`friends/index`) est refondu dans le même archétype, filtres/recherche inclus.
 3. L'écran demandes (`friends/requests`) est refondu, taguages en attente et demandes d'amitié lisibles et cohérents.
 
-### Phase 5: Auth, Profil & Finitions
+### Phase 5: Auth, Profil & Finitions ✅ COMPLETE
+**Status:** ✅ Terminé — 4/4 plans · milestone v1.0 code-complete (22/22 requirements). En attente du build de phase + validation device.
 **Goal:** Refondre les écrans « page de couverture » et finaliser la cohérence iOS transverse (safe areas, Dynamic Type).
 **Mode:** mvp
 **Requirements:** UI-01, UI-08, IOS-04
@@ -85,11 +86,11 @@ Chaque phase livre une tranche visible bout-en-bout. Les fondations techniques s
 3. Tous les écrans refondus respectent safe areas, home indicator et Dynamic Type sans casse, en thèmes clair et sombre.
 4. Une passe finale confirme cohérence visuelle et absence de régression sur l'ensemble des 9 écrans.
 
-**Plans:** 3/4 plans complete
+**Plans:** 4/4 plans complete
 - [x] 05-01-PLAN.md — AppText variant display (F.serifLight, cap 1.15) + caps Dynamic Type par role (D-06, IOS-04 lever) [vague 1]
 - [x] 05-02-PLAN.md — Refonte auth page de couverture : login + register (stepper conserve) + fix MIN_AGE (D-11) + CTA (D-12) + insets.bottom (UI-01) [vague 2]
 - [x] 05-03-PLAN.md — Refonte profil page de couverture + bento Analyse + toggle unique a11y (D-09) + delete Alert seule (D-08) + avatar PRESERVE (UI-08) [vague 2]
-- [ ] 05-04-PLAN.md — Passe IOS-04 sur les 6 ecrans hors-refonte (home indicator insets.bottom + caps heroes + sweep tokens, clair+dark) (IOS-04) [vague 3]
+- [x] 05-04-PLAN.md — Passe IOS-04 sur les 6 ecrans hors-refonte (home indicator insets.bottom + 64 + caps heroes 1.25/1.15 + sweep tokens, clair+dark) (IOS-04) [vague 3]
 
 ---
 
@@ -108,4 +109,4 @@ Tous les requirements v1 sont mappés à exactement une phase.
 **Total :** 22 / 22 requirements mappés ✓
 
 ---
-*Last updated: 2026-06-02 after 05-03 (refonte profil « page de couverture » + bento Analyse + toggle unique a11y D-09 + delete Alert seule D-08 + avatar PRESERVE + IOS-04 insets). Phase 5 : 3/4 plans. tsc 20 (baseline 20, 0 nouvelle erreur).*
+*Last updated: 2026-06-02 after 05-04 (passe IOS-04 : home indicator insets.bottom + 64 + caps heroes 1.25/1.15, clair+dark). Phase 5 : 4/4 plans — milestone v1.0 code-complete (22/22 requirements). tsc 20 (baseline 20, 0 nouvelle erreur).*
