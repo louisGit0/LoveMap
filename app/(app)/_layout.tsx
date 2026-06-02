@@ -3,15 +3,13 @@ import { Stack, router } from 'expo-router';
 import { useAuthStore } from '@/stores/authStore';
 import { useTheme } from '@/hooks/useTheme';
 
-// `presentation` narrowed to its literal so it satisfies the native-stack
-// options union; the rest stays inferred (mutable number[] / boolean) to avoid
-// the readonly-tuple incompatibility a blanket `as const` introduces (A1 / tsc gate).
+// iOS 26 + react-native-screens 4.16 : `formSheet` (détents custom) est cassé —
+// le contenu est ancré en bas / le sheet rend trop petit (RNS #3235, non corrigé
+// jusqu'à 4.20+, non corrigeable en JS). On utilise un `modal` plein écran natif
+// (carte iOS pageSheet : glisse du bas, swipe-to-dismiss) qui rend correctement.
 const sheetOptions = {
-  presentation: 'formSheet' as const,
-  sheetAllowedDetents: [0.92],   // D-02 détent unique large (≥0.7 atténue #3235)
-  sheetGrabberVisible: true,     // D-03 poignée iOS visible
-  sheetCornerRadius: 28,         // D-03 = T.radiusXl
-  gestureEnabled: true,          // IOS-01 swipe-to-dismiss natif
+  presentation: 'modal' as const,
+  gestureEnabled: true,          // swipe-to-dismiss natif (carte modale)
   headerShown: false,            // header éditorial interne
 };
 

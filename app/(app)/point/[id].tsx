@@ -11,7 +11,6 @@ import {
   TextInput,
   Alert,
   ActivityIndicator,
-  useWindowDimensions,
 } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { usePreventRemove, useNavigation } from '@react-navigation/native';
@@ -58,9 +57,6 @@ export default function PointDetail() {
   const { deletePoint, updatePointFields } = usePoints();
   const T = useTheme();
   const styles = useMemo(() => makeStyles(T), [T]);
-  // iOS 26 + RNS 4.16 : form sheet en flex:1 mal mesuré → contenu ancré en bas
-  // (vide noir en haut, #3235/#2522). Taille explicite = layout correct.
-  const { width: winW, height: winH } = useWindowDimensions();
 
   const [point, setPoint] = useState<MapPoint | null>(null);
   const [partnerRecord, setPartnerRecord] = useState<PointPartner | null>(null);
@@ -215,7 +211,7 @@ export default function PointDetail() {
   const isPending = partnerRecord?.status === 'pending';
 
   return (
-    <View style={[styles.container, { width: winW, height: winH }]}>
+    <View style={styles.container}>
       <ScrollView
         style={styles.scroll}
         keyboardShouldPersistTaps="handled"
@@ -418,7 +414,7 @@ export default function PointDetail() {
 }
 
 const makeStyles = (T: Theme) => StyleSheet.create({
-  container: { backgroundColor: T.bg },
+  container: { flex: 1, backgroundColor: T.bg },
   scroll: { flex: 1 },
   centered: { flex: 1, backgroundColor: T.bg, justifyContent: 'center', alignItems: 'center' },
   errorText: { fontFamily: F.serif, fontStyle: 'italic', fontSize: 16, color: T.text, textAlign: 'center', paddingHorizontal: 32 },

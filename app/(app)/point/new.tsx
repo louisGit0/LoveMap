@@ -9,7 +9,6 @@ import {
   TouchableOpacity,
   TextInput,
   Alert,
-  useWindowDimensions,
 } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { usePreventRemove, useNavigation } from '@react-navigation/native';
@@ -35,9 +34,6 @@ export default function NewPoint() {
   const navigation = useNavigation();
   const T = useTheme();
   const styles = useMemo(() => makeStyles(T), [T]);
-  // iOS 26 + RNS 4.16 : un form sheet en flex:1 mesure mal et ancre le contenu
-  // en bas (vide noir en haut, issue #3235/#2522). Une taille explicite corrige.
-  const { width: winW, height: winH } = useWindowDimensions();
 
   const hasParams =
     !!params.latitude && !!params.longitude &&
@@ -184,7 +180,7 @@ export default function NewPoint() {
   });
 
   return (
-    <View style={[styles.container, { width: winW, height: winH }]}>
+    <View style={styles.container}>
       <ScrollView
         style={styles.scroll}
         keyboardShouldPersistTaps="handled"
@@ -380,6 +376,7 @@ export default function NewPoint() {
 
 const makeStyles = (T: Theme) => StyleSheet.create({
   container: {
+    flex: 1,
     backgroundColor: T.bg,
   },
   scroll: {
