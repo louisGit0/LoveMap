@@ -53,6 +53,13 @@ Chaque phase livre une tranche visible bout-en-bout. Les fondations techniques s
 3. Les `Modal` custom de ce flux sont migrés vers des routes Stack (`gestureEnabled`).
 4. Les écrans création et détail suivent l'archétype « page de carnet » (N°00X, note serif géante, pull-quote italic).
 
+**Plans:** 5 plans
+- [ ] 03-01-PLAN.md — Restructuration nav : (app) Stack + groupe (tabs) + routes formSheet (point/new, point/[id]) (IOS-01, IOS-02)
+- [ ] 03-02-PLAN.md — Suppression Modal PointMarker + tap-pin → détail direct + nettoyage map/index (IOS-02)
+- [ ] 03-03-PLAN.md — Refonte création « page de carnet » (note d'abord) + clavier sheet + garde D-04 (UI-03, IOS-01)
+- [ ] 03-04-PLAN.md — Refonte détail « page de carnet » + segments date (anti-freeze #2125) + dismiss natif (UI-04, IOS-02, IOS-01)
+- [ ] 03-05-PLAN.md — Gate device : gates statiques + build/OTA + checklist TestFlight iOS 26 (IOS-01, IOS-02, UI-03, UI-04)
+
 ### Phase 4: Listes & Cercle
 **Goal:** Refondre les écrans de listing et social selon l'archétype « table des matières ».
 **Mode:** mvp
@@ -89,4 +96,4 @@ Tous les requirements v1 sont mappés à exactement une phase.
 **Total :** 22 / 22 requirements mappés ✓
 
 ---
-*Last updated: 2026-05-29 after roadmap creation*
+*Last updated: 2026-06-02 after Phase 3 planning (5 plans, 3 waves)*
