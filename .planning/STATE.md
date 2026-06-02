@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: Phase 03 terminée (5/5 plans) — validée device #26
-stopped_at: 03-05 validé device — pivot formSheet→modal (bug iOS 26 RNS 4.16 #3235 : contenu ancré en bas = sheet noir, non corrigeable JS) + aperçu carte retiré des sheets (location stamp/adresse, MapView GL & <Image> noirs en sheet) + layout (no KAV, automaticallyAdjustKeyboardInsets). Build #26 OK.
-last_updated: "2026-06-02T14:15:00.000Z"
+status: "Phase 04 en cours (1/3 plans) — 04-01 exécuté (UI-05, code)"
+stopped_at: "Phase 4 plan 04-01 exécuté (UI-05 — liste « Le carnet », pills inline, sticky par mois, FiltersBottomSheet supprimé). 0 nouvelle erreur tsc (21 ≤ baseline 36). Vérif device en attente. Restent 04-02 (cercle) + 04-03 (demandes). Warning à traiter : 04-03 handleRespond refus amitié `haptics.tap()` → `haptics.warn()` (UI-SPEC §Motion)."
+last_updated: "2026-06-02T17:10:00.000Z"
 progress:
   total_phases: 5
   completed_phases: 3
-  total_plans: 15
+  total_plans: 17
   completed_plans: 15
-  percent: 60
+  percent: 64
 ---
 
 # STATE — LoveMap (Refonte UI/UX iOS)
@@ -20,7 +20,7 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-29)
 
 **Core value:** L'expérience visuelle et tactile doit donner l'impression d'un produit iOS premium, beau, fluide et stable sur iPhone.
-**Current focus:** Phase 03 — cr-ation-d-tail-de-point-sheets-natifs
+**Current focus:** Phase 4 — Listes & Cercle
 
 ## Milestone
 
@@ -33,7 +33,7 @@ See: .planning/PROJECT.md (updated 2026-05-29)
 | 1 | Stabilisation & Fondations | ✅ Terminé — 8/8 req · builds #17/#18 · migrations 011+012 |
 | 2 | Carte stylisée | ✅ Terminé — 4/4 req · vérifié 4/4 · validé device #19 · style Mapbox custom + pivot D-12 |
 | 3 | Création & Détail de point (sheets natifs) | ✅ Terminé — 5/5 plans · validé device #26 · **pivot formSheet→modal** (bug iOS 26 RNS 4.16 #3235) · aperçu carte retiré (location stamp) (03-01 nav Stack+(tabs) · 03-02 tap-pin → détail direct · 03-03 création carnet note-first · 03-04 détail carnet lecture + segments date #2125 · 03-05 validation device + correctifs sheet) |
-| 4 | Listes & Cercle | ⬜ Not started |
+| 4 | Listes & Cercle | 🔄 En cours — 1/3 plans · 04-01 (UI-05) exécuté, vérif device en attente |
 | 5 | Auth, Profil & Finitions | ⬜ Not started |
 
 **Requirements:** 16 / 22 complete (Phase 1 : STAB-01/02/03, FOND-01/02/03/04, IOS-03 · Phase 2 : MAP-01, MAP-02, MAP-03, UI-02 · Phase 3 : IOS-01, IOS-02, UI-03, UI-04)
@@ -62,11 +62,12 @@ See: .planning/PROJECT.md (updated 2026-05-29)
 
 ## Next Step
 
-**Phase 3 terminée et validée device (#26 + #27).** Démarrer **Phase 4 — Listes & Cercle** (`/gsd:discuss-phase 4` → ui → plan → execute).
+**Phase 4 en cours — 04-01 (UI-05) exécuté.** Exécuter **04-02 (Le cercle, UI-06)** puis **04-03 (Demandes, UI-07)**, puis gate device de fin de phase (build natif). Baseline tsc de référence phase 4 = **36** (04-01 a fini à 21 après suppression de FiltersBottomSheet — l'écart vient d'une suppression de fichier, pas d'une correction de dette).
 
 Aperçu carte **restauré build #27** (validé device) : `<Image>` statique Mapbox (`mapboxStaticUrl()`) + pin rose RN, dans détail + création — fiable dans le `modal` (le noir d'avant venait du `formSheet`, pas de l'image).
 
 **Cycle de correctifs sheet (builds #20→#26), révélé par la validation device :**
+
 - #20–#22 : contenu « noir en haut ». Fausse piste « carte noire ».
 - Aperçu carte retiré (MapView GL **et** `<Image>` Mapbox rendent noir dans un sheet) → location stamp (création) / adresse en métadonnées (détail).
 - #24 : layout (suppression `KeyboardAvoidingView`, `contentInsetAdjustmentBehavior="never"`, `automaticallyAdjustKeyboardInsets`). Insuffisant.
@@ -75,7 +76,7 @@ Aperçu carte **restauré build #27** (validé device) : `<Image>` statique Mapb
 
 ## Session
 
-- **Stopped at:** Phase 4 planifiée + vérifiée (UI-SPEC approuvé 6/6, RESEARCH/PATTERNS/VALIDATION, 3 plans wave 1 vérifiés 0 blocage). Prêt à exécuter. Warning à traiter en exec : 04-03 handleRespond refus amitié `haptics.tap()` → `haptics.warn()` (UI-SPEC §Motion).
+- **Stopped at:** Phase 4 plan 04-01 exécuté (UI-05). PointListItem refondu (note Display 44 T.text, /10 mono, sans N°00X, chevron mono) ; list.tsx refondu (« Le carnet », pills inline minNote/sort, sticky par mois) ; FiltersBottomSheet.tsx supprimé. 0 nouvelle erreur tsc. Vérif device en attente. Restent 04-02 + 04-03.
 - **Resume file:** .planning/phases/04-listes-cercle/ (execute-phase)
 
 ---
