@@ -98,7 +98,7 @@ lovemap/
 │   │   ├── HeatmapLayer.web.tsx  # Stub web (null)
 │   │   ├── MapHeader.tsx         # Toggle pins/heatmap
 │   │   └── FriendSelector.tsx    # Sélecteur d'ami pour filtre carte
-│   ├── point/                    # PointForm, PointListItem (PressableScale), PhotoPicker, FiltersBottomSheet
+│   ├── point/                    # PointForm, PointListItem (archétype table des matières), PhotoPicker (FiltersBottomSheet supprimé P4 — filtres inline dans list.tsx)
 │   ├── friends/                  # FriendItem, FriendRequestItem
 │   └── ui/
 │       ├── Button.tsx            # Pill button custom (primary/ghost)
@@ -123,7 +123,7 @@ lovemap/
 ├── hooks/
 │   ├── useAuth.ts                # fetchProfile, signOut
 │   ├── usePoints.ts              # CRUD points + conversion PostGIS→MapPoint
-│   ├── useFriends.ts             # CRUD amitiés + demandes
+│   ├── useFriends.ts             # CRUD amitiés + demandes (unfriend, respondToRequest, respondToTag — consentement taguage inline P4)
 │   └── useTheme.ts               # retourne darkTheme ou lightTheme selon store
 ├── types/
 │   ├── database.types.ts         # Types générés Supabase
@@ -300,6 +300,8 @@ Le toggle dark/light est dans `app/(app)/profile/index.tsx` via `useThemeStore` 
 | 19 | ✅ Terminé | Build EAS #19 — code Phase 2 complet + style Mapbox Studio custom `eloso/cmpvltt03…` (noir/rose enrichi : parcs, relief, 3D, halo rose, POI) injecté via EXPO_PUBLIC_MAPBOX_STYLE (env EAS + .env.local). Submit TestFlight OK, validé device. **Phase 2 terminée (4/4).** |
 | GSD-P3 | ✅ Terminé | Phase 3 (Création & Détail) **validée device #26** — **restructuration navigation** : `app/(app)/_layout.tsx` est un `<Stack>`, les 5 écrans tabs sont dans `app/(app)/(tabs)/`, `point/new` + `point/[id]` sont des routes **`modal`** (cf. règle 19, plus de `formSheet`). Modal d'aperçu marker supprimée (tap-pin → détail direct). Création/détail refondus « page de carnet » (serif+mono, note d'abord), date détail en segments JJ/MM/AAAA (anti-freeze #2125), dismiss-confirm via `usePreventRemove`. Aperçu carte = **`<Image>` statique Mapbox** (restauré #27, fiable en modal) + pin RN. Détail : .planning/phases/03-cr-ation-d-tail-de-point-sheets-natifs/ |
 | 20-27 | ✅ Terminé | Builds EAS #20→#27 — cycle de correctifs « sheets noirs » révélé par validation device. **Cause racine (#26)** : `formSheet` cassé sur iOS 26 + react-native-screens 4.16 (RNS [#3235](https://github.com/software-mansion/react-native-screens/issues/3235), contenu ancré en bas = sheet noir, non corrigé jusqu'à 4.20+, non corrigeable JS) → bascule **`presentation: 'modal'`** (règle 19). Étapes : aperçu carte retiré (MapView GL & `<Image>` noirs en formSheet) → location stamp/adresse · layout (no KAV + `contentInsetAdjustmentBehavior="never"` + `automaticallyAdjustKeyboardInsets`) · #25 taille explicite (a empiré) · **#26 modal = validé device** · **#27 aperçu carte `<Image>` statique restauré** (fiable en modal, validé device). |
+| GSD-P4 | ✅ Terminé | Phase 4 (Listes & Cercle) **validée device #28** — refonte « table des matières » des 3 écrans : **liste** (`point/list`, note /10 en gros chiffre serif `T.text` sans N°00X, sections par mois sticky, **filtres en pills inline**, `FiltersBottomSheet.tsx` **supprimé**), **cercle** (`friends/index`, annuaire éditorial + **retrait d'ami** via Alert/`haptics.warn`/`useFriends.unfriend`), **demandes** (`friends/requests`, 2 sections eyebrow + Envoyées, **consentement taguage INLINE** via nouvelle méthode `useFriends.respondToTag` mono-table `point_partners` — `is_visible` via trigger). tsc baseline 36→**21** (suppression FiltersBottomSheet) ; 0 nouvelle erreur. Cycle GSD complet (discuss→ui→plan→execute). Détail : .planning/phases/04-listes-cercle/ |
+| 28 | ✅ Terminé | Build EAS natif iOS #28 — code Phase 4, soumis TestFlight, **validé device** (clair + sombre). Milestone 4/5 phases (80 %). |
 
 > Mettre à jour ce tableau à chaque phase complétée.
 

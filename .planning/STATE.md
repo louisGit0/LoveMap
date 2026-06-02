@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: "Phase 04 code complet (3/3 plans) — 04-01 (UI-05) + 04-02 (UI-06) + 04-03 (UI-07) exécutés ; gate device de fin de phase en attente"
-stopped_at: "Phase 4 plan 04-03 exécuté (UI-07 — Demandes refondues : 2 sections eyebrow mono « DEMANDES REÇUES » + « TAGUAGES EN ATTENTE » + Envoyées discrète ; FriendRequestItem boutons texte paramétrés (Accepter/Refuser · Sceller/Décliner, coral/ghost, D-12) + nom serif 20 ; consentement de taguage INLINE via nouvelle méthode hook useFriends.respondToTag (mono-table point_partners, is_visible via trigger, RLS mig 010/011) — plus de navigation « Répondre → » ; empty states D-07 ; W2 corrigé (refus amitié haptics.tap→warn). 0 nouvelle erreur tsc (21). Vérif device en attente."
-last_updated: "2026-06-02T18:20:00.000Z"
+status: "Phase 04 terminée (3/3 plans) — validée device #28"
+stopped_at: "Phase 4 terminée et validée device (#28) : liste « table des matières » (note /10 serif, sections par mois sticky, filtres pills inline, FiltersBottomSheet supprimé), « Le cercle » (annuaire + retrait d'ami éditorial), Demandes (2 sections + Envoyées, consentement taguage INLINE via hook respondToTag, W2 corrigé). tsc 21, 0 nouvelle erreur."
+last_updated: "2026-06-02T19:10:00.000Z"
 progress:
   total_phases: 5
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 17
   completed_plans: 17
-  percent: 71
+  percent: 80
 ---
 
 # STATE — LoveMap (Refonte UI/UX iOS)
@@ -20,7 +20,7 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-29)
 
 **Core value:** L'expérience visuelle et tactile doit donner l'impression d'un produit iOS premium, beau, fluide et stable sur iPhone.
-**Current focus:** Phase 4 — Listes & Cercle
+**Current focus:** Phase 5 — Auth, Profil & Finitions (dernière phase)
 
 ## Milestone
 
@@ -33,10 +33,10 @@ See: .planning/PROJECT.md (updated 2026-05-29)
 | 1 | Stabilisation & Fondations | ✅ Terminé — 8/8 req · builds #17/#18 · migrations 011+012 |
 | 2 | Carte stylisée | ✅ Terminé — 4/4 req · vérifié 4/4 · validé device #19 · style Mapbox custom + pivot D-12 |
 | 3 | Création & Détail de point (sheets natifs) | ✅ Terminé — 5/5 plans · validé device #26 · **pivot formSheet→modal** (bug iOS 26 RNS 4.16 #3235) · aperçu carte retiré (location stamp) (03-01 nav Stack+(tabs) · 03-02 tap-pin → détail direct · 03-03 création carnet note-first · 03-04 détail carnet lecture + segments date #2125 · 03-05 validation device + correctifs sheet) |
-| 4 | Listes & Cercle | 🔄 Code complet — 3/3 plans · 04-01 (UI-05) + 04-02 (UI-06) + 04-03 (UI-07) exécutés, gate device en attente |
+| 4 | Listes & Cercle | ✅ Terminé — 3/3 plans · validé device #28 · liste table des matières + cercle (retrait d'ami) + demandes (consentement taguage inline `respondToTag`) · `FiltersBottomSheet` supprimé |
 | 5 | Auth, Profil & Finitions | ⬜ Not started |
 
-**Requirements:** 16 / 22 complete (Phase 1 : STAB-01/02/03, FOND-01/02/03/04, IOS-03 · Phase 2 : MAP-01, MAP-02, MAP-03, UI-02 · Phase 3 : IOS-01, IOS-02, UI-03, UI-04)
+**Requirements:** 19 / 22 complete (Phase 1 : STAB-01/02/03, FOND-01/02/03/04, IOS-03 · Phase 2 : MAP-01, MAP-02, MAP-03, UI-02 · Phase 3 : IOS-01, IOS-02, UI-03, UI-04 · Phase 4 : UI-05, UI-06, UI-07)
 
 ## Config
 
@@ -62,22 +62,16 @@ See: .planning/PROJECT.md (updated 2026-05-29)
 
 ## Next Step
 
-**Phase 4 code complet — 04-01 (UI-05) + 04-02 (UI-06) + 04-03 (UI-07) exécutés.** Prochaine étape : **gate device de fin de phase** (build natif EAS — l'orchestrateur le lance) puis vérification 3/3. Baseline tsc de référence phase 4 = **21** ; 04-03 a fini à 21 (0 nouvelle erreur). respondToTag ajouté à useFriends (mono-table point_partners, is_visible via trigger). Déviation rule-4 existante `handleCancel` (Envoyées) laissée inchangée et documentée (non étendue).
+**Phase 4 terminée et validée device (#28).** Milestone à **4/5 phases (80 %)**. Reste **Phase 5 — Auth, Profil & Finitions** (UI-01 auth, UI-08 profil « page de couverture », IOS-04 finitions transverses : safe areas, Dynamic Type, passe de cohérence sur les 9 écrans) : `/gsd:discuss-phase 5` → ui → plan → execute → build device.
 
-Aperçu carte **restauré build #27** (validé device) : `<Image>` statique Mapbox (`mapboxStaticUrl()`) + pin rose RN, dans détail + création — fiable dans le `modal` (le noir d'avant venait du `formSheet`, pas de l'image).
+Baseline tsc phase = **21** (la suppression de `FiltersBottomSheet` en 04-01 a retiré des erreurs pré-existantes). Nouveau code phase 4 : 0 nouvelle erreur.
 
-**Cycle de correctifs sheet (builds #20→#26), révélé par la validation device :**
-
-- #20–#22 : contenu « noir en haut ». Fausse piste « carte noire ».
-- Aperçu carte retiré (MapView GL **et** `<Image>` Mapbox rendent noir dans un sheet) → location stamp (création) / adresse en métadonnées (détail).
-- #24 : layout (suppression `KeyboardAvoidingView`, `contentInsetAdjustmentBehavior="never"`, `automaticallyAdjustKeyboardInsets`). Insuffisant.
-- #25 : taille explicite `useWindowDimensions` (workaround #2522) → a **empiré** (sheet entièrement noir, contenu hors écran).
-- **#26 ✅ cause racine** : `formSheet` (détents custom) cassé sur **iOS 26 + react-native-screens 4.16** ([#3235](https://github.com/software-mansion/react-native-screens/issues/3235), contenu ancré en bas, non corrigé jusqu'à 4.20+, non corrigeable JS) → bascule vers **`presentation: 'modal'`** (carte pageSheet native, swipe-dismiss conservé) qui rend correctement. Validé device.
+Dette connue laissée (hors périmètre) : `handleCancel` (section « Envoyées » de requests.tsx) garde un appel Supabase direct (déviation rule-4 pré-existante) — documenté, non étendu ; `friends/index.tsx loadFriends` idem. À router via hook lors d'une passe future si souhaité.
 
 ## Session
 
-- **Stopped at:** Phase 4 plan 04-03 exécuté (UI-07). useFriends.respondToTag ajouté (mono-table point_partners, is_visible via trigger, RLS mig 010/011) ; FriendRequestItem boutons texte paramétrés (Accepter/Refuser · Sceller/Décliner, coral/ghost, D-12) + nom serif 20, IcoCheck/IcoClose retirés ; friends/requests refondu (2 sections eyebrow + Envoyées discrète, taguage consenti inline via respondToTag sans navigation, empty « Pas de page en attente. », titre serifLight 36, F.sans* purgé). W2 corrigé (refus amitié haptics.tap→warn). handleCancel (Envoyées) rule-4 laissé inchangé + documenté. 0 nouvelle erreur tsc (21). Vérif device en attente.
-- **Resume file:** .planning/phases/04-listes-cercle/ (execute-phase — gate device de fin de phase)
+- **Stopped at:** Phase 4 terminée, validée device (#28). 3 écrans refondus « table des matières » (liste, cercle, demandes) + retrait d'ami + consentement taguage inline (`respondToTag`). FiltersBottomSheet supprimé. tsc 21, 0 nouvelle erreur.
+- **Resume file:** Phase 5 — `/gsd:discuss-phase 5`
 
 ---
-*Last updated: 2026-06-02 after 04-03 (UI-07 Demandes — 2 sections eyebrow + consentement taguage inline respondToTag, 0 nouvelle erreur tsc)*
+*Last updated: 2026-06-02 after Phase 4 device validation (#28) — Listes & Cercle terminée 3/3, milestone 4/5*
