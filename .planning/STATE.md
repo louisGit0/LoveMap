@@ -75,8 +75,8 @@ Aperçu carte **restauré build #27** (validé device) : `<Image>` statique Mapb
 
 ## Session
 
-- **Stopped at:** Phase 4 contexte capturé (04-CONTEXT.md) — décisions : note /10 comme gros chiffre, sections par mois, filtres inline, retrait d'ami opt-in. Enchaînement ui → plan → execute.
-- **Resume file:** .planning/phases/04-listes-cercle/04-CONTEXT.md
+- **Stopped at:** Phase 4 planifiée + vérifiée (UI-SPEC approuvé 6/6, RESEARCH/PATTERNS/VALIDATION, 3 plans wave 1 vérifiés 0 blocage). Prêt à exécuter. Warning à traiter en exec : 04-03 handleRespond refus amitié `haptics.tap()` → `haptics.warn()` (UI-SPEC §Motion).
+- **Resume file:** .planning/phases/04-listes-cercle/ (execute-phase)
 
 ---
 *Last updated: 2026-06-02 after 03-05 (validation device #26, pivot formSheet→modal #3235, Phase 3 terminée 5/5)*
