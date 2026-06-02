@@ -37,7 +37,7 @@ Requirements pour ce cap (stabilisation + refonte UI/UX). Chacun mappé à une p
 
 - [ ] **UI-01**: Les écrans d'authentification (login + register) sont refondus selon l'archétype « page de couverture »
 - [ ] **UI-02**: L'écran carte + FAB est refondu (contrôles flottants éditoriaux, FAB non-Material)
-- [ ] **UI-03**: L'écran de création de point (`point/new`) est refondu selon l'archétype « page de carnet » dans un bottom sheet natif
+- [x] **UI-03**: L'écran de création de point (`point/new`) est refondu selon l'archétype « page de carnet » dans un bottom sheet natif
 - [ ] **UI-04**: L'écran de détail de point (`point/[id]`) est refondu selon l'archétype « page de carnet »
 - [ ] **UI-05**: L'écran liste des moments (`point/list`) est refondu selon l'archétype « table des matières »
 - [ ] **UI-06**: L'écran amis (`friends/index`) est refondu selon l'archétype « table des matières »
@@ -85,7 +85,7 @@ Quelles phases couvrent quels requirements. Rempli pendant la création de la ro
 | UI-02 | Phase 2 | Pending |
 | IOS-01 | Phase 3 | Complete |
 | IOS-02 | Phase 3 | Complete |
-| UI-03 | Phase 3 | Pending |
+| UI-03 | Phase 3 | Complete |
 | UI-04 | Phase 3 | Pending |
 | UI-05 | Phase 4 | Pending |
 | UI-06 | Phase 4 | Pending |
