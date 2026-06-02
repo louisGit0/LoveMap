@@ -158,7 +158,7 @@ export default function PointList() {
         )}
         ListHeaderComponent={
           <View style={styles.header}>
-            <Text style={styles.title}>Le carnet</Text>
+            <Text style={styles.title} maxFontSizeMultiplier={1.25}>Le carnet</Text>
 
             {/* Filtres inline en pills (D-03) */}
             <View style={styles.pillRow}>
@@ -191,7 +191,7 @@ export default function PointList() {
             <Text style={styles.emptyBody}>Posez votre premier moment sur la carte.</Text>
           </View>
         }
-        contentContainerStyle={styles.listContent}
+        contentContainerStyle={[styles.listContent, { paddingBottom: insets.bottom + 64 }]}
         showsVerticalScrollIndicator={false}
         stickySectionHeadersEnabled={true}
         refreshControl={
@@ -262,7 +262,7 @@ const makeStyles = (T: Theme) => StyleSheet.create({
   pillLabelInactive: {
     color: T.textDim,
   },
-  listContent: { paddingHorizontal: 24, paddingBottom: 100 },
+  listContent: { paddingHorizontal: 24 },
   sectionHeader: {
     flexDirection: 'row',
     alignItems: 'baseline',

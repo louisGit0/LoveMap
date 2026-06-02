@@ -171,7 +171,7 @@ export default function FriendRequests() {
         <Text style={styles.backText}>le cercle</Text>
       </TouchableOpacity>
 
-      <Text style={styles.title}>Demandes</Text>
+      <Text style={styles.title} maxFontSizeMultiplier={1.25}>Demandes</Text>
 
       {loading ? (
         <ActivityIndicator color={T.primary} style={styles.loader} />
@@ -301,7 +301,7 @@ export default function FriendRequests() {
               )}
             </>
           }
-          contentContainerStyle={styles.listContent}
+          contentContainerStyle={{ paddingBottom: insets.bottom + 64 }}
         />
       )}
 
@@ -336,7 +336,6 @@ const makeStyles = (T: Theme) => StyleSheet.create({
     marginBottom: 24,
   },
   loader: { marginTop: 32 },
-  listContent: { paddingBottom: 100 },
   sectionHeader: {
     flexDirection: 'row',
     alignItems: 'baseline',

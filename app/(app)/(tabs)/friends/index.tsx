@@ -106,7 +106,7 @@ export default function FriendsScreen() {
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.eyebrow}>Confidents</Text>
-        <Text style={styles.title}>Le cercle</Text>
+        <Text style={styles.title} maxFontSizeMultiplier={1.25}>Le cercle</Text>
         <Text style={styles.subtitle}>
           {friends.length} lien{friends.length > 1 ? 's' : ''} · {pendingReceived.length} demande{pendingReceived.length > 1 ? 's' : ''}
         </Text>
@@ -205,7 +205,7 @@ export default function FriendsScreen() {
                   }}
                 />
               )}
-              contentContainerStyle={styles.listContent}
+              contentContainerStyle={{ paddingBottom: insets.bottom + 64 }}
               showsVerticalScrollIndicator={false}
               refreshControl={
                 <RefreshControl
@@ -389,7 +389,6 @@ const makeStyles = (T: Theme) => StyleSheet.create({
     fontSize: 15,
     color: T.textFaint,
   },
-  listContent: { paddingBottom: 100 },
   snackbar: { backgroundColor: T.surface2 },
   sectionLabel: {
     fontFamily: F.mono,
