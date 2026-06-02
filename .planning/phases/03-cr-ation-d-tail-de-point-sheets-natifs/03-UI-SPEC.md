@@ -91,7 +91,7 @@ FAB carte (`handleFabPress`) et long-press carte (`handleLongPress`) → `router
 | **Détail (lecture)** | Fermeture **directe**, sans confirmation. |
 | **Détail (mode édition actif)** | Si des champs d'édition sont modifiés → même confirmation que création. |
 
-**Implémentation :** intercepter l'événement de navigation `beforeRemove` (couvre swipe-down natif **et** tap « Annuler ») ; si « dirty », `preventDefault()` + afficher l'`Alert`. Ne PAS se reposer uniquement sur le bouton Annuler (le swipe natif contournerait la garde).
+**Implémentation :** intercepter l'événement de navigation `beforeRemove` (couvre swipe-down natif **et** tap « Abandonner la saisie ») ; si « dirty », `preventDefault()` + afficher l'`Alert`. Ne PAS se reposer uniquement sur le lien tertiaire (le swipe natif contournerait la garde).
 
 **Copie de confirmation :**
 - Titre : **« Abandonner ce moment ? »**
@@ -108,14 +108,14 @@ Carnet **suggéré / sobre** (D-08) : porté par la typo + la hiérarchie. **Auc
 **Ordre vertical (la NOTE en premier — D-10) :**
 1. *(poignée native iOS — non rendue par nous)*
 2. **Eyebrow** mono : `N° 001 — Nouvelle page` (`F.mono`, accent `T.primary`).
-3. **NOTE — geste central** (D-10) : valeur serif géante `Display` + `/10` mono + barre de 10 segments tappables. C'est le hero de la page : on inscrit d'abord l'intensité.
+3. **NOTE — geste central** (D-10) : valeur serif géante `Display` + `/10` mono (Body) + barre de 10 segments tappables. C'est le hero de la page : on inscrit d'abord l'intensité.
 4. **Commentaire** : input serif italic multiligne (placeholder « Décrivez ce moment… »), compteur `n/500` mono.
 5. **Partenaire** (label + `Requis`) : rangée horizontale de chips d'amis (avatar carré initiale serif + nom). CTA bloqué si aucun sélectionné ; message si `friends.length === 0`.
 6. **Durée** : input serif italic numérique (placeholder « — »).
-7. **Date** : 3 segments JJ / MM / AAAA (mono), pré-remplis à aujourd'hui.
-8. **Lieu** : recherche d'adresse (input serif italic + bouton `IcoSearch`) → mini-carte pannable (pin fixe centré, le fond glisse dessous) → adresse résolue (mono, uppercase, faint).
+7. **Date** : 3 segments JJ / MM / AAAA (mono, Body), pré-remplis à aujourd'hui.
+8. **Lieu** : recherche d'adresse (input serif italic + bouton icône `IcoSearch`, `accessibilityLabel="Rechercher"`) → mini-carte pannable (pin fixe centré, le fond glisse dessous) → adresse résolue (mono, uppercase, faint).
 9. **CTA** « Sceller la page » (inline, fin de page — voir §Action Placement).
-10. Lien **« Annuler »** discret (mono, sous le CTA).
+10. Lien **« Abandonner la saisie »** discret (mono, sous le CTA).
 
 **Formes internes (D-12 — l'« angles francs » est mort) :**
 | Élément | Rayon |
@@ -137,8 +137,8 @@ Carnet **suggéré / sobre** (D-08) : porté par la typo + la hiérarchie. **Auc
 1. *(poignée native iOS)*
 2. **Mini-carte statique** (haut) = tampon de lieu : carte non interactive + marker centré. **Plus de bouton retour flottant** (supprimé — dismiss natif).
 3. **Eyebrow** mono : `La page` (lecture).
-4. **NOTE** : valeur serif géante `Display` (80) + `/10` + barre de 10 segments (lecture seule).
-5. **Pull-quote** (si commentaire) : guillemets `«` / `»` serif accentués + texte serif italic `Heading`. Cœur éditorial de la page (D-08).
+4. **NOTE** : valeur serif géante `Display` (80) + `/10` mono (Body) + barre de 10 segments (lecture seule).
+5. **Pull-quote** (si commentaire) : guillemets `«` / `»` serif italic (Heading 22, accent `T.primary`) + texte serif italic `Heading`. Cœur éditorial de la page (D-08).
 6. **Photos** (si présentes) : rangée horizontale de vignettes — comportement existant **conservé** (discrétion D : pas de refonte photos).
 7. **Table de métadonnées** : clés mono uppercase faint alignées gauche / valeurs serif italic alignées droite — `Lieu`, `Date`, `Durée`, `Avec` (+ badge de consentement).
 8. **Bloc d'action contextuel** (voir §Action Placement) : consentement partenaire, OU mode édition, OU rien.
@@ -165,7 +165,7 @@ Carnet **suggéré / sobre** (D-08) : porté par la typo + la hiérarchie. **Auc
 | Action | Type | Typo | Couleur |
 |--------|------|------|---------|
 | **Sceller la page** (primaire) | bloc plein, inline-fin | eyebrow mono `Archiver` + label serif italic `Heading` | fond `T.primary`, flèche `IcoArrow` accent |
-| **Annuler** (tertiaire) | lien texte, sous le CTA | mono uppercase petit | `T.textFaint` |
+| **Abandonner la saisie** (tertiaire) | lien texte, sous le CTA | mono uppercase petit (Eyebrow) | `T.textFaint` |
 
 CTA désactivé (`opacity 0.4`) si `submitting` ou `friends.length === 0`. État : « Scellement… » pendant l'envoi.
 
@@ -173,13 +173,13 @@ CTA désactivé (`opacity 0.4`) si `submitting` ou `friends.length === 0`. État
 | Action | Type | Typo | Couleur |
 |--------|------|------|---------|
 | **Sceller** (primaire, accepter) | bouton plein, `flex:2` | serif italic `Heading` | fond `T.primary` |
-| **Modifier** (secondaire, → mode édition) | bouton bordé, `flex:1` | mono uppercase | bord `T.border`, texte `T.textDim` |
+| **Modifier** (secondaire, → mode édition) | bouton bordé, `flex:1` | mono uppercase (Eyebrow) | bord `T.border`, texte `T.textDim` |
 | **Refuser ce taguage** (tertiaire) | lien texte centré | serif italic souligné | `T.textFaint` |
 
 > **Harmonisation typo (amélioration vs existant) :** le primaire de consentement passe de `F.sansMedium` à **serif italic** pour s'aligner sur le CTA de création (« Sceller la page »). Le secondaire passe en **mono uppercase**. On élimine `F.sans*` de ces pages → discipline 2 familles (serif + mono).
 
 ### Détail — mode édition
-« Sauvegarder et sceller » (inline-fin du formulaire d'édition), même traitement que le CTA primaire. Lien « Annuler » mono dessous.
+« Sauvegarder et sceller » (inline-fin du formulaire d'édition), même traitement que le CTA primaire. Lien « Annuler les modifications » mono (Eyebrow) dessous.
 
 ### Détail — destructeur (propriétaire)
 « Effacer cette page » : trigger discret inline-fin (icône `IcoTrash` + texte serif italic souligné), couleur **`T.danger`** (et NON `T.primary` — l'accent rose reste réservé aux actions affirmatives). La confirmation est une **`Alert` native iOS** (style `destructive` = rouge système).
@@ -200,46 +200,50 @@ Le sheet natif **ne se redimensionne pas** à l'ouverture du clavier. Pattern à
 
 ## Spacing Scale
 
-Échelle canonique (set standard `{4, 8, 16, 24, 32, 48, 64}`) :
+Échelle canonique — set standard **`{4, 8, 16, 24, 32, 48, 64}`**. Chaque valeur déclarée ci-dessous est un multiple de 4 et appartient à ce set :
 
 | Token | Value | Usage |
 |-------|-------|-------|
-| xs | 4px | Gaps de segments de note, micro-padding inline |
-| sm | 8px | Espacement compact (gap chips, gap actions consentement, marge eyebrow) |
+| xs | 4px | Gaps de segments de note (= gap note-bar), micro-padding inline |
+| sm | 8px | Espacement compact (gap chips, gap actions consentement, marge eyebrow, `gap` segments de date) |
 | lg | 16px | Espacement par défaut, marges de mini-carte, gap de note-display |
 | xl | 24px | Padding de contenu du sheet, dividers verticaux, padding de section |
 | 2xl | 32px | Ruptures majeures, `paddingBottom` au-dessus du home indicator (`insets.bottom + 32`) |
 | 3xl | 48px | Espacement de bas de page (création) |
 
-**Exceptions (hors échelle principale) :**
-- `pillPadX = 12px` — **iOS intermediate (3×4px)**, padding horizontal des chips partenaire et segments uniquement (hérité Phase 2 : 8 serre le label, 16 casse la compacité). Un `12` apparaissant ailleurs doit être réaffecté à `sm` (8) ou `lg` (16).
-- Touch targets iOS : CTA création 64, boutons consentement 52–56, trigger suppression ≥ 44, poignée native. Tous ≥ 44 garantis.
-- Micro-spacings typographiques conservés : `letterSpacing` eyebrow 2–2.5, gaps de note-bar 3–4px, `gap` date 8.
+**Exception unique (hors échelle principale) :**
+- `pillPadX = 12px` — **iOS intermediate (3×4px)**, padding horizontal des chips partenaire et segments uniquement (hérité Phase 2 : 8 serre le label, 16 casse la compacité). Reste un multiple de 4. Un `12` apparaissant ailleurs doit être réaffecté à `sm` (8) ou `lg` (16).
+
+**Notes (valeurs non issues de l'échelle de spacing — pas des tokens d'espacement) :**
+- Touch targets iOS (dimensions de cibles, tous ≥ 44 et multiples de 4) : CTA création 64, boutons consentement 52–56, trigger suppression ≥ 44, poignée native.
+- `letterSpacing` eyebrow 2–2.5 — tracking typographique (et non espacement de layout).
 - Insets via `useSafeAreaInsets()` (jamais `SafeAreaView`, jamais valeur en dur). `SafeAreaProvider` déjà injecté au root par Expo Router.
+
+> Le gap de note-bar est fixé à **4px** (= `xs`, dans l'échelle principale) — plus aucune valeur de spacing non multiple de 4.
 
 ---
 
 ## Typography
 
-Système éditorial 3 familles préexistant (`F`), borné via `AppText`. **Création et détail = deux échelles distinctes** (D-09), chacune ≤ 4 tailles de rôle et **2 tiers de graisse** (serif 300/400 + mono 400 — pas de `F.sans*` sur ces pages).
+Système éditorial 3 familles préexistant (`F`), borné via `AppText`. **Création et détail = deux échelles distinctes** (D-09), chacune **exactement ≤ 4 tailles** et **2 tiers de graisse** (serif 300 + serif/mono 400 — pas de `F.sans*`, pas de `F.serifMedium` sur ces pages). Chaque taille employée (y compris les micro-éléments) appartient à l'un des 4 rôles déclarés.
 
-### Création (4 rôles)
+### Création — 4 tailles : `{72, 24, 20, 10}`
 | Role | Famille (graisse) | Size | Line Height | Usage |
 |------|-------------------|------|-------------|-------|
 | Display | `F.serifLight` (300) | 72px | 68 | **Valeur de la note** (hero, D-10) |
 | Heading | `F.serif` (400) | 24px | 28 | Label du CTA « Sceller la page » |
-| Body | `F.serif` (400) | 20px | 28 | Inputs serif italic (commentaire, recherche, durée), noms de partenaires |
-| Eyebrow | `F.mono` (400) | 10px | — | `N° 001 — Nouvelle page`, labels de champ, `Requis`, `Annuler`, adresse résolue (9–10) |
+| Body | `F.serif` (400) / `F.mono` (400) | 20px | 28 | Inputs serif italic (commentaire, recherche, durée) et noms de partenaires *(serif)* ; **segments de date** et **`/10` denom** *(mono — différenciés par la famille, plus de delta de taille)* |
+| Eyebrow | `F.mono` (400) | 10px | — | `N° 001 — Nouvelle page`, labels de champ, `Requis`, lien « Abandonner la saisie », adresse résolue, séparateurs mono |
 
-### Détail (4 rôles)
+### Détail — 4 tailles : `{80, 22, 16, 9}`
 | Role | Famille (graisse) | Size | Line Height | Usage |
 |------|-------------------|------|-------------|-------|
 | Display | `F.serifLight` (300) | 80px | 76 | **Valeur de la note** (hero lecture) |
-| Heading | `F.serif` (400) | 22px | 30 | Pull-quote (commentaire), question de consentement, label « Sceller » |
-| Body | `F.serif` (400) | 16px | 22 | Valeurs de la table de métadonnées |
-| Eyebrow | `F.mono` (400) | 9px | — | `La page`, clés de méta, badge de consentement, `Modifier` |
+| Heading | `F.serif` (400) | 22px | 30 | Pull-quote (texte commentaire), **guillemets `« »`** *(serif italic 400 — plus de `F.serifMedium`)*, question de consentement, label « Sceller » |
+| Body | `F.serif` (400) / `F.mono` (400) | 16px | 22 | Valeurs de la table de métadonnées *(serif)* ; **`/10` denom** *(mono)* |
+| Eyebrow | `F.mono` (400) | 9px | — | `La page`, clés de méta, badge de consentement, label « Modifier », séparateurs mono |
 
-**Companions micro-type (exceptions, hors comptage des 4 rôles) :** `/10` denom mono (16 création / 18 détail) ; guillemets `« »` `F.serifMedium` 32 (détail) ; segments de date mono 22 (création) ; séparateurs mono.
+**Discipline des graisses :** chaque page n'emploie que **{300, 400}** — `F.serifLight` (300) pour le Display, `F.serif` (400) et `F.mono` (400) pour tout le reste. `F.serifMedium` (500) et `F.sans*` sont **proscrits** sur création et détail.
 
 **Dynamic Type :** `AppText` borne par variant (`title`/Display+Heading ≤ 1.3 ; `eyebrow` ≤ 1.2 ; `body` ≤ 2.0). Éviter `height`/`width` fixes sur les conteneurs de texte (PITFALLS §Redesign 3).
 
@@ -282,9 +286,9 @@ Tous en français (règle 6). Ton éditorial « journal intime ».
 | État sans ami | « Ajoutez un ami à votre cercle pour inscrire un moment. » |
 | Label — durée | « Durée (minutes) » · placeholder « — » |
 | Label — date | « Date » (segments JJ / MM / AAAA) |
-| Recherche d'adresse | placeholder « Rechercher une adresse » · erreur « Adresse introuvable. » |
+| Recherche d'adresse | placeholder « Rechercher une adresse » · bouton icône `accessibilityLabel="Rechercher"` · erreur « Adresse introuvable — modifiez votre recherche. » |
 | Primary CTA | eyebrow « Archiver » + label « Sceller la page » · en cours « Scellement… » |
-| Lien annuler | « Annuler » |
+| Lien tertiaire | « Abandonner la saisie » |
 | Warn — partenaire manquant | « Vous devez taguer un partenaire pour sceller ce moment. » + `haptics.warn()` |
 | Warn — GPS manquant | « Position GPS manquante. Autorisez la localisation et réessayez. » + `haptics.warn()` |
 | Error — création | « Erreur : {message} » + `haptics.error()` |
@@ -296,7 +300,7 @@ Tous en français (règle 6). Ton éditorial « journal intime ».
 |---------|------|
 | Eyebrow de page | « La page » |
 | Loading | skeleton (note + barre + lignes de quote) — réutiliser `components/ui/SkeletonItem` ; spinner `ActivityIndicator` accepté en repli |
-| Empty / introuvable | « Page introuvable. » |
+| Empty / introuvable | « Page introuvable. Faites glisser vers le bas pour fermer. » |
 | Clés de méta | « Lieu » · « Date » · « Durée » · « Avec » |
 | Badge consentement | « En attente » / « Accepté » / « Refusé » |
 | Question de consentement | « Ce moment vous concerne.\nAcceptez-vous d'y figurer ? » |
@@ -305,7 +309,7 @@ Tous en français (règle 6). Ton éditorial « journal intime ».
 | Refus consentement | « Taguage refusé. » + `haptics.warn()` |
 | Mode édition — eyebrow | « Modifier le moment » |
 | Mode édition — CTA | « Sauvegarder et sceller » · en cours « Scellement… » |
-| Mode édition — annuler | « Annuler » |
+| Mode édition — lien tertiaire | « Annuler les modifications » |
 | Destructive — trigger | « Effacer cette page » (couleur `T.danger`) |
 | **Destructive — confirm (Alert native)** | titre « Effacer cette page » · corps « Cette action est irréversible. » · actions [ Garder la page · Effacer (destructive) ] · `haptics.warn()` à la confirmation, `haptics.error()` si échec |
 
