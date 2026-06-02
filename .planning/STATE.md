@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: Phase 03 en cours (4/5 plans)
-stopped_at: 03-04 terminé — refonte détail « page de carnet » lecture (note 80, pull-quote serif, méta mono) + bouton retour supprimé (dismiss natif) + segments date anti-freeze #2125 + destructif T.danger, tsc 0 nouvelle erreur
-last_updated: "2026-06-02T09:16:00.000Z"
+status: Phase 03 terminée (5/5 plans) — validée device #26
+stopped_at: 03-05 validé device — pivot formSheet→modal (bug iOS 26 RNS 4.16 #3235 : contenu ancré en bas = sheet noir, non corrigeable JS) + aperçu carte retiré des sheets (location stamp/adresse, MapView GL & <Image> noirs en sheet) + layout (no KAV, automaticallyAdjustKeyboardInsets). Build #26 OK.
+last_updated: "2026-06-02T14:15:00.000Z"
 progress:
   total_phases: 5
-  completed_phases: 2
-  total_plans: 14
-  completed_plans: 14
-  percent: 43
+  completed_phases: 3
+  total_plans: 15
+  completed_plans: 15
+  percent: 60
 ---
 
 # STATE — LoveMap (Refonte UI/UX iOS)
@@ -32,7 +32,7 @@ See: .planning/PROJECT.md (updated 2026-05-29)
 |-------|------|--------|
 | 1 | Stabilisation & Fondations | ✅ Terminé — 8/8 req · builds #17/#18 · migrations 011+012 |
 | 2 | Carte stylisée | ✅ Terminé — 4/4 req · vérifié 4/4 · validé device #19 · style Mapbox custom + pivot D-12 |
-| 3 | Création & Détail de point (sheets natifs) | 🔄 En cours — 4/5 plans (03-01 ✅ restructure nav Stack + (tabs) + formSheet · 03-02 ✅ suppression Modal PointMarker, tap-pin → détail direct · 03-03 ✅ refonte création carnet note-first + clavier sheet + garde D-04 · 03-04 ✅ refonte détail carnet lecture + dismiss natif + segments date anti-freeze #2125 + destructif T.danger) |
+| 3 | Création & Détail de point (sheets natifs) | ✅ Terminé — 5/5 plans · validé device #26 · **pivot formSheet→modal** (bug iOS 26 RNS 4.16 #3235) · aperçu carte retiré (location stamp) (03-01 nav Stack+(tabs) · 03-02 tap-pin → détail direct · 03-03 création carnet note-first · 03-04 détail carnet lecture + segments date #2125 · 03-05 validation device + correctifs sheet) |
 | 4 | Listes & Cercle | ⬜ Not started |
 | 5 | Auth, Profil & Finitions | ⬜ Not started |
 
@@ -62,16 +62,21 @@ See: .planning/PROJECT.md (updated 2026-05-29)
 
 ## Next Step
 
-Vagues 1 & 2 terminées. **03-04 ✅** (refonte détail « page de carnet » lecture : «La page» + NOTE serif Display 80 + pull-quote `«»` serif italic + table méta mono/serif ; **bouton retour flottant supprimé** → dismiss natif ; **`DatePickerModal` → segments JJ/MM/AAAA** dans le mode édition → supprime le gel #2125 avec `usePreventRemove` ET l'usage de `react-native-paper-dates` sur cet écran ; mode édition KAV-wrap + garde dismiss D-04 ; destructif « Effacer cette page » recoloré **T.danger** ; discipline typo serif+mono {80,22,16,9}, rayons D-12 ; logique métier `handleConsent`/`handleDelete`/`handleSaveAndAccept` intacte — tsc 0 nouvelle erreur, commits 644f41c + 94431be). Prochaine : **03-05** (gate device, build #20/OTA) — valider dismiss natif, flux édition sans gel, consentement, suppression.
+**Phase 3 terminée et validée device (#26).** Démarrer **Phase 4 — Listes & Cercle** (`/gsd:discuss-phase 4` → ui → plan → execute).
 
-Note : tap-backdrop dismiss (#3568) **accepté Option A** — au détent 0.92, bande ~8% en haut ; documenté, pas de contournement, à confirmer device (Plan 05). ESLint non configuré au niveau repo (pré-existant) → `expo lint` substitué : 0 nouvelle alerte sur `new.tsx` (seul warning pré-existant `exhaustive-deps` sur le `useEffect` géoloc).
+Optionnel avant Phase 4 : proposer de **remettre un aperçu carte** dans le détail/création (maintenant que la présentation est un `modal` fiable, un MapView GL ou une image statique pourrait s'afficher — à tester en build dédié).
 
-Note : Phase 3 = JS uniquement (zéro dépendance) → potentiellement OTA-compatible, mais validation des sheets natifs/gestes/clavier = device (build #20 probable, comme #19).
+**Cycle de correctifs sheet (builds #20→#26), révélé par la validation device :**
+- #20–#22 : contenu « noir en haut ». Fausse piste « carte noire ».
+- Aperçu carte retiré (MapView GL **et** `<Image>` Mapbox rendent noir dans un sheet) → location stamp (création) / adresse en métadonnées (détail).
+- #24 : layout (suppression `KeyboardAvoidingView`, `contentInsetAdjustmentBehavior="never"`, `automaticallyAdjustKeyboardInsets`). Insuffisant.
+- #25 : taille explicite `useWindowDimensions` (workaround #2522) → a **empiré** (sheet entièrement noir, contenu hors écran).
+- **#26 ✅ cause racine** : `formSheet` (détents custom) cassé sur **iOS 26 + react-native-screens 4.16** ([#3235](https://github.com/software-mansion/react-native-screens/issues/3235), contenu ancré en bas, non corrigé jusqu'à 4.20+, non corrigeable JS) → bascule vers **`presentation: 'modal'`** (carte pageSheet native, swipe-dismiss conservé) qui rend correctement. Validé device.
 
 ## Session
 
-- **Stopped at:** 03-04 terminé — refonte détail « page de carnet » lecture + dismiss natif + segments date anti-freeze #2125 + destructif T.danger, tsc 0 nouvelle erreur
-- **Resume file:** .planning/phases/03-cr-ation-d-tail-de-point-sheets-natifs/03-05-PLAN.md
+- **Stopped at:** 03-05 validé device (#26) — Phase 3 terminée. Pivot formSheet→modal (#3235) + aperçu carte retiré.
+- **Resume file:** Phase 4 — `/gsd:discuss-phase 4`
 
 ---
-*Last updated: 2026-06-02 after 03-04 (refonte détail carnet lecture + dismiss natif + segments date #2125 + T.danger, UI-04/IOS-02)*
+*Last updated: 2026-06-02 after 03-05 (validation device #26, pivot formSheet→modal #3235, Phase 3 terminée 5/5)*
