@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, Image, StyleSheet } from 'react-native';
 import { useTheme } from '@/hooks/useTheme';
 import { Button } from '@/components/ui/Button';
 import { F } from '@/constants/fonts';
@@ -36,7 +36,11 @@ export function FriendRequestItem({
   return (
     <View style={styles.container}>
       <View style={styles.avatar}>
-        <Text style={styles.avatarInitial}>{initials}</Text>
+        {profile.avatar_url ? (
+          <Image source={{ uri: profile.avatar_url }} style={StyleSheet.absoluteFillObject} resizeMode="cover" />
+        ) : (
+          <Text style={styles.avatarInitial}>{initials}</Text>
+        )}
       </View>
       <View style={styles.info}>
         <Text style={styles.displayName} numberOfLines={1}>
@@ -73,6 +77,7 @@ const makeStyles = (T: Theme) => StyleSheet.create({
     borderColor: T.border,
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'hidden',
   },
   avatarInitial: {
     fontFamily: F.serif,

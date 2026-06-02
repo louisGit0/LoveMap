@@ -255,9 +255,13 @@ export default function NewPoint() {
                     activeOpacity={0.8}
                   >
                     <View style={[styles.partnerAvatar, selected && styles.partnerAvatarActive]}>
-                      <Text style={[styles.partnerInitial, selected && styles.partnerInitialActive]}>
-                        {(f.profile.display_name ?? f.profile.username)[0].toUpperCase()}
-                      </Text>
+                      {f.profile.avatar_url ? (
+                        <Image source={{ uri: f.profile.avatar_url }} style={StyleSheet.absoluteFillObject} resizeMode="cover" />
+                      ) : (
+                        <Text style={[styles.partnerInitial, selected && styles.partnerInitialActive]}>
+                          {(f.profile.display_name ?? f.profile.username)[0].toUpperCase()}
+                        </Text>
+                      )}
                     </View>
                     <Text style={[styles.partnerName, selected && styles.partnerNameActive]}>
                       {f.profile.display_name ?? f.profile.username}
@@ -530,6 +534,7 @@ const makeStyles = (T: Theme) => StyleSheet.create({
     borderColor: T.border,
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'hidden',
   },
   partnerAvatarActive: {
     backgroundColor: T.bg,

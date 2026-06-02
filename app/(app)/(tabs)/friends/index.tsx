@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
+  Image,
   StyleSheet,
   FlatList,
   TouchableOpacity,
@@ -148,9 +149,13 @@ export default function FriendsScreen() {
             {searchResults.map((u) => (
               <View key={u.id} style={styles.searchResultItem}>
                 <View style={styles.avatar}>
-                  <Text style={styles.avatarInitial}>
-                    {(u.display_name ?? u.username)[0].toUpperCase()}
-                  </Text>
+                  {u.avatar_url ? (
+                    <Image source={{ uri: u.avatar_url }} style={StyleSheet.absoluteFillObject} resizeMode="cover" />
+                  ) : (
+                    <Text style={styles.avatarInitial}>
+                      {(u.display_name ?? u.username)[0].toUpperCase()}
+                    </Text>
+                  )}
                 </View>
                 <View style={styles.searchResultInfo}>
                   <Text style={styles.resultName}>{u.display_name}</Text>
@@ -323,6 +328,7 @@ const makeStyles = (T: Theme) => StyleSheet.create({
     borderColor: T.border,
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'hidden',
   },
   avatarInitial: {
     fontFamily: F.serif,
