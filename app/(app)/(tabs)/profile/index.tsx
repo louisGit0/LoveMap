@@ -10,7 +10,6 @@ import {
   Image,
   KeyboardAvoidingView,
   Platform,
-  Switch,
   Alert,
 } from 'react-native';
 import { router } from 'expo-router';
@@ -24,6 +23,7 @@ import { useAuthStore } from '@/stores/authStore';
 import { supabase } from '@/lib/supabase';
 import { haptics } from '@/lib/haptics';
 import { Input } from '@/components/ui/Input';
+import { Button } from '@/components/ui/Button';
 import { AppText } from '@/components/ui/AppText';
 import { PressableScale } from '@/components/ui/PressableScale';
 import { F } from '@/constants/fonts';
@@ -66,9 +66,6 @@ export default function ProfileScreen() {
   const [showNewPwd, setShowNewPwd] = useState(false);
   const [showConfirmPwd, setShowConfirmPwd] = useState(false);
   const [savingPwd, setSavingPwd] = useState(false);
-
-  /* ── Suppression ── */
-  const [deleteConfirm, setDeleteConfirm] = useState('');
 
   useEffect(() => {
     if (!user) return;
@@ -200,8 +197,9 @@ export default function ProfileScreen() {
     setSavingEmail(true);
     const { error } = await supabase.auth.updateUser({ email: newEmail });
     setSavingEmail(false);
-    if (error) { setSnackbar('Erreur : ' + error.message); return; }
-    setSnackbar('Email mis à jour. Vérifiez votre boîte mail.');
+    if (error) { haptics.error(); setSnackbar('Échec — réessayez.'); return; }
+    haptics.success();
+    setSnackbar('Enregistré.');
     setNewEmail('');
     setShowEmail(false);
   }
@@ -213,8 +211,9 @@ export default function ProfileScreen() {
     setSavingPwd(true);
     const { error } = await supabase.auth.updateUser({ password: newPassword });
     setSavingPwd(false);
-    if (error) { setSnackbar('Erreur : ' + error.message); return; }
-    setSnackbar('Mot de passe mis à jour.');
+    if (error) { haptics.error(); setSnackbar('Échec — réessayez.'); return; }
+    haptics.success();
+    setSnackbar('Enregistré.');
     setNewPassword('');
     setConfirmPassword('');
     setShowPassword(false);
@@ -228,22 +227,21 @@ export default function ProfileScreen() {
     ]);
   }
 
-  /* ── Suppression ── */
-  async function handleDeleteAccount() {
-    if (deleteConfirm !== 'EFFACER') { setSnackbar('Tapez exactement "EFFACER" pour confirmer.'); return; }
+  /* ── Suppression (Alert seule — D-08) ── */
+  function handleDeleteAccount() {
     if (!user) return;
+    haptics.warn();
     Alert.alert(
-      'Effacer le compte',
-      'Cette action est irréversible. Toutes vos données seront définitivement supprimées.',
+      'Supprimer le compte ?',
+      'Toutes vos pages seront effacées. Cette action est irréversible.',
       [
-        { text: 'Annuler', style: 'cancel' },
+        { text: 'Garder', style: 'cancel' },
         {
-          text: 'Effacer définitivement',
+          text: 'Supprimer',
           style: 'destructive',
           onPress: async () => {
             const { error } = await supabase.functions.invoke('delete-account', { body: { userId: user.id } });
-            if (error) { haptics.error(); setSnackbar('Erreur lors de la suppression.'); return; }
-            haptics.warn();
+            if (error) { haptics.error(); setSnackbar('Échec — réessayez.'); return; }
             reset();
             router.replace('/(auth)/login');
           },
@@ -380,42 +378,46 @@ export default function ProfileScreen() {
           )}
         </View>
 
+        {/* ── Apparence — toggle thème unique (D-09) ── */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}><Text style={styles.sectionEyebrow}>Apparence</Text></View>
+          <View style={styles.actionRow}>
+            <Text style={styles.actionLabel}>Thème {isDark ? 'sombre' : 'clair'}</Text>
+            <TouchableOpacity
+              style={styles.themeToggle}
+              onPress={() => { haptics.select(); toggleTheme(); }}
+              activeOpacity={0.7}
+              accessibilityRole="switch"
+              accessibilityState={{ checked: isDark }}
+              accessibilityLabel={isDark ? 'Basculer vers le thème clair' : 'Basculer vers le thème sombre'}
+            >
+              {isDark ? <IcoSun size={18} color={T.primary} /> : <IcoMoon size={18} color={T.primary} />}
+            </TouchableOpacity>
+          </View>
+        </View>
+
         {/* ── Compte ── */}
         <View style={[styles.section, { paddingTop: 0 }]}>
-          <View style={styles.sectionHeader}><Text style={styles.sectionEyebrow}>Mon compte</Text></View>
-
-          {/* Modifier le prénom */}
-          <TouchableOpacity style={styles.actionRow} onPress={startEditingName} activeOpacity={0.75}>
-            <Text style={styles.actionLabel}>Modifier le prénom</Text>
-            <Text style={styles.actionArrow}>→</Text>
-          </TouchableOpacity>
-
-          {/* Mode sombre */}
-          <View style={styles.switchRow}>
-            <Text style={styles.actionLabel}>Mode sombre</Text>
-            <Switch value={isDark} onValueChange={toggleTheme} trackColor={{ false: '#e2e2e2', true: T.primary }} thumbColor={T.text} />
-          </View>
+          <View style={styles.sectionHeader}><Text style={styles.sectionEyebrow}>Compte</Text></View>
 
           {/* Email — collapsible */}
-          <TouchableOpacity style={styles.actionRow} onPress={() => setShowEmail(!showEmail)} activeOpacity={0.75}>
-            <Text style={styles.actionLabel}>Changer l'email</Text>
-            <Text style={styles.actionArrow}>{showEmail ? '↑' : '→'}</Text>
-          </TouchableOpacity>
+          <PressableScale style={styles.actionRow} onPress={() => { haptics.tap(); setShowEmail(!showEmail); }}>
+            <Text style={styles.actionLabel}>Modifier l'e-mail</Text>
+            <Text style={styles.actionChevron}>{showEmail ? '⌄' : '›'}</Text>
+          </PressableScale>
           {showEmail && (
             <View style={styles.subForm}>
               <Text style={styles.currentEmail}>{user?.email}</Text>
-              <Input label="Nouvel email" value={newEmail} onChangeText={setNewEmail} keyboardType="email-address" autoCapitalize="none" containerStyle={styles.inputWrap} />
-              <TouchableOpacity style={[styles.updateBtn, savingEmail && { opacity: 0.6 }]} onPress={handleChangeEmail} disabled={savingEmail} activeOpacity={0.88}>
-                <Text style={styles.updateBtnText}>{savingEmail ? 'Mise à jour...' : 'Confirmer'}</Text>
-              </TouchableOpacity>
+              <Input label="Nouvel e-mail" value={newEmail} onChangeText={setNewEmail} keyboardType="email-address" autoCapitalize="none" containerStyle={styles.inputWrap} />
+              <Button variant="coral" onPress={handleChangeEmail} loading={savingEmail}>Confirmer</Button>
             </View>
           )}
 
           {/* Mot de passe — collapsible */}
-          <TouchableOpacity style={styles.actionRow} onPress={() => setShowPassword(!showPassword)} activeOpacity={0.75}>
-            <Text style={styles.actionLabel}>Changer le mot de passe</Text>
-            <Text style={styles.actionArrow}>{showPassword ? '↑' : '→'}</Text>
-          </TouchableOpacity>
+          <PressableScale style={styles.actionRow} onPress={() => { haptics.tap(); setShowPassword(!showPassword); }}>
+            <Text style={styles.actionLabel}>Modifier le mot de passe</Text>
+            <Text style={styles.actionChevron}>{showPassword ? '⌄' : '›'}</Text>
+          </PressableScale>
           {showPassword && (
             <View style={styles.subForm}>
               <Input
@@ -442,29 +444,23 @@ export default function ProfileScreen() {
                   </TouchableOpacity>
                 }
               />
-              <TouchableOpacity style={[styles.updateBtn, savingPwd && { opacity: 0.6 }]} onPress={handleChangePassword} disabled={savingPwd} activeOpacity={0.88}>
-                <Text style={styles.updateBtnText}>{savingPwd ? 'Mise à jour...' : 'Confirmer'}</Text>
-              </TouchableOpacity>
+              <Button variant="coral" onPress={handleChangePassword} loading={savingPwd}>Confirmer</Button>
             </View>
           )}
 
           {/* Déconnexion */}
-          <TouchableOpacity style={[styles.actionRow, { borderBottomWidth: 0 }]} onPress={handleSignOut} activeOpacity={0.75}>
+          <PressableScale style={[styles.actionRow, { borderBottomWidth: 0 }]} onPress={() => { haptics.tap(); handleSignOut(); }}>
             <Text style={[styles.actionLabel, { color: T.primary }]}>Se déconnecter</Text>
-          </TouchableOpacity>
+          </PressableScale>
         </View>
 
-        {/* ── Zone irréversible ── */}
-        <View style={[styles.dangerBlock, { paddingBottom: 60 }]}>
+        {/* ── Zone irréversible (Alert seule — D-08) ── */}
+        <View style={[styles.dangerBlock, { paddingBottom: insets.bottom + 32 }]}>
           <Text style={styles.dangerEyebrow}>Zone irréversible</Text>
           <Text style={styles.dangerDescription}>
-            Pour effacer définitivement votre compte et toutes vos pages,
-            inscrivez{' '}<Text style={styles.dangerKeyword}>EFFACER</Text>{' '}ci-dessous.
+            La suppression efface définitivement votre compte et toutes vos pages.
           </Text>
-          <Input label="Confirmation" value={deleteConfirm} onChangeText={setDeleteConfirm} autoCapitalize="characters" containerStyle={styles.inputWrap} />
-          <TouchableOpacity style={[styles.deleteBtn, deleteConfirm !== 'EFFACER' && styles.deleteBtnDisabled]} onPress={handleDeleteAccount} activeOpacity={0.8}>
-            <Text style={styles.deleteBtnText}>Effacer mon compte</Text>
-          </TouchableOpacity>
+          <Button variant="danger" onPress={handleDeleteAccount}>Supprimer mon compte</Button>
         </View>
 
       </ScrollView>
@@ -530,26 +526,20 @@ const makeStyles = (T: Theme) => StyleSheet.create({
   sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', borderBottomWidth: 1, borderBottomColor: T.border, paddingBottom: 8, marginBottom: 0 },
   sectionEyebrow: { fontFamily: F.mono, fontSize: 10, letterSpacing: 2.5, textTransform: 'uppercase', color: T.textFaint },
 
-  actionRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: T.border },
-  switchRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: T.border },
+  actionRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 44, paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: T.border },
   actionLabel: { fontFamily: F.serif, fontStyle: 'italic', fontSize: 16, color: T.text },
-  actionArrow: { fontFamily: F.serif, fontStyle: 'italic', fontSize: 16, color: T.textFaint },
+  actionChevron: { fontFamily: F.mono, fontSize: 16, color: T.textFaint },
+  themeToggle: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: T.border, borderRadius: T.radiusSm, borderCurve: 'continuous' },
 
   subForm: { paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: T.border, gap: 0 },
   currentEmail: { fontFamily: F.mono, fontSize: 11, letterSpacing: 0.5, color: T.textFaint, marginBottom: 16 },
   inputWrap: { marginBottom: 16 },
   showToggle: { paddingBottom: 4 },
   showToggleText: { fontFamily: F.mono, fontSize: 9, letterSpacing: 1.5, textTransform: 'uppercase', color: T.textFaint },
-  updateBtn: { backgroundColor: T.primary, paddingVertical: 16, alignItems: 'center', marginTop: 4 },
-  updateBtnText: { fontFamily: F.sansMedium, fontSize: 13, letterSpacing: 1, textTransform: 'uppercase', color: T.text },
 
   dangerBlock: { paddingHorizontal: 24, paddingTop: 32, borderTopWidth: 1, borderTopColor: T.primary + '33', marginTop: 24 },
-  dangerEyebrow: { fontFamily: F.mono, fontSize: 9, letterSpacing: 2.5, textTransform: 'uppercase', color: T.primary, marginBottom: 12 },
-  dangerDescription: { fontFamily: F.serif, fontStyle: 'italic', fontSize: 15, lineHeight: 22, color: T.textDim, marginBottom: 20 },
-  dangerKeyword: { fontFamily: F.mono, fontSize: 13, color: T.primary, fontStyle: 'normal' },
-  deleteBtn: { borderWidth: 1, borderColor: T.primary, paddingVertical: 16, alignItems: 'center', marginTop: 8 },
-  deleteBtnDisabled: { opacity: 0.3 },
-  deleteBtnText: { fontFamily: F.sansMedium, fontSize: 13, letterSpacing: 1, textTransform: 'uppercase', color: T.primary },
+  dangerEyebrow: { fontFamily: F.mono, fontSize: 9, letterSpacing: 2.5, textTransform: 'uppercase', color: T.danger, marginBottom: 12 },
+  dangerDescription: { fontFamily: F.serif, fontStyle: 'italic', fontSize: 15, lineHeight: 22, color: T.textDim, marginBottom: 24 },
 
   snackbar: { backgroundColor: T.surface2 },
 });
