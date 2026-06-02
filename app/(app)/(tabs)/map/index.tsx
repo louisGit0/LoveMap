@@ -83,6 +83,15 @@ export default function MapScreen() {
 
   useEffect(() => { loadPoints(); }, [loadPoints]);
 
+  // En mode « vue ami » : barycentre des points de l'ami pour recentrer la caméra
+  // (sinon les points de l'ami resteraient hors écran, centrés sur ma position).
+  const friendFocus = useMemo(() => {
+    if (!viewingFriendId || points.length === 0) return null;
+    const lat = points.reduce((s, p) => s + p.latitude, 0) / points.length;
+    const lng = points.reduce((s, p) => s + p.longitude, 0) / points.length;
+    return { latitude: lat, longitude: lng };
+  }, [viewingFriendId, points]);
+
   function handleLongPress(coords: { latitude: number; longitude: number }) {
     router.push({ pathname: '/(app)/point/new', params: { latitude: coords.latitude.toString(), longitude: coords.longitude.toString() } });
   }
@@ -94,7 +103,12 @@ export default function MapScreen() {
 
   return (
     <View style={styles.container}>
-      <AppMapView onLongPress={viewingFriendId ? undefined : handleLongPress} onCenterChange={setCenterCoords}>
+      <AppMapView
+        onLongPress={viewingFriendId ? undefined : handleLongPress}
+        onCenterChange={setCenterCoords}
+        showUserLocation={!viewingFriendId}
+        focusCoords={friendFocus}
+      >
         {viewMode === 'pins' && points.slice(0, visibleCount).map((p) => (
           <PointMarker key={p.id} point={p} />
         ))}

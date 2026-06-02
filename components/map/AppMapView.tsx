@@ -22,6 +22,11 @@ interface Props {
   onCenterChange?: (coords: { latitude: number; longitude: number }) => void;
   scrollEnabled?: boolean;
   initialRegion?: { latitude: number; longitude: number; latitudeDelta?: number; longitudeDelta?: number };
+  // Affiche le marqueur de position de l'utilisateur. Faux en mode « vue ami » :
+  // on ne montre pas sa propre localisation actuelle quand on consulte la carte d'un ami.
+  showUserLocation?: boolean;
+  // Recentre la caméra sur ces coordonnées quand elles changent (ex. barycentre des points de l'ami).
+  focusCoords?: { latitude: number; longitude: number } | null;
 }
 
 export function AppMapView({
@@ -30,6 +35,8 @@ export function AppMapView({
   onCenterChange,
   scrollEnabled = true,
   initialRegion,
+  showUserLocation = true,
+  focusCoords = null,
 }: Props) {
   const T = useTheme();
   const insets = useSafeAreaInsets();
@@ -52,7 +59,9 @@ export function AppMapView({
       });
       const coords: [number, number] = [loc.coords.longitude, loc.coords.latitude];
       setUserCoords(coords);
-      if (!initialRegion) {
+      // Ne pas centrer automatiquement sur l'utilisateur en mode « vue ami »
+      // (la caméra suit alors focusCoords = les points de l'ami).
+      if (!initialRegion && showUserLocation) {
         cameraRef.current?.setCamera({
           centerCoordinate: coords,
           zoomLevel: DEFAULT_ZOOM,
@@ -62,6 +71,17 @@ export function AppMapView({
       }
     })();
   }, []);
+
+  // Recentre sur focusCoords quand il change (mode « vue ami » → barycentre des points de l'ami).
+  useEffect(() => {
+    if (!focusCoords) return;
+    cameraRef.current?.setCamera({
+      centerCoordinate: [focusCoords.longitude, focusCoords.latitude],
+      zoomLevel: DEFAULT_ZOOM,
+      animationDuration: 700,
+      animationMode: 'flyTo',
+    });
+  }, [focusCoords?.latitude, focusCoords?.longitude]);
 
   function handleCameraChanged(state: { properties: { center: [number, number] } }) {
     const [lng, lat] = state.properties.center;
@@ -111,11 +131,11 @@ export function AppMapView({
           animationMode="none"
           animationDuration={0}
         />
-        <MapboxGL.UserLocation visible renderMode="native" />
+        {showUserLocation && <MapboxGL.UserLocation visible renderMode="native" />}
         {children}
       </MapboxGL.MapView>
 
-      {showRecenter && (
+      {showRecenter && showUserLocation && (
         <TouchableOpacity
           style={[styles.recenterButton, { bottom: insets.bottom + 144 }]}
           onPress={handleRecenter}
