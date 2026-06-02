@@ -197,7 +197,7 @@ export default function NewPoint() {
 
           {/* NOTE — geste central, le hero de la page (D-10) */}
           <View style={styles.noteDisplay}>
-            <Text style={styles.noteValue}>{note}</Text>
+            <Text style={styles.noteValue} maxFontSizeMultiplier={1.15}>{note}</Text>
             <Text style={styles.noteDenom}>/10</Text>
           </View>
           <View style={styles.noteSegments}>

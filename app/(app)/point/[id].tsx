@@ -240,7 +240,7 @@ export default function PointDetail() {
 
           {/* Note grande — hero de lecture (Display 80) */}
           <View style={styles.noteBlock}>
-            <Text style={styles.noteValue}>{point.note}</Text>
+            <Text style={styles.noteValue} maxFontSizeMultiplier={1.15}>{point.note}</Text>
             <Text style={styles.noteDenom}>/10</Text>
           </View>
 
