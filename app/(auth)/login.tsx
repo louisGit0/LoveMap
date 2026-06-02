@@ -5,16 +5,20 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
+  KeyboardAvoidingView,
+  Platform,
   Alert,
 } from 'react-native';
+import { Snackbar } from 'react-native-paper';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { supabase } from '@/lib/supabase';
 import { useTheme } from '@/hooks/useTheme';
 import { F } from '@/constants/fonts';
+import { AppText } from '@/components/ui/AppText';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
-import { IcoHeartDashed } from '@/components/icons';
+import { haptics } from '@/lib/haptics';
 import type { Theme } from '@/constants/theme';
 
 export default function Login() {
@@ -29,12 +33,12 @@ export default function Login() {
   const [error, setError] = useState<string | null>(null);
 
   async function handleLogin() {
-    if (!email.trim() || !password) { setError('Champs requis manquants.'); return; }
+    if (!email.trim() || !password) { setError('Connexion impossible. Vérifiez vos identifiants.'); return; }
     setLoading(true);
     setError(null);
     const { error: e } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
     setLoading(false);
-    if (e) { setError(e.message); return; }
+    if (e) { setError('Connexion impossible. Vérifiez vos identifiants.'); return; }
     router.replace('/(app)/map');
   }
 
@@ -45,105 +49,121 @@ export default function Login() {
   }
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top + 56 }]}>
-      <View style={styles.innerBorder} pointerEvents="none" />
+    <View style={[styles.container, { paddingTop: insets.top + 48 }]}>
+      <KeyboardAvoidingView
+        style={styles.flex}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        <ScrollView
+          contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + 32 }]}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
+          {/* En-tête couverture */}
+          <AppText variant="eyebrow" style={styles.eyebrow}>
+            LOVEMAP · ÉDITION INTIME
+          </AppText>
+          <AppText variant="display" style={styles.hero} numberOfLines={1}>
+            LoveMap
+          </AppText>
 
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-        {/* Wordmark */}
-        <Text style={styles.tagline}>De retour, voyageur.</Text>
-        <View style={styles.wordmark}>
-          <Text style={styles.wordmarkText}>love</Text>
-          <IcoHeartDashed size={16} color={T.primary} />
-          <Text style={styles.wordmarkText}>map</Text>
-        </View>
-
-        {/* Formulaire */}
-        <View style={styles.form}>
-          <Input
-            label="Adresse"
-            value={email}
-            onChangeText={setEmail}
-            keyboardType="email-address"
-            autoCapitalize="none"
-            containerStyle={styles.inputWrap}
-          />
-
-          <View>
+          {/* Formulaire — immédiatement visible */}
+          <View style={styles.form}>
             <Input
-              label="Mot de passe"
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry={!showPwd}
-              containerStyle={styles.inputWrap}
+              label="E-MAIL"
+              value={email}
+              onChangeText={setEmail}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              style={styles.fieldValue}
+              maxFontSizeMultiplier={1.8}
+              containerStyle={styles.field}
             />
-            <TouchableOpacity onPress={() => setShowPwd(!showPwd)} style={styles.showPwdBtn}>
-              <Text style={styles.showPwdText}>{showPwd ? 'masquer' : 'voir'}</Text>
+
+            <View style={styles.field}>
+              <Input
+                label="MOT DE PASSE"
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry={!showPwd}
+                style={styles.fieldValue}
+                maxFontSizeMultiplier={1.8}
+              />
+              <TouchableOpacity onPress={() => setShowPwd(!showPwd)} style={styles.showPwdBtn}>
+                <Text style={styles.showPwdText}>{showPwd ? 'masquer' : 'voir'}</Text>
+              </TouchableOpacity>
+            </View>
+
+            <TouchableOpacity onPress={handleForgot} style={styles.forgotBtn}>
+              <Text style={styles.forgotText}>oublié ?</Text>
             </TouchableOpacity>
           </View>
 
-          <TouchableOpacity onPress={handleForgot} style={{ marginTop: 12, alignSelf: 'flex-start' }}>
-            <Text style={styles.forgotText}>oublié ?</Text>
-          </TouchableOpacity>
+          {/* CTA unique */}
+          <View style={styles.actions}>
+            <Button
+              onPress={() => { haptics.tap(); handleLogin(); }}
+              disabled={loading}
+              variant="coral"
+              style={styles.cta}
+            >
+              {loading ? 'Connexion…' : 'Se connecter'}
+            </Button>
 
-          {error ? <Text style={styles.errorText}>↳ {error}</Text> : null}
-        </View>
-
-        {/* Actions */}
-        <View style={styles.actions}>
-          <Button onPress={handleLogin} loading={loading} variant="solid">
-            Se connecter
-          </Button>
-
-          <View style={styles.separator}>
-            <View style={styles.sepLine} />
-            <Text style={styles.sepText}>ou</Text>
-            <View style={styles.sepLine} />
+            <TouchableOpacity
+              onPress={() => router.push('/(auth)/register')}
+              style={styles.secondaryBtn}
+            >
+              <Text style={styles.secondaryText}>Créer un compte</Text>
+            </TouchableOpacity>
           </View>
 
-          <Button onPress={() => router.push('/(auth)/register')} variant="ghost">
-            Créer un compte
-          </Button>
-        </View>
-      </ScrollView>
+          {/* Ourlet mono */}
+          <Text style={styles.hem}>ÉDITION N°01 · 2026</Text>
+        </ScrollView>
+      </KeyboardAvoidingView>
+
+      <Snackbar
+        visible={!!error}
+        onDismiss={() => setError(null)}
+        duration={3000}
+        style={styles.snackbar}
+      >
+        {error}
+      </Snackbar>
     </View>
   );
 }
 
 const makeStyles = (T: Theme) => StyleSheet.create({
   container: { flex: 1, backgroundColor: T.bg },
-  innerBorder: {
-    position: 'absolute',
-    top: 16, left: 16, right: 16, bottom: 16,
-    borderWidth: 1, borderColor: T.border,
-  },
+  flex: { flex: 1 },
   scroll: {
-    paddingHorizontal: 36,
-    paddingBottom: 48,
+    paddingHorizontal: 24,
     flexGrow: 1,
   },
-  tagline: {
-    fontFamily: F.serif,
-    fontStyle: 'italic',
-    fontSize: 17,
-    color: T.textDim,
-    marginBottom: 8,
+  eyebrow: {
+    fontSize: 10,
+    letterSpacing: 2.5,
+    textTransform: 'uppercase',
+    color: T.textFaint,
+    marginBottom: 16,
   },
-  wordmark: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    gap: 4,
-    marginBottom: 44,
-  },
-  wordmarkText: {
-    fontFamily: F.serif,
+  hero: {
+    fontSize: 56,
+    lineHeight: 56,
     fontStyle: 'italic',
-    fontSize: 48,
-    color: T.text,
     letterSpacing: -1,
-    lineHeight: 52,
+    color: T.text,
+    marginBottom: 32,
   },
   form: { gap: 0 },
-  inputWrap: { marginBottom: 22 },
+  field: { marginBottom: 24 },
+  fieldValue: {
+    fontFamily: F.sans,
+    fontSize: 16,
+    fontStyle: 'normal',
+  },
   showPwdBtn: {
     position: 'absolute',
     right: 0,
@@ -156,33 +176,37 @@ const makeStyles = (T: Theme) => StyleSheet.create({
     textTransform: 'uppercase',
     color: T.textFaint,
   },
+  forgotBtn: { alignSelf: 'flex-start', marginTop: 8 },
   forgotText: {
     fontFamily: F.serif,
     fontStyle: 'italic',
-    fontSize: 14,
+    fontSize: 16,
     color: T.textDim,
     textDecorationLine: 'underline',
   },
-  errorText: {
-    fontFamily: F.serif,
-    fontStyle: 'italic',
-    fontSize: 13,
-    color: T.primary,
-    marginTop: 8,
+  actions: { marginTop: 32 },
+  cta: {
+    height: 52,
+    borderRadius: T.radiusSm,
+    borderCurve: 'continuous',
   },
-  actions: { marginTop: 40, gap: 0 },
-  separator: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    marginVertical: 20,
+  secondaryBtn: { alignSelf: 'center', marginTop: 24, paddingVertical: 4 },
+  secondaryText: {
+    fontFamily: F.mono,
+    fontSize: 10,
+    letterSpacing: 2,
+    textTransform: 'uppercase',
+    color: T.textDim,
+    textDecorationLine: 'underline',
   },
-  sepLine: { flex: 1, height: 1, backgroundColor: T.border },
-  sepText: {
+  hem: {
     fontFamily: F.mono,
     fontSize: 9,
     letterSpacing: 2,
     textTransform: 'uppercase',
     color: T.textFaint,
+    textAlign: 'center',
+    marginTop: 48,
   },
+  snackbar: { backgroundColor: T.surface2 },
 });
