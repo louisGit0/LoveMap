@@ -32,7 +32,7 @@ See: .planning/PROJECT.md (updated 2026-05-29)
 |-------|------|--------|
 | 1 | Stabilisation & Fondations | ✅ Terminé — 8/8 req · builds #17/#18 · migrations 011+012 |
 | 2 | Carte stylisée | ✅ Terminé — 4/4 req · vérifié 4/4 · validé device #19 · style Mapbox custom + pivot D-12 |
-| 3 | Création & Détail de point (sheets natifs) | ⬜ Not started |
+| 3 | Création & Détail de point (sheets natifs) | 📋 Planifiée (5 plans, 3 vagues — vérifiée PASS) |
 | 4 | Listes & Cercle | ⬜ Not started |
 | 5 | Auth, Profil & Finitions | ⬜ Not started |
 
@@ -62,7 +62,9 @@ See: .planning/PROJECT.md (updated 2026-05-29)
 
 ## Next Step
 
-`/gsd:plan-phase 3` — le planner utilisera CONTEXT.md (D-01..D-10) + UI-SPEC.md approuvé (6/6). Form sheet natif Expo Router (zéro dépendance), restructuration Tabs→Stack form-sheets, refonte création/détail « page de carnet » (typo serif+mono, note d'abord), suppression de la Modal d'aperçu marker. Prêts : `03-CONTEXT.md` + `03-UI-SPEC.md`.
+`/gsd:execute-phase 3` — 5 plans en 3 vagues. Vague 1 : 03-01 (restructure (app)→Stack + (tabs) + routes formSheet, item le plus risqué). Vague 2 : 03-02 (suppression Modal marker) · 03-03 (refonte création carnet + garde dismiss) · 03-04 (refonte détail + segments date). Vague 3 : 03-05 (gate device, build #20/OTA). 03-02/03/04 dépendent de 03-01.
+
+Note : Phase 3 = JS uniquement (zéro dépendance) → potentiellement OTA-compatible, mais validation des sheets natifs/gestes/clavier = device (build #20 probable, comme #19).
 
 ## Session
 
