@@ -23,6 +23,7 @@ import type { MapPoint } from '@/types/app.types';
 
 type MinNote = 0 | 5 | 7 | 9;
 type Sort = 'date' | 'note';
+type Dir = 'desc' | 'asc';
 
 /** Clé de tri consommée par groupByMonth (inlinée depuis l'ancien FiltersBottomSheet) */
 type GroupSort = 'date_desc' | 'date_asc' | 'note_desc' | 'note_asc';
@@ -37,6 +38,11 @@ const NOTE_OPTIONS: { value: MinNote; label: string }[] = [
 const SORT_OPTIONS: { value: Sort; label: string }[] = [
   { value: 'date', label: 'Date' },
   { value: 'note', label: 'Note' },
+];
+
+const DIR_OPTIONS: { value: Dir; label: string }[] = [
+  { value: 'desc', label: 'Décroissant' },
+  { value: 'asc', label: 'Croissant' },
 ];
 
 const MONTHS_FR = [
@@ -69,8 +75,10 @@ function groupByMonth(points: MapPoint[], sort: GroupSort): { title: string; mon
     groups[key].items.push(p);
   }
 
+  // L'ordre des mois suit la direction : décroissant = mois récents d'abord, croissant = anciens d'abord.
+  const asc = sort.endsWith('_asc');
   return Object.entries(groups)
-    .sort(([a], [b]) => b.localeCompare(a))
+    .sort(([a], [b]) => (asc ? a.localeCompare(b) : b.localeCompare(a)))
     .map(([, { label, monthNum, items }]) => ({ title: label, monthNum, data: items }));
 }
 
@@ -110,6 +118,7 @@ export default function PointList() {
   const [snackbar, setSnackbar] = useState<string | null>(null);
   const [minNote, setMinNote] = useState<MinNote>(0);
   const [sort, setSort] = useState<Sort>('date');
+  const [dir, setDir] = useState<Dir>('desc');
 
   const load = useCallback(async (): Promise<boolean> => {
     if (!user) return false;
@@ -133,8 +142,8 @@ export default function PointList() {
 
   const sections = useMemo(() => {
     const filtered = points.filter((p) => p.note >= minNote);
-    return groupByMonth(filtered, sort === 'note' ? 'note_desc' : 'date_desc');
-  }, [points, minNote, sort]);
+    return groupByMonth(filtered, `${sort}_${dir}` as GroupSort);
+  }, [points, minNote, sort, dir]);
 
   if (loading) {
     return (
@@ -179,6 +188,19 @@ export default function PointList() {
                   label={o.label}
                   active={sort === o.value}
                   onPress={() => setSort(o.value)}
+                  styles={styles}
+                />
+              ))}
+            </View>
+
+            {/* Direction du tri (croissant / décroissant) */}
+            <View style={styles.pillRow}>
+              {DIR_OPTIONS.map((o) => (
+                <FilterPill
+                  key={o.value}
+                  label={o.label}
+                  active={dir === o.value}
+                  onPress={() => setDir(o.value)}
                   styles={styles}
                 />
               ))}
