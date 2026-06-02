@@ -18,6 +18,7 @@ import { Snackbar } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { supabase } from '@/lib/supabase';
 import { haptics } from '@/lib/haptics';
+import { mapboxStaticUrl } from '@/constants/config';
 import { useAuth } from '@/hooks/useAuth';
 import { usePoints } from '@/hooks/usePoints';
 import { useTheme } from '@/hooks/useTheme';
@@ -220,8 +221,19 @@ export default function PointDetail() {
         contentInsetAdjustmentBehavior="never"
         contentContainerStyle={{ paddingBottom: insets.bottom + 32 }}
       >
-        {/* Pas d'aperçu carte : MapView GL ET <Image> Mapbox rendent noir dans un
-            form sheet iOS. Le lieu est affiché dans les métadonnées (adresse) ci-dessous. */}
+        {/* Aperçu carte STATIQUE (Mapbox Static Images via <Image>) — fiable dans un
+            `modal` (cf. règle 19 ; un MapView GL resterait risqué). Pin rose en RN. */}
+        <View style={styles.miniMap}>
+          <Image
+            source={{ uri: mapboxStaticUrl(point.longitude, point.latitude) }}
+            style={StyleSheet.absoluteFillObject}
+            resizeMode="cover"
+          />
+          <View style={styles.miniMapPinWrap} pointerEvents="none">
+            <View style={styles.markerDot} />
+          </View>
+        </View>
+
         <View style={styles.content}>
           {/* Eyebrow de page — lecture */}
           <Text style={styles.pageEyebrow}>La page</Text>

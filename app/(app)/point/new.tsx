@@ -9,6 +9,7 @@ import {
   TouchableOpacity,
   TextInput,
   Alert,
+  Image,
 } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { usePreventRemove, useNavigation } from '@react-navigation/native';
@@ -16,6 +17,7 @@ import { Snackbar } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Location from 'expo-location';
 import { haptics } from '@/lib/haptics';
+import { mapboxStaticUrl } from '@/constants/config';
 import { useAuth } from '@/hooks/useAuth';
 import { usePoints } from '@/hooks/usePoints';
 import { useFriendStore } from '@/stores/friendStore';
@@ -333,8 +335,18 @@ export default function NewPoint() {
             </TouchableOpacity>
           </View>
 
-          {/* Pas d'aperçu carte : MapView GL ET <Image> Mapbox rendent noir dans un
-              form sheet iOS. La position vient du tap carte (FAB/appui long) + recherche. */}
+          {/* Aperçu carte STATIQUE (Mapbox Static Images via <Image>) — fiable dans un
+              `modal` (cf. règle 19). Pin rose dessiné en RN. */}
+          <View style={styles.miniMap}>
+            <Image
+              source={{ uri: mapboxStaticUrl(longitude, latitude) }}
+              style={StyleSheet.absoluteFillObject}
+              resizeMode="cover"
+            />
+            <View style={styles.centerPin} pointerEvents="none">
+              <View style={styles.centerPinDot} />
+            </View>
+          </View>
           <View style={styles.locationStamp}>
             <View style={styles.locationPinDot} />
             <Text style={styles.locationStampText} numberOfLines={2}>
