@@ -7,15 +7,18 @@ import {
   TouchableOpacity,
   FlatList,
 } from 'react-native';
+import { Snackbar } from 'react-native-paper';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { supabase } from '@/lib/supabase';
 import { useTheme } from '@/hooks/useTheme';
 import { F } from '@/constants/fonts';
+import { AppText } from '@/components/ui/AppText';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { IcoArrow } from '@/components/icons';
-import { MIN_AGE } from '@/constants/config';
+import { haptics } from '@/lib/haptics';
+import { APP_CONFIG } from '@/constants/config';
 import type { Theme } from '@/constants/theme';
 
 /* ─── Picker colonnes (réutilisé de l'ancien age-gate) ──────────────── */
@@ -98,8 +101,9 @@ export default function Register() {
   }
 
   function confirmAge() {
-    if (calcAge() < MIN_AGE) {
-      setAgeError('Accès interdit aux mineur·e·s.');
+    if (calcAge() < APP_CONFIG.MIN_AGE) {
+      haptics.warn();
+      setAgeError('Vous devez avoir 18 ans ou plus.');
       return;
     }
     setAgeError(null);
@@ -110,6 +114,7 @@ export default function Register() {
   const [form, setForm] = useState({ email: '', pwd: '', pwd2: '', name: '', username: '' });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
+  const [snackbar, setSnackbar] = useState<string | null>(null);
 
   function setField(k: string, v: string) { setForm((p) => ({ ...p, [k]: v })); }
 
@@ -140,7 +145,7 @@ export default function Register() {
       },
     });
     setLoading(false);
-    if (error) { setErrors({ email: error.message }); return; }
+    if (error) { setSnackbar('Inscription impossible. Réessayez.'); return; }
     router.replace('/(app)/map');
   }
 
@@ -157,8 +162,6 @@ export default function Register() {
   if (step === 1) {
     return (
       <View style={[styles.container, { paddingTop: insets.top + 48 }]}>
-        <View style={styles.innerBorder} pointerEvents="none" />
-
         {/* Bouton retour → login */}
         <TouchableOpacity
           onPress={() => router.back()}
@@ -169,26 +172,23 @@ export default function Register() {
           <IcoArrow size={18} color={T.textFaint} dir="left" />
         </TouchableOpacity>
 
-        <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+        <ScrollView
+          contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + 32 }]}
+          showsVerticalScrollIndicator={false}
+        >
           <StepIndicator />
 
-          {/* Titre */}
-          <View style={styles.titleBlock}>
-            <Text style={styles.titleLine1}>Réservé</Text>
-            <Text style={styles.titleLine2}>aux adultes.</Text>
-          </View>
+          {/* En-tête couverture solennelle */}
+          <AppText variant="eyebrow" style={styles.coverEyebrow}>
+            VÉRIFICATION D'ÂGE
+          </AppText>
+          <AppText variant="display" style={styles.coverHero}>
+            Quel âge avez-vous ?
+          </AppText>
+          <Text style={styles.helpText}>Vous devez avoir 18 ans ou plus pour entrer.</Text>
 
-          {/* Sous-titre */}
-          <View style={styles.subtitleRow}>
-            <View style={styles.trait} />
-            <Text style={styles.subtitle}>
-              LoveMap cartographie vos moments intimes.{'\n'}
-              <Text style={styles.subtitleItalic}>L'accès est strictement limité aux personnes majeures.</Text>
-            </Text>
-          </View>
-
-          {/* Pickers */}
-          <Text style={styles.pickerEyebrow}>↳ Date de naissance</Text>
+          {/* Pickers JJ/MM/AAAA (préservés) */}
+          <Text style={styles.pickerEyebrow}>Date de naissance</Text>
           <View style={styles.pickers}>
             <PickerCol label="Jour" items={days} selected={day} onSelect={setDay} format={(x) => String(x).padStart(2, '0')} styles={styles} />
             <PickerCol label="Mois" items={months} selected={month} onSelect={setMonth} format={(x) => MOIS[x - 1]} styles={styles} />
@@ -203,18 +203,14 @@ export default function Register() {
 
           <View style={{ flex: 1, minHeight: 32 }} />
 
-          {/* Bouton suivant */}
-          <TouchableOpacity onPress={confirmAge} style={styles.enterBtn} activeOpacity={0.88}>
-            <View style={styles.enterLeft}>
-              <Text style={styles.enterEyebrow}>Accès majeur</Text>
-              <Text style={styles.enterLabel}>Continuer</Text>
-            </View>
-            <View style={styles.enterArrow}>
-              <IcoArrow size={20} color={T.primary} dir="right" />
-            </View>
-          </TouchableOpacity>
-
-          <Text style={styles.footer}>✦ Vérifié côté serveur ✦ Jamais partagé ✦</Text>
+          {/* CTA */}
+          <Button
+            onPress={() => { haptics.tap(); confirmAge(); }}
+            variant="coral"
+            style={styles.cta}
+          >
+            Vérifier mon âge
+          </Button>
         </ScrollView>
       </View>
     );
@@ -222,9 +218,7 @@ export default function Register() {
 
   /* ────────────────────── ÉTAPE 2 — Formulaire d'inscription ─────────── */
   return (
-    <View style={[styles.container, { paddingTop: insets.top + 56 }]}>
-      <View style={styles.innerBorder} pointerEvents="none" />
-
+    <View style={[styles.container, { paddingTop: insets.top + 48 }]}>
       {/* Bouton retour → étape 1 */}
       <TouchableOpacity
         onPress={() => setStep(1)}
@@ -235,22 +229,29 @@ export default function Register() {
         <IcoArrow size={18} color={T.textFaint} dir="left" />
       </TouchableOpacity>
 
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+      <ScrollView
+        contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + 32 }]}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
         <StepIndicator />
 
-        <Text style={styles.eyebrow}>N° 003 — Inscription</Text>
+        {/* En-tête couverture (cohérent login) */}
+        <AppText variant="eyebrow" style={styles.coverEyebrow}>
+          N° 003 — INSCRIPTION
+        </AppText>
+        <AppText variant="display" style={styles.coverHero}>
+          Votre carnet
+        </AppText>
 
-        <Text style={styles.title}>
-          Bienvenue dans{'\n'}la cartographie{'\n'}
-          <Text style={styles.titleAccent}>de l'intime.</Text>
-        </Text>
+        <View style={styles.formGap} />
 
         {[
-          { key: 'email', label: 'Adresse email', type: 'email-address' as const, secure: false, cap: 'none' as const },
-          { key: 'pwd', label: 'Mot de passe', type: 'default' as const, secure: true, cap: 'none' as const },
-          { key: 'pwd2', label: 'Confirmer', type: 'default' as const, secure: true, cap: 'none' as const },
-          { key: 'name', label: 'Prénom affiché', type: 'default' as const, secure: false, cap: 'words' as const },
-          { key: 'username', label: 'Pseudo (@)', type: 'default' as const, secure: false, cap: 'none' as const },
+          { key: 'email', label: 'E-MAIL', type: 'email-address' as const, secure: false, cap: 'none' as const },
+          { key: 'pwd', label: 'MOT DE PASSE', type: 'default' as const, secure: true, cap: 'none' as const },
+          { key: 'pwd2', label: 'CONFIRMER', type: 'default' as const, secure: true, cap: 'none' as const },
+          { key: 'name', label: 'PRÉNOM AFFICHÉ', type: 'default' as const, secure: false, cap: 'words' as const },
+          { key: 'username', label: 'PSEUDO (@)', type: 'default' as const, secure: false, cap: 'none' as const },
         ].map(({ key, label, type, secure, cap }) => (
           <Input
             key={key}
@@ -261,19 +262,35 @@ export default function Register() {
             secureTextEntry={secure}
             autoCapitalize={cap}
             error={errors[key]}
+            style={styles.fieldValue}
+            maxFontSizeMultiplier={1.8}
             containerStyle={styles.inputWrap}
           />
         ))}
 
         <View style={styles.actions}>
-          <Button onPress={handleRegister} loading={loading} variant="coral">
-            Créer mon journal
+          <Button
+            onPress={() => { haptics.tap(); handleRegister(); }}
+            loading={loading}
+            variant="coral"
+            style={styles.cta}
+          >
+            Commencer le carnet
           </Button>
-          <Button onPress={() => router.back()} variant="ghost" style={{ marginTop: 10 }}>
-            J'ai déjà un compte
-          </Button>
+          <TouchableOpacity onPress={() => setStep(1)} style={styles.backLink}>
+            <Text style={styles.backLinkText}>Retour</Text>
+          </TouchableOpacity>
         </View>
       </ScrollView>
+
+      <Snackbar
+        visible={!!snackbar}
+        onDismiss={() => setSnackbar(null)}
+        duration={3000}
+        style={styles.snackbar}
+      >
+        {snackbar}
+      </Snackbar>
     </View>
   );
 }
@@ -288,12 +305,7 @@ const makeStyles = (T: Theme) => StyleSheet.create({
     zIndex: 10,
     padding: 4,
   },
-  innerBorder: {
-    position: 'absolute',
-    top: 16, left: 16, right: 16, bottom: 16,
-    borderWidth: 1, borderColor: T.border,
-  },
-  scroll: { paddingHorizontal: 36, paddingBottom: 48, flexGrow: 1 },
+  scroll: { paddingHorizontal: 24, flexGrow: 1 },
 
   /* Indicateur d'étape */
   stepRow: {
@@ -318,62 +330,42 @@ const makeStyles = (T: Theme) => StyleSheet.create({
     marginHorizontal: 6,
   },
 
-  /* Étape 1 — âge */
-  titleBlock: { marginBottom: 24 },
-  titleLine1: {
-    fontFamily: F.serifLight,
-    fontSize: 64,
-    lineHeight: 60,
-    letterSpacing: -2,
+  /* En-tête couverture (partagé step 1 / step 2) */
+  coverEyebrow: {
+    fontSize: 10,
+    letterSpacing: 2.5,
+    textTransform: 'uppercase',
+    color: T.textFaint,
+    marginBottom: 16,
+  },
+  coverHero: {
+    fontSize: 56,
+    lineHeight: 56,
+    fontStyle: 'italic',
+    letterSpacing: -1,
     color: T.text,
-    fontStyle: 'italic',
+    marginBottom: 16,
   },
-  titleLine2: {
-    fontFamily: F.serifLight,
-    fontSize: 64,
-    lineHeight: 60,
-    letterSpacing: -2,
-    color: T.primary,
-    fontStyle: 'italic',
-    marginLeft: 38,
-  },
-  subtitleRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 14,
+  helpText: {
+    fontFamily: F.sans,
+    fontSize: 16,
+    lineHeight: 22,
+    color: T.textDim,
     marginBottom: 32,
   },
-  trait: {
-    width: 24,
-    height: 1,
-    backgroundColor: T.primary,
-    marginTop: 10,
-    flexShrink: 0,
-  },
-  subtitle: {
-    fontFamily: F.sansLight,
-    fontSize: 13,
-    lineHeight: 20,
-    color: T.textDim,
-    flex: 1,
-  },
-  subtitleItalic: {
-    fontFamily: F.serif,
-    fontSize: 14,
-    color: T.textFaint,
-    fontStyle: 'italic',
-  },
+
+  /* Étape 1 — pickers (préservés) */
   pickerEyebrow: {
     fontFamily: F.mono,
     fontSize: 10,
     letterSpacing: 2.5,
     textTransform: 'uppercase',
     color: T.textFaint,
-    marginBottom: 14,
+    marginBottom: 16,
   },
   pickers: {
     flexDirection: 'row',
-    gap: 10,
+    gap: 8,
     marginBottom: 24,
   },
   pickerLabel: {
@@ -411,85 +403,40 @@ const makeStyles = (T: Theme) => StyleSheet.create({
   errorBlock: {
     borderLeftWidth: 2,
     borderLeftColor: T.primary,
-    paddingLeft: 12,
-    marginBottom: 18,
+    paddingLeft: 16,
+    marginBottom: 16,
   },
   errorText: {
     fontFamily: F.serif,
     fontStyle: 'italic',
-    fontSize: 14,
+    fontSize: 16,
     color: T.primary,
-  },
-  enterBtn: {
-    flexDirection: 'row',
-    height: 64,
-    shadowColor: T.primary,
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.25,
-    shadowRadius: 32,
-    elevation: 8,
-  },
-  enterLeft: {
-    flex: 1,
-    backgroundColor: T.primary,
-    paddingHorizontal: 24,
-    justifyContent: 'center',
-    gap: 2,
-  },
-  enterEyebrow: {
-    fontFamily: F.mono,
-    fontSize: 9,
-    letterSpacing: 2.5,
-    textTransform: 'uppercase',
-    color: T.text,
-    opacity: 0.7,
-  },
-  enterLabel: {
-    fontFamily: F.serif,
-    fontStyle: 'italic',
-    fontSize: 26,
-    letterSpacing: -0.5,
-    color: T.text,
-    lineHeight: 28,
-  },
-  enterArrow: {
-    width: 64,
-    backgroundColor: T.bg,
-    borderWidth: 1,
-    borderLeftWidth: 0,
-    borderColor: T.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  footer: {
-    fontFamily: F.mono,
-    fontSize: 9,
-    letterSpacing: 1.5,
-    color: T.textFaint,
-    textTransform: 'uppercase',
-    textAlign: 'center',
-    marginTop: 16,
   },
 
   /* Étape 2 — formulaire */
-  eyebrow: {
+  formGap: { height: 32 },
+  fieldValue: {
+    fontFamily: F.sans,
+    fontSize: 16,
+    fontStyle: 'normal',
+  },
+  inputWrap: { marginBottom: 24 },
+  actions: { marginTop: 32 },
+  backLink: { alignSelf: 'center', marginTop: 24, paddingVertical: 4 },
+  backLinkText: {
     fontFamily: F.mono,
     fontSize: 10,
-    letterSpacing: 2.5,
+    letterSpacing: 2,
     textTransform: 'uppercase',
-    color: T.primary,
-    marginBottom: 24,
+    color: T.textDim,
+    textDecorationLine: 'underline',
   },
-  title: {
-    fontFamily: F.serifLight,
-    fontStyle: 'italic',
-    fontSize: 42,
-    lineHeight: 44,
-    letterSpacing: -1,
-    color: T.text,
-    marginBottom: 40,
+
+  /* Partagé */
+  cta: {
+    height: 52,
+    borderRadius: T.radiusSm,
+    borderCurve: 'continuous',
   },
-  titleAccent: { color: T.primary },
-  inputWrap: { marginBottom: 22 },
-  actions: { marginTop: 32, gap: 0 },
+  snackbar: { backgroundColor: T.surface2 },
 });
