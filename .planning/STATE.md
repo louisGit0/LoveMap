@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: "Phase 05 en cours (2/4 plans) — 05-02 refonte auth « page de couverture » exécuté"
-stopped_at: Phase 5 — 05-02 terminé (login + register cover + fix MIN_AGE)
-last_updated: "2026-06-02T19:10:00.000Z"
+status: "Phase 05 en cours (3/4 plans) — 05-03 refonte profil « page de couverture » + bento Analyse exécuté"
+stopped_at: Phase 5 — 05-03 terminé (profil cover + bento + toggle unique a11y + delete Alert seule + insets)
+last_updated: "2026-06-02T19:45:00.000Z"
 progress:
   total_phases: 5
   completed_phases: 4
   total_plans: 21
-  completed_plans: 19
-  percent: 90
+  completed_plans: 20
+  percent: 95
 ---
 
 # STATE — LoveMap (Refonte UI/UX iOS)
@@ -34,9 +34,9 @@ See: .planning/PROJECT.md (updated 2026-05-29)
 | 2 | Carte stylisée | ✅ Terminé — 4/4 req · vérifié 4/4 · validé device #19 · style Mapbox custom + pivot D-12 |
 | 3 | Création & Détail de point (sheets natifs) | ✅ Terminé — 5/5 plans · validé device #26 · **pivot formSheet→modal** (bug iOS 26 RNS 4.16 #3235) · aperçu carte retiré (location stamp) (03-01 nav Stack+(tabs) · 03-02 tap-pin → détail direct · 03-03 création carnet note-first · 03-04 détail carnet lecture + segments date #2125 · 03-05 validation device + correctifs sheet) |
 | 4 | Listes & Cercle | ✅ Terminé — 3/3 plans · validé device #28 · liste table des matières + cercle (retrait d'ami) + demandes (consentement taguage inline `respondToTag`) · `FiltersBottomSheet` supprimé |
-| 5 | Auth, Profil & Finitions | 🔄 En cours — 2/4 plans · 05-01 AppText `display` (levier D-06/IOS-04) · 05-02 refonte auth login + register « page de couverture » + fix MIN_AGE (D-11) + CTA « Vérifier mon âge » (D-12) + insets.bottom (IOS-04) · tsc 20 (0 nouvelle erreur) |
+| 5 | Auth, Profil & Finitions | 🔄 En cours — 3/4 plans · 05-01 AppText `display` (levier D-06/IOS-04) · 05-02 refonte auth login + register « page de couverture » + fix MIN_AGE (D-11) + CTA « Vérifier mon âge » (D-12) + insets.bottom (IOS-04) · 05-03 refonte profil « page de couverture » + bento Analyse (grande tuile = points.length T.text) + toggle unique a11y (D-09) + delete Alert seule (D-08) + avatar PRESERVE (UI-08) + insets · tsc 20 (0 nouvelle erreur) |
 
-**Requirements:** 19 / 22 complete (Phase 1 : STAB-01/02/03, FOND-01/02/03/04, IOS-03 · Phase 2 : MAP-01, MAP-02, MAP-03, UI-02 · Phase 3 : IOS-01, IOS-02, UI-03, UI-04 · Phase 4 : UI-05, UI-06, UI-07)
+**Requirements:** 20 / 22 complete (Phase 1 : STAB-01/02/03, FOND-01/02/03/04, IOS-03 · Phase 2 : MAP-01, MAP-02, MAP-03, UI-02 · Phase 3 : IOS-01, IOS-02, UI-03, UI-04 · Phase 4 : UI-05, UI-06, UI-07 · Phase 5 : UI-01, UI-08 — IOS-04 en attente du sweep 05-04)
 
 ## Config
 
@@ -62,16 +62,16 @@ See: .planning/PROJECT.md (updated 2026-05-29)
 
 ## Next Step
 
-**Phase 5 en cours — 05-02 exécuté (2/4 plans).** Reste 05-03 (refonte profil + bento Analyse, vague 2), 05-04 (passe IOS-04 sur 6 écrans hors-refonte, vague 3). 05-02 a refondu login + register en « page de couverture » (eyebrow mono + Cover 56 serif via AppText display + champs underline visibles + CTA coral unique + Snackbar), corrigé le bug latent MIN_AGE (D-11 : import `{ MIN_AGE }` undefined → `APP_CONFIG.MIN_AGE`, gate client < 18 désormais actif), renommé le CTA step 1 « Vérifier mon âge » (D-12) et câblé `insets.bottom + 32` (IOS-04). Stepper, picker, signUp+date_of_birth, trigger serveur préservés verbatim. tsc 20 (le fix MIN_AGE retire 1 erreur préexistante de la baseline 21 ; 0 nouvelle erreur).
+**Phase 5 en cours — 05-03 exécuté (3/4 plans).** Reste **05-04** (passe IOS-04 sur les 6 écrans hors-refonte, vague 3), puis build de phase + validation device. 05-03 a refondu `profile/index.tsx` en « page de couverture » : cover (avatar carré 80px en PressableScale + nom Cover 56 serif T.text + @username mono), section Analyse en mini-bento (grande tuile = `points.length` en display 56 **T.text, pas rose** D-04 ; durée totale ; mois actifs ; distribution track surface2/fill primary), toggle thème **unique** IcoSun/IcoMoon (Switch dupliqué retiré, D-09) avec accessibilityLabel + role switch (checker_flag Visuals), suppression de compte par **Alert native seule** (champ « EFFACER » + state retirés, D-08 ; haptics.warn à l'ouverture / error à l'échec), actions compte via `Button` (variant coral/danger ; `Button.tsx` non modifié, D-10), `paddingBottom: insets.bottom + 32` (IOS-04). **Avatar upload préservé verbatim** (require dynamique image-picker + file-system/legacy, rules 14/15/17 — item le plus à risque). statsRow + Anthologie pré-refonte retirés (remplacés par le bento) ; useFriends/avgNote retirés (n'alimentaient que la statsRow). Messages d'échec génériques « Échec — réessayez. » (plus de message Supabase brut, T-05-03-05). tsc 20 (0 nouvelle erreur ; les 2 erreurs profil l.164/186 sont préexistantes, code préservé).
 
-Baseline tsc phase = **21** (confirmé à frais en 05-01 Task 0 — inchangé depuis la phase 4). Nouveau code 05-01 : 0 nouvelle erreur. **Gate « 0 nouvelle erreur » = 21 pour tous les plans de la Phase 5.**
+Baseline tsc phase = **20** (après le fix MIN_AGE de 05-02). Nouveau code 05-03 : 0 nouvelle erreur. **Gate « 0 nouvelle erreur » = 20 pour les plans restants de la Phase 5.**
 
 Dette connue laissée (hors périmètre) : `handleCancel` (section « Envoyées » de requests.tsx) garde un appel Supabase direct (déviation rule-4 pré-existante) — documenté, non étendu ; `friends/index.tsx loadFriends` idem. À router via hook lors d'une passe future si souhaité.
 
 ## Session
 
-- **Stopped at:** Phase 5 — 05-02 terminé (refonte auth « page de couverture »)
+- **Stopped at:** Phase 5 — 05-03 terminé (refonte profil « page de couverture » + bento Analyse)
 - **Resume file:** .planning/phases/05-auth-profil-finitions/05-CONTEXT.md
 
 ---
-*Last updated: 2026-06-02 after 05-02 (refonte auth login + register « page de couverture » + fix MIN_AGE D-11 + CTA D-12 + IOS-04 insets). Phase 5 : 2/4 plans, tsc 20 (baseline 21, 0 nouvelle erreur).*
+*Last updated: 2026-06-02 after 05-03 (refonte profil « page de couverture » + bento Analyse + toggle unique a11y D-09 + delete Alert seule D-08 + avatar PRESERVE + IOS-04 insets). Phase 5 : 3/4 plans, tsc 20 (baseline 20, 0 nouvelle erreur).*

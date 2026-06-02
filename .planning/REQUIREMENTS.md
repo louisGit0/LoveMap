@@ -42,7 +42,7 @@ Requirements pour ce cap (stabilisation + refonte UI/UX). Chacun mappé à une p
 - [ ] **UI-05**: L'écran liste des moments (`point/list`) est refondu selon l'archétype « table des matières »
 - [ ] **UI-06**: L'écran amis (`friends/index`) est refondu selon l'archétype « table des matières »
 - [ ] **UI-07**: L'écran demandes (`friends/requests`) est refondu selon l'archétype « table des matières »
-- [ ] **UI-08**: L'écran profil (`profile/index`) est refondu selon l'archétype « page de couverture »
+- [x] **UI-08**: L'écran profil (`profile/index`) est refondu selon l'archétype « page de couverture »
 
 ## v2 Requirements
 
@@ -91,7 +91,7 @@ Quelles phases couvrent quels requirements. Rempli pendant la création de la ro
 | UI-06 | Phase 4 | Pending |
 | UI-07 | Phase 4 | Pending |
 | UI-01 | Phase 5 | Pending |
-| UI-08 | Phase 5 | Pending |
+| UI-08 | Phase 5 | Complete |
 | IOS-04 | Phase 5 | Pending |
 
 **Coverage:**
