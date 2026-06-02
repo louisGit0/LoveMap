@@ -107,14 +107,14 @@ export default function NewPoint() {
     if (!query) return;
     try {
       const results = await Location.geocodeAsync(query);
-      if (!results || results.length === 0) { setSnackbar('Adresse introuvable.'); return; }
+      if (!results || results.length === 0) { setSnackbar('Adresse introuvable — modifiez votre recherche.'); return; }
       const { latitude: lat, longitude: lng } = results[0];
       setLatitude(lat);
       setLongitude(lng);
       animateTo(lat, lng);
       reverseGeocode(lat, lng);
     } catch {
-      setSnackbar('Adresse introuvable.');
+      setSnackbar('Adresse introuvable — modifiez votre recherche.');
     }
   }
 
@@ -205,69 +205,90 @@ export default function NewPoint() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: insets.bottom + 32 }}
       >
-        {/* Header */}
-        <View style={[styles.header, { paddingTop: 24 }]}>
-          <View style={styles.innerBorder} pointerEvents="none" />
-          <Text style={styles.eyebrow}>N° 001 — Nouveau</Text>
-          <Text style={styles.title}>Inscrire{'\n'}un moment.</Text>
-        </View>
-
         <View style={styles.body}>
-          {/* Recherche d'adresse */}
-          <View style={styles.searchRow}>
-            <TextInput
-              style={styles.searchInput}
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-              placeholder="Rechercher une adresse"
-              placeholderTextColor={T.textFaint}
-              returnKeyType="search"
-              onSubmitEditing={handleSearch}
-            />
-            <TouchableOpacity style={styles.searchBtn} onPress={handleSearch} activeOpacity={0.8}>
-              <IcoSearch size={16} color={T.textFaint} />
-            </TouchableOpacity>
+          {/* Eyebrow de page */}
+          <Text style={styles.eyebrow}>N° 001 — Nouvelle page</Text>
+
+          {/* NOTE — geste central, le hero de la page (D-10) */}
+          <View style={styles.noteDisplay}>
+            <Text style={styles.noteValue}>{note}</Text>
+            <Text style={styles.noteDenom}>/10</Text>
           </View>
-
-          {/* Adresse résolue */}
-          {address ? (
-            <Text style={styles.addressResolved} numberOfLines={1}>{address}</Text>
-          ) : null}
-
-          {/* Mini carte — pan pour repositionner le point */}
-          <View style={styles.miniMap}>
-            <MapboxGL.MapView
-              style={StyleSheet.absoluteFillObject}
-              styleURL={APP_CONFIG.MAPBOX_STYLE}
-              scrollEnabled
-              logoEnabled={false}
-              attributionEnabled={false}
-              compassEnabled={false}
-              onCameraChanged={(state: { properties: { center: [number, number] } }) => {
-                const [lng, lat] = state.properties.center;
-                setLatitude(lat);
-                setLongitude(lng);
-              }}
-              onMapIdle={(state: { properties: { center: [number, number] } }) => {
-                const [lng, lat] = state.properties.center;
-                reverseGeocode(lat, lng);
-              }}
-            >
-              <MapboxGL.Camera
-                ref={mapRef}
-                zoomLevel={15}
-                centerCoordinate={[longitude, latitude]}
-                animationMode="none"
-                animationDuration={0}
+          <View style={styles.noteSegments}>
+            {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => (
+              <TouchableOpacity
+                key={n}
+                onPress={() => { haptics.select(); setNote(n); }}
+                style={[styles.segment, n <= note && styles.segmentActive]}
+                activeOpacity={0.7}
               />
-            </MapboxGL.MapView>
-            {/* Pin fixe centré — le fond de carte se déplace sous lui */}
-            <View style={styles.centerPin} pointerEvents="none">
-              <View style={styles.centerPinDot} />
-            </View>
+            ))}
           </View>
 
-          {/* Séparateur */}
+          <View style={styles.divider} />
+
+          {/* Commentaire */}
+          <Text style={styles.fieldEyebrow}>Commentaire</Text>
+          <TextInput
+            style={styles.commentInput}
+            value={comment}
+            onChangeText={(v) => v.length <= 500 && setComment(v)}
+            multiline
+            numberOfLines={4}
+            placeholder="Décrivez ce moment…"
+            placeholderTextColor={T.textFaint}
+            maxLength={500}
+          />
+          <Text style={styles.charCount}>{comment.length}/500</Text>
+
+          <View style={styles.divider} />
+
+          {/* Partenaire */}
+          <View style={styles.partnerLabelRow}>
+            <Text style={styles.fieldEyebrow}>Partenaire</Text>
+            <Text style={styles.fieldRequired}>Requis</Text>
+          </View>
+          {friends.length === 0 ? (
+            <Text style={styles.noFriends}>Ajoutez un ami à votre cercle pour inscrire un moment.</Text>
+          ) : (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.partnerScroll}>
+              {friends.map((f) => {
+                const selected = f.profile.id === selectedPartnerId;
+                return (
+                  <TouchableOpacity
+                    key={f.profile.id}
+                    onPress={() => { haptics.select(); setSelectedPartnerId(selected ? null : f.profile.id); }}
+                    style={[styles.partnerChip, selected && styles.partnerChipActive]}
+                    activeOpacity={0.8}
+                  >
+                    <View style={[styles.partnerAvatar, selected && styles.partnerAvatarActive]}>
+                      <Text style={[styles.partnerInitial, selected && styles.partnerInitialActive]}>
+                        {(f.profile.display_name ?? f.profile.username)[0].toUpperCase()}
+                      </Text>
+                    </View>
+                    <Text style={[styles.partnerName, selected && styles.partnerNameActive]}>
+                      {f.profile.display_name ?? f.profile.username}
+                    </Text>
+                    {selected && <IcoClose size={12} color={T.bg} />}
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+          )}
+
+          <View style={styles.divider} />
+
+          {/* Durée */}
+          <Text style={styles.fieldEyebrow}>Durée (minutes)</Text>
+          <TextInput
+            style={styles.lineInput}
+            value={durationMinutes}
+            onChangeText={(v) => setDurationMinutes(v.replace(/[^0-9]/g, ''))}
+            keyboardType="numeric"
+            placeholder="—"
+            placeholderTextColor={T.textFaint}
+          />
+
           <View style={styles.divider} />
 
           {/* Date */}
@@ -306,90 +327,69 @@ export default function NewPoint() {
 
           <View style={styles.divider} />
 
-          {/* Note */}
-          <Text style={styles.fieldEyebrow}>Note</Text>
-          <View style={styles.noteDisplay}>
-            <Text style={styles.noteValue}>{note}</Text>
-            <Text style={styles.noteDenom}>/10</Text>
+          {/* Lieu — recherche → mini-carte → adresse résolue */}
+          <Text style={styles.fieldEyebrow}>Lieu</Text>
+          <View style={styles.searchRow}>
+            <TextInput
+              style={styles.searchInput}
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              placeholder="Rechercher une adresse"
+              placeholderTextColor={T.textFaint}
+              returnKeyType="search"
+              onSubmitEditing={handleSearch}
+            />
+            <TouchableOpacity
+              style={styles.searchBtn}
+              onPress={handleSearch}
+              activeOpacity={0.8}
+              accessibilityLabel="Rechercher"
+            >
+              <IcoSearch size={16} color={T.textFaint} />
+            </TouchableOpacity>
           </View>
-          <View style={styles.noteSegments}>
-            {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => (
-              <TouchableOpacity
-                key={n}
-                onPress={() => setNote(n)}
-                style={[styles.segment, n <= note && styles.segmentActive]}
-                activeOpacity={0.7}
+
+          {/* Mini carte — pan pour repositionner le point */}
+          <View style={styles.miniMap}>
+            <MapboxGL.MapView
+              style={StyleSheet.absoluteFillObject}
+              styleURL={APP_CONFIG.MAPBOX_STYLE}
+              scrollEnabled
+              logoEnabled={false}
+              attributionEnabled={false}
+              compassEnabled={false}
+              onCameraChanged={(state: { properties: { center: [number, number] } }) => {
+                const [lng, lat] = state.properties.center;
+                setLatitude(lat);
+                setLongitude(lng);
+              }}
+              onMapIdle={(state: { properties: { center: [number, number] } }) => {
+                const [lng, lat] = state.properties.center;
+                reverseGeocode(lat, lng);
+              }}
+            >
+              <MapboxGL.Camera
+                ref={mapRef}
+                zoomLevel={15}
+                centerCoordinate={[longitude, latitude]}
+                animationMode="none"
+                animationDuration={0}
               />
-            ))}
+            </MapboxGL.MapView>
+            {/* Pin fixe centré — le fond de carte se déplace sous lui */}
+            <View style={styles.centerPin} pointerEvents="none">
+              <View style={styles.centerPinDot} />
+            </View>
           </View>
 
-          <View style={styles.divider} />
-
-          {/* Commentaire */}
-          <Text style={styles.fieldEyebrow}>Commentaire</Text>
-          <TextInput
-            style={styles.commentInput}
-            value={comment}
-            onChangeText={(v) => v.length <= 500 && setComment(v)}
-            multiline
-            numberOfLines={4}
-            placeholder="Décrivez ce moment..."
-            placeholderTextColor={T.textFaint}
-            maxLength={500}
-          />
-          <Text style={styles.charCount}>{comment.length}/500</Text>
+          {/* Adresse résolue */}
+          {address ? (
+            <Text style={styles.addressResolved} numberOfLines={1}>{address}</Text>
+          ) : null}
 
           <View style={styles.divider} />
 
-          {/* Durée */}
-          <Text style={styles.fieldEyebrow}>Durée (minutes)</Text>
-          <TextInput
-            style={styles.lineInput}
-            value={durationMinutes}
-            onChangeText={(v) => setDurationMinutes(v.replace(/[^0-9]/g, ''))}
-            keyboardType="numeric"
-            placeholder="—"
-            placeholderTextColor={T.textFaint}
-          />
-
-          <View style={styles.divider} />
-
-          {/* Partenaire */}
-          <View style={styles.partnerLabelRow}>
-            <Text style={styles.fieldEyebrow}>Partenaire</Text>
-            <Text style={styles.fieldRequired}>Requis</Text>
-          </View>
-          {friends.length === 0 ? (
-            <Text style={styles.noFriends}>Ajoutez un ami à votre cercle pour pouvoir inscrire un moment.</Text>
-          ) : (
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.partnerScroll}>
-              {friends.map((f) => {
-                const selected = f.profile.id === selectedPartnerId;
-                return (
-                  <TouchableOpacity
-                    key={f.profile.id}
-                    onPress={() => setSelectedPartnerId(selected ? null : f.profile.id)}
-                    style={[styles.partnerChip, selected && styles.partnerChipActive]}
-                    activeOpacity={0.8}
-                  >
-                    <View style={[styles.partnerAvatar, selected && styles.partnerAvatarActive]}>
-                      <Text style={[styles.partnerInitial, selected && styles.partnerInitialActive]}>
-                        {(f.profile.display_name ?? f.profile.username)[0].toUpperCase()}
-                      </Text>
-                    </View>
-                    <Text style={[styles.partnerName, selected && styles.partnerNameActive]}>
-                      {f.profile.display_name ?? f.profile.username}
-                    </Text>
-                    {selected && <IcoClose size={12} color={T.bg} />}
-                  </TouchableOpacity>
-                );
-              })}
-            </ScrollView>
-          )}
-
-          <View style={styles.divider} />
-
-          {/* CTA */}
+          {/* CTA — Sceller la page (inline-fin) */}
           <TouchableOpacity
             onPress={handleSubmit}
             disabled={submitting || friends.length === 0}
@@ -398,15 +398,16 @@ export default function NewPoint() {
           >
             <View style={styles.ctaLeft}>
               <Text style={styles.ctaEyebrow}>Archiver</Text>
-              <Text style={styles.ctaLabel}>{submitting ? 'Scellement...' : 'Sceller la page'}</Text>
+              <Text style={styles.ctaLabel}>{submitting ? 'Scellement…' : 'Sceller la page'}</Text>
             </View>
             <View style={styles.ctaArrow}>
               <IcoArrow size={20} color={T.primary} dir="right" />
             </View>
           </TouchableOpacity>
 
+          {/* Lien tertiaire — Abandonner la saisie */}
           <TouchableOpacity onPress={() => router.back()} style={styles.cancelLink} activeOpacity={0.7}>
-            <Text style={styles.cancelText}>Annuler</Text>
+            <Text style={styles.cancelText}>Abandonner la saisie</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -423,71 +424,218 @@ const makeStyles = (T: Theme) => StyleSheet.create({
     flex: 1,
     backgroundColor: T.bg,
   },
-  header: {
+  body: {
+    paddingHorizontal: 24,
+    paddingTop: 24,
     paddingBottom: 24,
-    paddingHorizontal: 36,
-    position: 'relative',
   },
-  innerBorder: {
-    position: 'absolute',
-    top: 16, left: 16, right: 16, bottom: 0,
-    borderWidth: 1,
-    borderColor: T.border,
-    borderBottomWidth: 0,
-  },
+  // Eyebrow (10 / Eyebrow) — accent T.primary réservé à l'en-tête de page
   eyebrow: {
     fontFamily: F.mono,
     fontSize: 10,
     letterSpacing: 2.5,
     textTransform: 'uppercase',
     color: T.primary,
-    marginBottom: 8,
+    marginBottom: 24,
   },
-  title: {
+  // NOTE hero (72 / Display)
+  noteDisplay: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    marginBottom: 16,
+  },
+  noteValue: {
     fontFamily: F.serifLight,
     fontStyle: 'italic',
-    fontSize: 44,
-    lineHeight: 44,
-    letterSpacing: -1.5,
-    color: T.text,
+    fontSize: 72,
+    lineHeight: 68,
+    color: T.primary,
+    letterSpacing: -2,
   },
-  body: {
-    paddingHorizontal: 24,
-    paddingBottom: 48,
+  noteDenom: {
+    fontFamily: F.mono,
+    fontSize: 20,
+    color: T.textFaint,
+    marginLeft: 8,
+    marginBottom: 8,
+  },
+  noteSegments: {
+    flexDirection: 'row',
+    gap: 4,
+  },
+  segment: {
+    flex: 1,
+    height: 6,
+    backgroundColor: T.surface2,
+    borderRadius: T.radiusXs,
+    borderCurve: 'continuous',
+  },
+  segmentActive: {
+    backgroundColor: T.primary,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: T.border,
+    marginVertical: 24,
+  },
+  // Field labels (10 / Eyebrow)
+  fieldEyebrow: {
+    fontFamily: F.mono,
+    fontSize: 10,
+    letterSpacing: 2,
+    textTransform: 'uppercase',
+    color: T.textFaint,
+    marginBottom: 12,
+  },
+  // Inputs serif italic (20 / Body)
+  commentInput: {
+    fontFamily: F.serif,
+    fontStyle: 'italic',
+    fontSize: 20,
+    color: T.text,
+    minHeight: 100,
+    textAlignVertical: 'top',
+    paddingTop: 0,
+    lineHeight: 28,
+  },
+  charCount: {
+    fontFamily: F.mono,
+    fontSize: 10,
+    color: T.textFaint,
+    textAlign: 'right',
+    marginTop: 8,
+    letterSpacing: 1,
+  },
+  partnerLabelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
+  fieldRequired: {
+    fontFamily: F.mono,
+    fontSize: 10,
+    letterSpacing: 1.5,
+    textTransform: 'uppercase',
+    color: T.primary,
+  },
+  noFriends: {
+    fontFamily: F.serif,
+    fontStyle: 'italic',
+    fontSize: 20,
+    lineHeight: 28,
+    color: T.textFaint,
+  },
+  partnerScroll: {
+    marginTop: 4,
+  },
+  partnerChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: T.border,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    marginRight: 8,
+    gap: 8,
+    borderRadius: T.radiusSm,
+    borderCurve: 'continuous',
+  },
+  partnerChipActive: {
+    backgroundColor: T.primary,
+    borderColor: T.primary,
+  },
+  partnerAvatar: {
+    width: 28,
+    height: 28,
+    backgroundColor: T.surface2,
+    borderWidth: 1,
+    borderColor: T.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  partnerAvatarActive: {
+    backgroundColor: T.bg,
+    borderColor: T.bg,
+  },
+  partnerInitial: {
+    fontFamily: F.serif,
+    fontStyle: 'italic',
+    fontSize: 20,
+    color: T.textDim,
+  },
+  partnerInitialActive: {
+    color: T.primary,
+  },
+  partnerName: {
+    fontFamily: F.serif,
+    fontStyle: 'italic',
+    fontSize: 20,
+    color: T.textDim,
+  },
+  partnerNameActive: {
+    color: T.bg,
+  },
+  lineInput: {
+    fontFamily: F.serif,
+    fontStyle: 'italic',
+    fontSize: 20,
+    color: T.text,
+    borderBottomWidth: 1,
+    borderBottomColor: T.border,
+    paddingVertical: 8,
+  },
+  dateRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: 8,
+  },
+  dateSegment: {
+    fontFamily: F.mono,
+    fontSize: 20,
+    letterSpacing: -1,
+    color: T.text,
+    borderBottomWidth: 1,
+    borderBottomColor: T.border,
+    paddingVertical: 4,
+    textAlign: 'center',
+    width: 52,
+  },
+  dateSegmentYear: {
+    width: 80,
+  },
+  dateSep: {
+    fontFamily: F.mono,
+    fontSize: 20,
+    color: T.textFaint,
+    marginBottom: 4,
   },
   searchRow: {
     flexDirection: 'row',
     alignItems: 'center',
     borderBottomWidth: 1,
     borderBottomColor: T.border,
-    marginBottom: 8,
+    marginBottom: 16,
   },
   searchInput: {
     flex: 1,
     fontFamily: F.serif,
     fontStyle: 'italic',
-    fontSize: 18,
+    fontSize: 20,
     color: T.text,
     paddingVertical: 12,
   },
   searchBtn: {
-    padding: 10,
-  },
-  addressResolved: {
-    fontFamily: F.mono,
-    fontSize: 9,
-    letterSpacing: 1,
-    color: T.textFaint,
-    textTransform: 'uppercase',
-    marginBottom: 12,
+    padding: 8,
   },
   miniMap: {
     height: 200,
     backgroundColor: T.surface,
-    marginVertical: 16,
     borderWidth: 1,
     borderColor: T.border,
     overflow: 'hidden',
+    borderRadius: T.radiusMd,
+    borderCurve: 'continuous',
   },
   centerPin: {
     position: 'absolute',
@@ -511,169 +659,15 @@ const makeStyles = (T: Theme) => StyleSheet.create({
     shadowRadius: 6,
     elevation: 4,
   },
-  divider: {
-    height: 1,
-    backgroundColor: T.border,
-    marginVertical: 24,
-  },
-  fieldEyebrow: {
+  addressResolved: {
     fontFamily: F.mono,
-    fontSize: 9,
-    letterSpacing: 2,
-    textTransform: 'uppercase',
-    color: T.textFaint,
-    marginBottom: 12,
-  },
-  dateRow: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    gap: 8,
-  },
-  dateSegment: {
-    fontFamily: F.mono,
-    fontSize: 32,
-    letterSpacing: -1,
-    color: T.text,
-    borderBottomWidth: 1,
-    borderBottomColor: T.border,
-    paddingVertical: 4,
-    textAlign: 'center',
-    width: 52,
-  },
-  dateSegmentYear: {
-    width: 80,
-  },
-  dateSep: {
-    fontFamily: F.mono,
-    fontSize: 20,
-    color: T.textFaint,
-    marginBottom: 4,
-  },
-  noteDisplay: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    marginBottom: 16,
-  },
-  noteValue: {
-    fontFamily: F.serifLight,
-    fontStyle: 'italic',
-    fontSize: 64,
-    lineHeight: 64,
-    color: T.primary,
-    letterSpacing: -2,
-  },
-  noteDenom: {
-    fontFamily: F.mono,
-    fontSize: 16,
-    color: T.textFaint,
-    marginLeft: 4,
-    marginBottom: 8,
-  },
-  noteSegments: {
-    flexDirection: 'row',
-    gap: 4,
-  },
-  segment: {
-    flex: 1,
-    height: 4,
-    backgroundColor: T.surface2,
-  },
-  segmentActive: {
-    backgroundColor: T.primary,
-  },
-  commentInput: {
-    fontFamily: F.serif,
-    fontStyle: 'italic',
-    fontSize: 18,
-    color: T.text,
-    minHeight: 100,
-    textAlignVertical: 'top',
-    paddingTop: 0,
-    lineHeight: 26,
-  },
-  charCount: {
-    fontFamily: F.mono,
-    fontSize: 9,
-    color: T.textFaint,
-    textAlign: 'right',
-    marginTop: 6,
+    fontSize: 10,
     letterSpacing: 1,
-  },
-  lineInput: {
-    fontFamily: F.serif,
-    fontStyle: 'italic',
-    fontSize: 22,
-    color: T.text,
-    borderBottomWidth: 1,
-    borderBottomColor: T.border,
-    paddingVertical: 8,
-  },
-  partnerLabelRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 12,
-  },
-  fieldRequired: {
-    fontFamily: F.mono,
-    fontSize: 8,
-    letterSpacing: 1.5,
-    textTransform: 'uppercase',
-    color: T.primary,
-  },
-  noFriends: {
-    fontFamily: F.serif,
-    fontStyle: 'italic',
-    fontSize: 15,
     color: T.textFaint,
+    textTransform: 'uppercase',
+    marginTop: 16,
   },
-  partnerScroll: {
-    marginTop: 4,
-  },
-  partnerChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: T.border,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    marginRight: 8,
-    gap: 8,
-  },
-  partnerChipActive: {
-    backgroundColor: T.primary,
-    borderColor: T.primary,
-  },
-  partnerAvatar: {
-    width: 28,
-    height: 28,
-    backgroundColor: T.surface2,
-    borderWidth: 1,
-    borderColor: T.border,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  partnerAvatarActive: {
-    backgroundColor: T.bg,
-    borderColor: T.bg,
-  },
-  partnerInitial: {
-    fontFamily: F.serif,
-    fontStyle: 'italic',
-    fontSize: 14,
-    color: T.textDim,
-  },
-  partnerInitialActive: {
-    color: T.primary,
-  },
-  partnerName: {
-    fontFamily: F.sans,
-    fontSize: 13,
-    color: T.textDim,
-  },
-  partnerNameActive: {
-    color: T.bg,
-  },
+  // CTA bloc (24 / Heading) — radiusMd + borderCurve continuous (D-12)
   cta: {
     flexDirection: 'row',
     height: 64,
@@ -689,11 +683,14 @@ const makeStyles = (T: Theme) => StyleSheet.create({
     backgroundColor: T.primary,
     paddingHorizontal: 24,
     justifyContent: 'center',
-    gap: 2,
+    gap: 4,
+    borderTopLeftRadius: T.radiusMd,
+    borderBottomLeftRadius: T.radiusMd,
+    borderCurve: 'continuous',
   },
   ctaEyebrow: {
     fontFamily: F.mono,
-    fontSize: 9,
+    fontSize: 10,
     letterSpacing: 2.5,
     textTransform: 'uppercase',
     color: T.text,
@@ -702,7 +699,7 @@ const makeStyles = (T: Theme) => StyleSheet.create({
   ctaLabel: {
     fontFamily: F.serif,
     fontStyle: 'italic',
-    fontSize: 26,
+    fontSize: 24,
     letterSpacing: -0.5,
     color: T.text,
     lineHeight: 28,
@@ -715,17 +712,21 @@ const makeStyles = (T: Theme) => StyleSheet.create({
     borderColor: T.primary,
     alignItems: 'center',
     justifyContent: 'center',
+    borderTopRightRadius: T.radiusMd,
+    borderBottomRightRadius: T.radiusMd,
+    borderCurve: 'continuous',
   },
   cancelLink: {
-    marginTop: 20,
+    marginTop: 24,
     alignSelf: 'center',
   },
+  // Lien tertiaire (10 / Eyebrow, mono uppercase)
   cancelText: {
-    fontFamily: F.serif,
-    fontStyle: 'italic',
-    fontSize: 15,
+    fontFamily: F.mono,
+    fontSize: 10,
+    letterSpacing: 2,
+    textTransform: 'uppercase',
     color: T.textFaint,
-    textDecorationLine: 'underline',
   },
   snackbar: { backgroundColor: T.surface2 },
 });
