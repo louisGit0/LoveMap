@@ -75,8 +75,8 @@ Aperçu carte **restauré build #27** (validé device) : `<Image>` statique Mapb
 
 ## Session
 
-- **Stopped at:** 03-05 validé device (#26) — Phase 3 terminée. Pivot formSheet→modal (#3235) + aperçu carte retiré.
-- **Resume file:** Phase 4 — `/gsd:discuss-phase 4`
+- **Stopped at:** Phase 4 contexte capturé (04-CONTEXT.md) — décisions : note /10 comme gros chiffre, sections par mois, filtres inline, retrait d'ami opt-in. Enchaînement ui → plan → execute.
+- **Resume file:** .planning/phases/04-listes-cercle/04-CONTEXT.md
 
 ---
 *Last updated: 2026-06-02 after 03-05 (validation device #26, pivot formSheet→modal #3235, Phase 3 terminée 5/5)*
