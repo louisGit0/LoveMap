@@ -203,7 +203,7 @@ export default function PointDetail() {
   if (!point) {
     return (
       <View style={styles.centered}>
-        <Text style={styles.errorText}>Page introuvable.</Text>
+        <Text style={styles.errorText}>Page introuvable. Faites glisser vers le bas pour fermer.</Text>
       </View>
     );
   }
@@ -251,7 +251,10 @@ export default function PointDetail() {
         </View>
 
         <View style={styles.content}>
-          {/* Note grande */}
+          {/* Eyebrow de page — lecture */}
+          <Text style={styles.pageEyebrow}>La page</Text>
+
+          {/* Note grande — hero de lecture (Display 80) */}
           <View style={styles.noteBlock}>
             <Text style={styles.noteValue}>{point.note}</Text>
             <Text style={styles.noteDenom}>/10</Text>
@@ -424,7 +427,7 @@ export default function PointDetail() {
           {/* Action propriétaire */}
           {isOwner && (
             <TouchableOpacity style={styles.deleteBtn} onPress={handleDelete} activeOpacity={0.8}>
-              <IcoTrash size={16} color={T.primary} />
+              <IcoTrash size={16} color={T.danger} />
               <Text style={styles.deleteBtnText}>Effacer cette page</Text>
             </TouchableOpacity>
           )}
@@ -441,8 +444,22 @@ export default function PointDetail() {
 const makeStyles = (T: Theme) => StyleSheet.create({
   container: { flex: 1, backgroundColor: T.bg },
   centered: { flex: 1, backgroundColor: T.bg, justifyContent: 'center', alignItems: 'center' },
-  errorText: { fontFamily: F.serif, fontStyle: 'italic', fontSize: 16, color: T.primary },
-  miniMap: { height: 220, backgroundColor: T.surface, overflow: 'hidden' },
+  errorText: { fontFamily: F.serif, fontStyle: 'italic', fontSize: 16, color: T.text, textAlign: 'center', paddingHorizontal: 32 },
+  miniMap: {
+    height: 220,
+    backgroundColor: T.surface,
+    overflow: 'hidden',
+    borderRadius: T.radiusMd,
+    borderCurve: 'continuous',
+  },
+  pageEyebrow: {
+    fontFamily: F.mono,
+    fontSize: 9,
+    letterSpacing: 2,
+    textTransform: 'uppercase',
+    color: T.primary,
+    marginBottom: 16,
+  },
   markerDot: {
     width: 14,
     height: 14,
@@ -461,13 +478,13 @@ const makeStyles = (T: Theme) => StyleSheet.create({
     fontFamily: F.serifLight,
     fontStyle: 'italic',
     fontSize: 80,
-    lineHeight: 80,
+    lineHeight: 76,
     color: T.primary,
     letterSpacing: -3,
   },
   noteDenom: {
     fontFamily: F.mono,
-    fontSize: 18,
+    fontSize: 16,
     color: T.textFaint,
     marginLeft: 4,
     marginBottom: 10,
@@ -490,7 +507,8 @@ const makeStyles = (T: Theme) => StyleSheet.create({
     paddingHorizontal: 8,
   },
   quoteMark: {
-    fontFamily: F.serifMedium,
+    fontFamily: F.serif,
+    fontStyle: 'italic',
     fontSize: 32,
     color: T.primary,
     lineHeight: 28,
@@ -512,6 +530,8 @@ const makeStyles = (T: Theme) => StyleSheet.create({
     height: 120,
     marginRight: 8,
     backgroundColor: T.surface,
+    borderRadius: T.radiusSm,
+    borderCurve: 'continuous',
   },
   metaTable: {
     borderTopWidth: 1,
@@ -554,6 +574,7 @@ const makeStyles = (T: Theme) => StyleSheet.create({
     borderColor: T.border,
     paddingHorizontal: 8,
     paddingVertical: 3,
+    borderRadius: T.radiusXs,
   },
   consentBadgeOk: {
     borderColor: T.primary,
@@ -564,7 +585,7 @@ const makeStyles = (T: Theme) => StyleSheet.create({
   },
   consentBadgeText: {
     fontFamily: F.mono,
-    fontSize: 8,
+    fontSize: 9,
     letterSpacing: 1.5,
     textTransform: 'uppercase',
     color: T.textFaint,
@@ -594,11 +615,15 @@ const makeStyles = (T: Theme) => StyleSheet.create({
     borderColor: T.border,
     paddingVertical: 14,
     alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: T.radiusMd,
+    borderCurve: 'continuous',
   },
   consentEditText: {
-    fontFamily: F.sansMedium,
-    fontSize: 13,
-    letterSpacing: 0.5,
+    fontFamily: F.mono,
+    fontSize: 9,
+    letterSpacing: 2,
+    textTransform: 'uppercase',
     color: T.textDim,
   },
   consentAcceptBtn: {
@@ -606,11 +631,15 @@ const makeStyles = (T: Theme) => StyleSheet.create({
     backgroundColor: T.primary,
     paddingVertical: 14,
     alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: T.radiusMd,
+    borderCurve: 'continuous',
   },
   consentAcceptText: {
-    fontFamily: F.sansMedium,
-    fontSize: 14,
-    letterSpacing: 0.5,
+    fontFamily: F.serif,
+    fontStyle: 'italic',
+    fontSize: 22,
+    lineHeight: 26,
     color: T.text,
   },
   consentRejectBtn: {
@@ -732,11 +761,15 @@ const makeStyles = (T: Theme) => StyleSheet.create({
     backgroundColor: T.primary,
     justifyContent: 'center',
     paddingHorizontal: 20,
+    borderTopLeftRadius: T.radiusMd,
+    borderBottomLeftRadius: T.radiusMd,
+    borderCurve: 'continuous',
   },
   saveBtnLabel: {
-    fontFamily: F.sansMedium,
-    fontSize: 13,
-    letterSpacing: 0.5,
+    fontFamily: F.serif,
+    fontStyle: 'italic',
+    fontSize: 22,
+    lineHeight: 26,
     color: T.text,
   },
   saveBtnArrow: {
@@ -747,6 +780,9 @@ const makeStyles = (T: Theme) => StyleSheet.create({
     borderColor: T.primary,
     alignItems: 'center',
     justifyContent: 'center',
+    borderTopRightRadius: T.radiusMd,
+    borderBottomRightRadius: T.radiusMd,
+    borderCurve: 'continuous',
   },
   cancelEditBtn: {
     alignSelf: 'center',
@@ -773,7 +809,7 @@ const makeStyles = (T: Theme) => StyleSheet.create({
     fontFamily: F.serif,
     fontStyle: 'italic',
     fontSize: 15,
-    color: T.primary,
+    color: T.danger,
     textDecorationLine: 'underline',
   },
   snackbar: { backgroundColor: T.surface2 },
