@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: Phase 03 en cours (1/5 plans)
-stopped_at: 03-01 terminé — restructure nav (Stack + (tabs) + routes formSheet), tsc clean
-last_updated: "2026-06-02T07:00:00.000Z"
+status: Phase 03 en cours (2/5 plans)
+stopped_at: 03-02 terminé — suppression Modal PointMarker + tap-pin → détail direct, tsc clean
+last_updated: "2026-06-02T09:00:00.000Z"
 progress:
   total_phases: 5
   completed_phases: 2
   total_plans: 14
-  completed_plans: 11
+  completed_plans: 12
   percent: 40
 ---
 
@@ -32,7 +32,7 @@ See: .planning/PROJECT.md (updated 2026-05-29)
 |-------|------|--------|
 | 1 | Stabilisation & Fondations | ✅ Terminé — 8/8 req · builds #17/#18 · migrations 011+012 |
 | 2 | Carte stylisée | ✅ Terminé — 4/4 req · vérifié 4/4 · validé device #19 · style Mapbox custom + pivot D-12 |
-| 3 | Création & Détail de point (sheets natifs) | 🔄 En cours — 1/5 plans (03-01 ✅ restructure nav Stack + (tabs) + formSheet) |
+| 3 | Création & Détail de point (sheets natifs) | 🔄 En cours — 2/5 plans (03-01 ✅ restructure nav Stack + (tabs) + formSheet · 03-02 ✅ suppression Modal PointMarker, tap-pin → détail direct) |
 | 4 | Listes & Cercle | ⬜ Not started |
 | 5 | Auth, Profil & Finitions | ⬜ Not started |
 
@@ -62,14 +62,16 @@ See: .planning/PROJECT.md (updated 2026-05-29)
 
 ## Next Step
 
-Vague 1 terminée (**03-01 ✅** restructure (app)→Stack + (tabs) + routes formSheet, tsc clean 0 nouvelle erreur, commits 20751cb + dcb11ad). Prochaine : **Vague 2** — 03-02 (suppression Modal marker) · 03-03 (refonte création carnet + garde dismiss) · 03-04 (refonte détail + segments date), toutes dépendantes de 03-01 désormais en place. Vague 3 : 03-05 (gate device, build #20/OTA).
+Vague 1 terminée (**03-01 ✅**). **Vague 2 en cours** : **03-02 ✅** (suppression Modal PointMarker, tap-pin → `router.push('/(app)/point/[id]')`, nettoyage `handleDelete`/`deletePoint`/`Alert` dans map/index, tsc clean 0 nouvelle erreur, commits 54631e7 + b06d80a). Prochaines : **03-03** (refonte création carnet + clavier sheet + garde dismiss D-04) · **03-04** (refonte détail + segments date + dismiss natif). Vague 3 : 03-05 (gate device, build #20/OTA).
+
+Note : la suppression du Modal a retiré un second point d'entrée de suppression — `deletePoint` ne vit plus que dans le détail (`point/[id].tsx`, RLS-gardé). Quirk iOS de re-sélection (re-taper un pin déjà sélectionné) mitigé via `onDeselected` → reset, à valider device (Plan 05). ESLint non configuré au niveau repo (pré-existant) → garde "eslint clean" non évaluable, substituée par grep + tsc.
 
 Note : Phase 3 = JS uniquement (zéro dépendance) → potentiellement OTA-compatible, mais validation des sheets natifs/gestes/clavier = device (build #20 probable, comme #19).
 
 ## Session
 
-- **Stopped at:** 03-01 terminé — restructure nav (Stack + (tabs) + routes formSheet), tsc clean
-- **Resume file:** .planning/phases/03-cr-ation-d-tail-de-point-sheets-natifs/03-02-PLAN.md
+- **Stopped at:** 03-02 terminé — suppression Modal PointMarker + tap-pin → détail direct, tsc clean
+- **Resume file:** .planning/phases/03-cr-ation-d-tail-de-point-sheets-natifs/03-03-PLAN.md
 
 ---
-*Last updated: 2026-06-02 after 03-01 (restructure navigation → Stack + (tabs) + formSheet, IOS-01/IOS-02)*
+*Last updated: 2026-06-02 after 03-02 (suppression Modal PointMarker + tap-pin → détail direct, IOS-02/D-06)*
