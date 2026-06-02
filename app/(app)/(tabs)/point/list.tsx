@@ -10,28 +10,41 @@ import {
 import { Snackbar } from 'react-native-paper';
 import { SkeletonRow } from '@/components/ui/SkeletonItem';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { haptics } from '@/lib/haptics';
 import { useAuth } from '@/hooks/useAuth';
 import { usePoints } from '@/hooks/usePoints';
 import { useTheme } from '@/hooks/useTheme';
 import { PointListItem } from '@/components/point/PointListItem';
-import {
-  FiltersBottomSheet,
-  DEFAULT_FILTERS,
-  countActiveFilters,
-  type FiltersState,
-  type FilterSort,
-} from '@/components/point/FiltersBottomSheet';
-import { IcoFilter } from '@/components/icons';
 import { F } from '@/constants/fonts';
 import type { Theme } from '@/constants/theme';
 import type { MapPoint } from '@/types/app.types';
+
+/* ─── État de filtre inline (D-03) — remplace FiltersBottomSheet ──────── */
+
+type MinNote = 0 | 5 | 7 | 9;
+type Sort = 'date' | 'note';
+
+/** Clé de tri consommée par groupByMonth (inlinée depuis l'ancien FiltersBottomSheet) */
+type GroupSort = 'date_desc' | 'date_asc' | 'note_desc' | 'note_asc';
+
+const NOTE_OPTIONS: { value: MinNote; label: string }[] = [
+  { value: 0, label: 'Toutes' },
+  { value: 5, label: '5+' },
+  { value: 7, label: '7+' },
+  { value: 9, label: '9+' },
+];
+
+const SORT_OPTIONS: { value: Sort; label: string }[] = [
+  { value: 'date', label: 'Date' },
+  { value: 'note', label: 'Note' },
+];
 
 const MONTHS_FR = [
   'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
   'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre',
 ];
 
-function groupByMonth(points: MapPoint[], sort: FilterSort): { title: string; monthNum: string; data: MapPoint[] }[] {
+function groupByMonth(points: MapPoint[], sort: GroupSort): { title: string; monthNum: string; data: MapPoint[] }[] {
   const sorted = [...points].sort((a, b) => {
     const da = new Date(a.happened_at ?? a.created_at).getTime();
     const db = new Date(b.happened_at ?? b.created_at).getTime();
@@ -61,6 +74,30 @@ function groupByMonth(points: MapPoint[], sort: FilterSort): { title: string; mo
     .map(([, { label, monthNum, items }]) => ({ title: label, monthNum, data: items }));
 }
 
+/* ─── Pill de filtre inline (D-03) ───────────────────────────────────── */
+
+function FilterPill({ label, active, onPress, styles }: {
+  label: string;
+  active: boolean;
+  onPress: () => void;
+  styles: ReturnType<typeof makeStyles>;
+}) {
+  return (
+    <TouchableOpacity
+      style={[styles.pill, active ? styles.pillActive : styles.pillInactive]}
+      onPress={() => {
+        haptics.select();
+        onPress();
+      }}
+      activeOpacity={0.75}
+    >
+      <Text style={[styles.pillLabel, active ? styles.pillLabelActive : styles.pillLabelInactive]}>
+        {label}
+      </Text>
+    </TouchableOpacity>
+  );
+}
+
 export default function PointList() {
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
@@ -71,10 +108,8 @@ export default function PointList() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [snackbar, setSnackbar] = useState<string | null>(null);
-  const [filtersOpen, setFiltersOpen] = useState(false);
-  const [filters, setFilters] = useState<FiltersState>(DEFAULT_FILTERS);
-
-  const activeCount = countActiveFilters(filters);
+  const [minNote, setMinNote] = useState<MinNote>(0);
+  const [sort, setSort] = useState<Sort>('date');
 
   const load = useCallback(async (): Promise<boolean> => {
     if (!user) return false;
@@ -85,7 +120,7 @@ export default function PointList() {
     setLoading(true);
     load().then((ok) => {
       setLoading(false);
-      if (!ok) setSnackbar('Erreur de chargement. Tirez pour réessayer.');
+      if (!ok) setSnackbar('Impossible de charger les moments. Réessayez.');
     });
   }, [load]);
 
@@ -93,32 +128,13 @@ export default function PointList() {
     setRefreshing(true);
     const ok = await load();
     setRefreshing(false);
-    if (!ok) setSnackbar('Erreur de chargement.');
+    if (!ok) setSnackbar('Impossible de charger les moments. Réessayez.');
   }, [load]);
 
-  const filtered = useMemo(() => {
-    return points.filter((p) => {
-      // Filtre par note minimale
-      if (p.note < filters.minNote) return false;
-
-      // Filtre par statut de consentement partenaire
-      if (filters.partnerStatus !== 'all') {
-        if ((p.partnerStatus ?? null) !== filters.partnerStatus) return false;
-      }
-
-      // Filtre par période
-      if (filters.period !== null) {
-        const cutoff = new Date();
-        cutoff.setDate(cutoff.getDate() - filters.period);
-        const date = new Date(p.happened_at ?? p.created_at);
-        if (date < cutoff) return false;
-      }
-
-      return true;
-    });
-  }, [points, filters]);
-
-  const sections = useMemo(() => groupByMonth(filtered, filters.sort), [filtered, filters.sort]);
+  const sections = useMemo(() => {
+    const filtered = points.filter((p) => p.note >= minNote);
+    return groupByMonth(filtered, sort === 'note' ? 'note_desc' : 'date_desc');
+  }, [points, minNote, sort]);
 
   if (loading) {
     return (
@@ -133,75 +149,51 @@ export default function PointList() {
       <SectionList
         sections={sections}
         keyExtractor={(item) => item.id}
-        renderItem={({ item, index, section }) => {
-          const sectionIdx = sections.indexOf(section);
-          const prevTotal = sections.slice(0, sectionIdx).reduce((acc, s) => acc + s.data.length, 0);
-          return <PointListItem point={item} index={prevTotal + index} />;
-        }}
+        renderItem={({ item }) => <PointListItem point={item} />}
         renderSectionHeader={({ section: { title, data } }) => (
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>{title}</Text>
+            <Text style={styles.sectionTitle}>{title.toUpperCase()}</Text>
             <Text style={styles.sectionCount}>{String(data.length).padStart(2, '0')}</Text>
           </View>
         )}
         ListHeaderComponent={
           <View style={styles.header}>
-            <Text style={styles.eyebrow}>le carnet</Text>
-            <Text style={styles.title}>Vos moments</Text>
+            <Text style={styles.title}>Le carnet</Text>
 
-            {/* Stats row */}
-            <View style={styles.statsRow}>
-              <View style={styles.statBlock}>
-                <Text style={styles.statNum}>{String(points.length).padStart(2, '0')}</Text>
-                <Text style={styles.statLabel}>Entrées</Text>
-              </View>
-              {points.length > 0 && (
-                <View style={styles.statDivider} />
-              )}
-              {points.length > 0 && (
-                <View style={styles.statBlock}>
-                  <Text style={styles.statNum}>
-                    {points.length > 0
-                      ? (points.reduce((s, p) => s + p.note, 0) / points.length).toFixed(1)
-                      : '—'}
-                  </Text>
-                  <Text style={styles.statLabel}>Moy.</Text>
-                </View>
-              )}
+            {/* Filtres inline en pills (D-03) */}
+            <View style={styles.pillRow}>
+              {NOTE_OPTIONS.map((o) => (
+                <FilterPill
+                  key={o.value}
+                  label={o.label}
+                  active={minNote === o.value}
+                  onPress={() => setMinNote(o.value)}
+                  styles={styles}
+                />
+              ))}
             </View>
-
-            {/* Bouton Filtres */}
-            <TouchableOpacity
-              style={[styles.filterBar, activeCount > 0 && styles.filterBarActive]}
-              onPress={() => setFiltersOpen(true)}
-              activeOpacity={0.7}
-            >
-              <IcoFilter size={13} color={activeCount > 0 ? T.primary : T.textFaint} />
-              <Text style={[styles.filtersBtnText, activeCount > 0 && styles.filtersBtnTextActive]}>
-                {activeCount > 0 ? `Filtres actifs` : 'Filtres'}
-              </Text>
-              {activeCount > 0 ? (
-                <View style={styles.badge}>
-                  <Text style={styles.badgeText}>{activeCount}</Text>
-                </View>
-              ) : (
-                <Text style={styles.filterArrow}>›</Text>
-              )}
-            </TouchableOpacity>
+            <View style={styles.pillRow}>
+              {SORT_OPTIONS.map((o) => (
+                <FilterPill
+                  key={o.value}
+                  label={o.label}
+                  active={sort === o.value}
+                  onPress={() => setSort(o.value)}
+                  styles={styles}
+                />
+              ))}
+            </View>
           </View>
         }
         ListEmptyComponent={
           <View style={styles.empty}>
-            <Text style={styles.emptyTitle}>
-              {activeCount > 0
-                ? 'Aucun résultat\npour ces filtres.'
-                : 'Aucun moment\nn\'a encore été inscrit.'}
-            </Text>
+            <Text style={styles.emptyTitle}>Le carnet est vide.</Text>
+            <Text style={styles.emptyBody}>Posez votre premier moment sur la carte.</Text>
           </View>
         }
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
-        stickySectionHeadersEnabled={false}
+        stickySectionHeadersEnabled={true}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -210,13 +202,6 @@ export default function PointList() {
             colors={[T.primary]}
           />
         }
-      />
-
-      <FiltersBottomSheet
-        visible={filtersOpen}
-        filters={filters}
-        onApply={(f) => setFilters(f)}
-        onClose={() => setFiltersOpen(false)}
       />
 
       <Snackbar visible={!!snackbar} onDismiss={() => setSnackbar(null)} duration={3000} style={styles.snackbar}>
@@ -234,98 +219,48 @@ const makeStyles = (T: Theme) => StyleSheet.create({
     paddingHorizontal: 24,
     marginBottom: 8,
   },
-  eyebrow: {
-    fontFamily: F.mono,
-    fontSize: 9,
-    letterSpacing: 2.5,
-    textTransform: 'uppercase',
-    color: T.textFaint,
-    marginBottom: 6,
-  },
   title: {
     fontFamily: F.serifLight,
     fontStyle: 'italic',
-    fontSize: 48,
-    lineHeight: 46,
-    letterSpacing: -2,
+    fontSize: 36,
+    lineHeight: 40,
+    letterSpacing: -1,
     color: T.text,
     marginBottom: 16,
   },
-  statsRow: {
+  pillRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: 20,
-    marginBottom: 20,
-  },
-  statBlock: { alignItems: 'flex-start' },
-  statDivider: {
-    width: 1,
-    height: 24,
-    backgroundColor: T.border,
-  },
-  statNum: {
-    fontFamily: F.mono,
-    fontSize: 22,
-    letterSpacing: -0.5,
-    color: T.text,
-    lineHeight: 24,
-  },
-  statLabel: {
-    fontFamily: F.mono,
-    fontSize: 8,
-    letterSpacing: 2,
-    textTransform: 'uppercase',
-    color: T.textFaint,
-    marginTop: 2,
-  },
-  filterBar: {
-    marginHorizontal: -24,
-    borderTopWidth: 1,
-    borderTopColor: T.border,
-    borderBottomWidth: 1,
-    borderBottomColor: T.border,
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    flexDirection: 'row',
-    alignItems: 'center',
     gap: 8,
+    marginBottom: 8,
   },
-  filterBarActive: {
-    borderTopColor: T.primary + '40',
-    borderBottomColor: T.primary + '40',
-  },
-  filtersBtnText: {
-    fontFamily: F.mono,
-    fontSize: 9,
-    letterSpacing: 2,
-    textTransform: 'uppercase',
-    color: T.textFaint,
-    flex: 1,
-  },
-  filtersBtnTextActive: {
-    color: T.primary,
-  },
-  filterArrow: {
-    fontFamily: F.sansLight,
-    fontSize: 18,
-    color: T.textFaint,
-    lineHeight: 18,
-  },
-  badge: {
-    backgroundColor: T.primary,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    alignItems: 'center',
+  pill: {
+    borderRadius: T.pill,
+    borderCurve: 'continuous',
+    paddingHorizontal: 12,
+    height: 44,
     justifyContent: 'center',
-    minWidth: 18,
-    height: 16,
+    alignItems: 'center',
+    borderWidth: 1,
   },
-  badgeText: {
+  pillActive: {
+    backgroundColor: T.primary,
+    borderColor: T.primary,
+  },
+  pillInactive: {
+    backgroundColor: 'transparent',
+    borderColor: T.border,
+  },
+  pillLabel: {
     fontFamily: F.mono,
-    fontSize: 9,
-    color: '#ffffff',
-    lineHeight: 14,
-    letterSpacing: 0.5,
+    fontSize: 10,
+    letterSpacing: 1.5,
+    textTransform: 'uppercase',
+  },
+  pillLabelActive: {
+    color: T.text,
+  },
+  pillLabelInactive: {
+    color: T.textDim,
   },
   listContent: { paddingHorizontal: 24, paddingBottom: 100 },
   sectionHeader: {
@@ -336,6 +271,7 @@ const makeStyles = (T: Theme) => StyleSheet.create({
     paddingBottom: 8,
     borderBottomWidth: 1,
     borderBottomColor: T.border,
+    backgroundColor: T.bg,
   },
   sectionTitle: {
     fontFamily: F.mono,
@@ -359,6 +295,14 @@ const makeStyles = (T: Theme) => StyleSheet.create({
     lineHeight: 34,
     color: T.textDim,
     textAlign: 'center',
-    marginBottom: 20,
+    marginBottom: 12,
+  },
+  emptyBody: {
+    fontFamily: F.mono,
+    fontSize: 10,
+    letterSpacing: 1.5,
+    textTransform: 'uppercase',
+    color: T.textFaint,
+    textAlign: 'center',
   },
 });

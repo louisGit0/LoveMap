@@ -10,8 +10,6 @@ import { PressableScale } from '@/components/ui/PressableScale';
 
 interface Props {
   point: MapPoint;
-  /** @deprecated N°00X supprimé (D-01) — conservé transitoirement, retiré en 04-01 Task 3 */
-  index?: number;
 }
 
 export function PointListItem({ point }: Props) {
