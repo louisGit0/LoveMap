@@ -85,8 +85,8 @@ Chaque phase livre une tranche visible bout-en-bout. Les fondations techniques s
 3. Tous les écrans refondus respectent safe areas, home indicator et Dynamic Type sans casse, en thèmes clair et sombre.
 4. Une passe finale confirme cohérence visuelle et absence de régression sur l'ensemble des 9 écrans.
 
-**Plans:** 4 plans en 3 vagues
-- [ ] 05-01-PLAN.md — AppText variant display (F.serifLight, cap 1.15) + caps Dynamic Type par role (D-06, IOS-04 lever) [vague 1]
+**Plans:** 1/4 plans complete
+- [x] 05-01-PLAN.md — AppText variant display (F.serifLight, cap 1.15) + caps Dynamic Type par role (D-06, IOS-04 lever) [vague 1]
 - [ ] 05-02-PLAN.md — Refonte auth page de couverture : login + register (stepper conserve) + fix MIN_AGE (D-11) + CTA (D-12) + insets.bottom (UI-01) [vague 2]
 - [ ] 05-03-PLAN.md — Refonte profil page de couverture + bento Analyse + toggle unique a11y (D-09) + delete Alert seule (D-08) + avatar PRESERVE (UI-08) [vague 2]
 - [ ] 05-04-PLAN.md — Passe IOS-04 sur les 6 ecrans hors-refonte (home indicator insets.bottom + caps heroes + sweep tokens, clair+dark) (IOS-04) [vague 3]
@@ -108,4 +108,4 @@ Tous les requirements v1 sont mappés à exactement une phase.
 **Total :** 22 / 22 requirements mappés ✓
 
 ---
-*Last updated: 2026-06-02 after 04-03 (Demandes UI-07 — 2 sections eyebrow + consentement taguage inline respondToTag). Phase 4 : 3/3 plans, gate device en attente.*
+*Last updated: 2026-06-02 after 05-01 (AppText `display` variant — F.serifLight cap 1.15, levier central D-06/IOS-04). Phase 5 : 1/4 plans. tsc baseline phase = 21 (0 nouvelle erreur).*

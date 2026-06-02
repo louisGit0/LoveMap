@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: "Phase 04 terminée (3/3 plans) — validée device #28"
-stopped_at: Phase 5 contexte capturé
-last_updated: "2026-06-02T18:10:30.359Z"
+status: "Phase 05 en cours (1/4 plans) — 05-01 AppText display variant exécuté"
+stopped_at: Phase 5 — 05-01 terminé (AppText display)
+last_updated: "2026-06-02T18:40:00.000Z"
 progress:
   total_phases: 5
   completed_phases: 4
   total_plans: 21
-  completed_plans: 17
-  percent: 80
+  completed_plans: 18
+  percent: 86
 ---
 
 # STATE — LoveMap (Refonte UI/UX iOS)
@@ -34,7 +34,7 @@ See: .planning/PROJECT.md (updated 2026-05-29)
 | 2 | Carte stylisée | ✅ Terminé — 4/4 req · vérifié 4/4 · validé device #19 · style Mapbox custom + pivot D-12 |
 | 3 | Création & Détail de point (sheets natifs) | ✅ Terminé — 5/5 plans · validé device #26 · **pivot formSheet→modal** (bug iOS 26 RNS 4.16 #3235) · aperçu carte retiré (location stamp) (03-01 nav Stack+(tabs) · 03-02 tap-pin → détail direct · 03-03 création carnet note-first · 03-04 détail carnet lecture + segments date #2125 · 03-05 validation device + correctifs sheet) |
 | 4 | Listes & Cercle | ✅ Terminé — 3/3 plans · validé device #28 · liste table des matières + cercle (retrait d'ami) + demandes (consentement taguage inline `respondToTag`) · `FiltersBottomSheet` supprimé |
-| 5 | Auth, Profil & Finitions | ⬜ Not started |
+| 5 | Auth, Profil & Finitions | 🔄 En cours — 1/4 plans · 05-01 AppText `display` (F.serifLight, cap 1.15 — levier D-06/IOS-04) · tsc baseline 21, 0 nouvelle erreur |
 
 **Requirements:** 19 / 22 complete (Phase 1 : STAB-01/02/03, FOND-01/02/03/04, IOS-03 · Phase 2 : MAP-01, MAP-02, MAP-03, UI-02 · Phase 3 : IOS-01, IOS-02, UI-03, UI-04 · Phase 4 : UI-05, UI-06, UI-07)
 
@@ -62,9 +62,9 @@ See: .planning/PROJECT.md (updated 2026-05-29)
 
 ## Next Step
 
-**Phase 4 terminée et validée device (#28).** Milestone à **4/5 phases (80 %)**. Reste **Phase 5 — Auth, Profil & Finitions** (UI-01 auth, UI-08 profil « page de couverture », IOS-04 finitions transverses : safe areas, Dynamic Type, passe de cohérence sur les 9 écrans) : `/gsd:discuss-phase 5` → ui → plan → execute → build device.
+**Phase 5 en cours — 05-01 exécuté (1/4 plans).** Reste 05-02 (refonte auth login+register, vague 2), 05-03 (refonte profil + bento Analyse, vague 2), 05-04 (passe IOS-04 sur 6 écrans hors-refonte, vague 3). 05-01 a posé le levier central D-06 : `AppText` variant `display` (F.serifLight, cap 1.15) que 05-02/03/04 consomment.
 
-Baseline tsc phase = **21** (la suppression de `FiltersBottomSheet` en 04-01 a retiré des erreurs pré-existantes). Nouveau code phase 4 : 0 nouvelle erreur.
+Baseline tsc phase = **21** (confirmé à frais en 05-01 Task 0 — inchangé depuis la phase 4). Nouveau code 05-01 : 0 nouvelle erreur. **Gate « 0 nouvelle erreur » = 21 pour tous les plans de la Phase 5.**
 
 Dette connue laissée (hors périmètre) : `handleCancel` (section « Envoyées » de requests.tsx) garde un appel Supabase direct (déviation rule-4 pré-existante) — documenté, non étendu ; `friends/index.tsx loadFriends` idem. À router via hook lors d'une passe future si souhaité.
 
@@ -74,4 +74,4 @@ Dette connue laissée (hors périmètre) : `handleCancel` (section « Envoyées 
 - **Resume file:** .planning/phases/05-auth-profil-finitions/05-CONTEXT.md
 
 ---
-*Last updated: 2026-06-02 after Phase 4 device validation (#28) — Listes & Cercle terminée 3/3, milestone 4/5*
+*Last updated: 2026-06-02 after 05-01 (AppText `display` variant — F.serifLight cap 1.15, levier central D-06/IOS-04). Phase 5 : 1/4 plans, tsc baseline 21 confirmée à frais (0 nouvelle erreur).*
