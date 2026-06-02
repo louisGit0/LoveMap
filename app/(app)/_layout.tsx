@@ -1,66 +1,23 @@
-import { useEffect, useMemo } from 'react';
-import { View, StyleSheet } from 'react-native';
-import { Tabs, router } from 'expo-router';
+import { useEffect } from 'react';
+import { Stack, router } from 'expo-router';
 import { useAuthStore } from '@/stores/authStore';
-import { useFriendStore } from '@/stores/friendStore';
 import { useTheme } from '@/hooks/useTheme';
-import { useThemeStore } from '@/stores/themeStore';
-import { F } from '@/constants/fonts';
-import type { Theme } from '@/constants/theme';
-import { IcoPin, IcoList, IcoCircle, IcoUser } from '@/components/icons';
 
-function TabIcon({
-  Icon,
-  focused,
-  badge,
-}: {
-  Icon: React.ComponentType<{ size?: number; color?: string }>;
-  focused: boolean;
-  badge?: boolean;
-}) {
-  const T = useTheme();
-  const { isDark } = useThemeStore();
-  const inactiveColor = isDark ? '#636366' : '#8e8e93';
-
-  return (
-    <View style={{ alignItems: 'center' }}>
-      {focused && (
-        <View
-          style={{
-            position: 'absolute',
-            top: -10,
-            height: 2,
-            width: 24,
-            backgroundColor: T.primary,
-          }}
-        />
-      )}
-      <Icon size={22} color={focused ? T.primary : inactiveColor} />
-      {badge && (
-        <View
-          style={{
-            position: 'absolute',
-            top: 0,
-            right: -8,
-            width: 6,
-            height: 6,
-            borderRadius: 3,
-            backgroundColor: T.primary,
-          }}
-        />
-      )}
-    </View>
-  );
-}
+// `presentation` narrowed to its literal so it satisfies the native-stack
+// options union; the rest stays inferred (mutable number[] / boolean) to avoid
+// the readonly-tuple incompatibility a blanket `as const` introduces (A1 / tsc gate).
+const sheetOptions = {
+  presentation: 'formSheet' as const,
+  sheetAllowedDetents: [0.92],   // D-02 détent unique large (≥0.7 atténue #3235)
+  sheetGrabberVisible: true,     // D-03 poignée iOS visible
+  sheetCornerRadius: 28,         // D-03 = T.radiusXl
+  gestureEnabled: true,          // IOS-01 swipe-to-dismiss natif
+  headerShown: false,            // header éditorial interne
+};
 
 export default function AppLayout() {
   const { session, loading } = useAuthStore();
-  const { pendingReceived } = useFriendStore();
   const T = useTheme();
-  const { isDark } = useThemeStore();
-  const styles = useMemo(() => makeStyles(T, isDark), [T, isDark]);
-
-  const inactiveTint = isDark ? '#636366' : '#8e8e93';
 
   useEffect(() => {
     if (!loading && !session) router.replace('/(auth)/login');
@@ -69,70 +26,10 @@ export default function AppLayout() {
   if (!session) return null;
 
   return (
-    <Tabs
-      screenOptions={{
-        headerShown: false,
-        tabBarStyle: styles.tabBar,
-        tabBarShowLabel: true,
-        tabBarLabelStyle: styles.tabLabel,
-        tabBarActiveTintColor: T.primary,
-        tabBarInactiveTintColor: inactiveTint,
-      }}
-    >
-      <Tabs.Screen
-        name="map/index"
-        options={{
-          title: 'Map',
-          tabBarIcon: ({ focused }) => <TabIcon Icon={IcoPin} focused={focused} />,
-        }}
-      />
-      <Tabs.Screen
-        name="point/list"
-        options={{
-          title: 'Moments',
-          tabBarIcon: ({ focused }) => <TabIcon Icon={IcoList} focused={focused} />,
-        }}
-      />
-      <Tabs.Screen
-        name="friends/index"
-        options={{
-          title: 'Amis',
-          tabBarIcon: ({ focused }) => (
-            <TabIcon Icon={IcoCircle} focused={focused} badge={pendingReceived.length > 0} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="profile/index"
-        options={{
-          title: 'Moi',
-          tabBarIcon: ({ focused }) => <TabIcon Icon={IcoUser} focused={focused} />,
-        }}
-      />
-      {/* Écrans cachés de la tab bar */}
-      <Tabs.Screen name="point/new" options={{ href: null }} />
-      <Tabs.Screen name="point/[id]" options={{ href: null }} />
-      <Tabs.Screen name="friends/requests" options={{ href: null }} />
-    </Tabs>
+    <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: T.bg } }}>
+      <Stack.Screen name="(tabs)" />
+      <Stack.Screen name="point/new" options={sheetOptions} />
+      <Stack.Screen name="point/[id]" options={sheetOptions} />
+    </Stack>
   );
 }
-
-const makeStyles = (T: Theme, isDark: boolean) => StyleSheet.create({
-  tabBar: {
-    // Fond opaque — le BlurView translucide cause des problèmes de lisibilité
-    backgroundColor: isDark ? '#111114' : '#f2f2f7',
-    borderTopWidth: 0.5,
-    borderTopColor: isDark ? '#2c2c2e' : '#c6c6c8',
-    height: 83,
-    paddingBottom: 28,
-    paddingTop: 10,
-    elevation: 0,
-  },
-  tabLabel: {
-    fontFamily: F.mono,
-    fontSize: 9,
-    letterSpacing: 1.5,
-    textTransform: 'uppercase',
-    marginTop: 3,
-  },
-});
