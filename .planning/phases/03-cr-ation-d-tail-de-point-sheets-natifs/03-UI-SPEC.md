@@ -1,10 +1,11 @@
 ---
 phase: 3
 slug: cr-ation-d-tail-de-point-sheets-natifs
-status: draft
+status: approved
 shadcn_initialized: false
 preset: none
 created: 2026-06-02
+reviewed_at: 2026-06-02
 ---
 
 # Phase 3 — UI Design Contract · Création & Détail de point (sheets natifs)
