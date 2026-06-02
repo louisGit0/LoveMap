@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: "Phase 04 terminée (3/3 plans) — validée device #28"
-stopped_at: "Phase 4 terminée et validée device (#28) : liste « table des matières » (note /10 serif, sections par mois sticky, filtres pills inline, FiltersBottomSheet supprimé), « Le cercle » (annuaire + retrait d'ami éditorial), Demandes (2 sections + Envoyées, consentement taguage INLINE via hook respondToTag, W2 corrigé). tsc 21, 0 nouvelle erreur."
-last_updated: "2026-06-02T19:10:00.000Z"
+stopped_at: Phase 5 contexte capturé
+last_updated: "2026-06-02T17:25:52.980Z"
 progress:
   total_phases: 5
   completed_phases: 4
@@ -70,8 +70,8 @@ Dette connue laissée (hors périmètre) : `handleCancel` (section « Envoyées 
 
 ## Session
 
-- **Stopped at:** Phase 4 terminée, validée device (#28). 3 écrans refondus « table des matières » (liste, cercle, demandes) + retrait d'ami + consentement taguage inline (`respondToTag`). FiltersBottomSheet supprimé. tsc 21, 0 nouvelle erreur.
-- **Resume file:** Phase 5 — `/gsd:discuss-phase 5`
+- **Stopped at:** Phase 5 contexte capturé
+- **Resume file:** .planning/phases/05-auth-profil-finitions/05-CONTEXT.md
 
 ---
 *Last updated: 2026-06-02 after Phase 4 device validation (#28) — Listes & Cercle terminée 3/3, milestone 4/5*
