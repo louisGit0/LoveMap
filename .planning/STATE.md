@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: Phase 02 complete
-stopped_at: Phase 3 planifiée (5 plans, 3 vagues) — vérifiée PASS
-last_updated: "2026-06-02T06:06:34.222Z"
+status: Phase 03 en cours (1/5 plans)
+stopped_at: 03-01 terminé — restructure nav (Stack + (tabs) + routes formSheet), tsc clean
+last_updated: "2026-06-02T07:00:00.000Z"
 progress:
   total_phases: 5
   completed_phases: 2
   total_plans: 14
-  completed_plans: 9
+  completed_plans: 11
   percent: 40
 ---
 
@@ -20,7 +20,7 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-29)
 
 **Core value:** L'expérience visuelle et tactile doit donner l'impression d'un produit iOS premium, beau, fluide et stable sur iPhone.
-**Current focus:** Phase 2 terminée → prochaine : Phase 3 (Création & Détail de point, sheets natifs)
+**Current focus:** Phase 03 — cr-ation-d-tail-de-point-sheets-natifs
 
 ## Milestone
 
@@ -32,11 +32,11 @@ See: .planning/PROJECT.md (updated 2026-05-29)
 |-------|------|--------|
 | 1 | Stabilisation & Fondations | ✅ Terminé — 8/8 req · builds #17/#18 · migrations 011+012 |
 | 2 | Carte stylisée | ✅ Terminé — 4/4 req · vérifié 4/4 · validé device #19 · style Mapbox custom + pivot D-12 |
-| 3 | Création & Détail de point (sheets natifs) | 📋 Planifiée (5 plans, 3 vagues — vérifiée PASS) |
+| 3 | Création & Détail de point (sheets natifs) | 🔄 En cours — 1/5 plans (03-01 ✅ restructure nav Stack + (tabs) + formSheet) |
 | 4 | Listes & Cercle | ⬜ Not started |
 | 5 | Auth, Profil & Finitions | ⬜ Not started |
 
-**Requirements:** 12 / 22 complete (Phase 1 : STAB-01/02/03, FOND-01/02/03/04, IOS-03 · Phase 2 : MAP-01, MAP-02, MAP-03, UI-02)
+**Requirements:** 14 / 22 complete (Phase 1 : STAB-01/02/03, FOND-01/02/03/04, IOS-03 · Phase 2 : MAP-01, MAP-02, MAP-03, UI-02 · Phase 3 : IOS-01, IOS-02)
 
 ## Config
 
@@ -62,14 +62,14 @@ See: .planning/PROJECT.md (updated 2026-05-29)
 
 ## Next Step
 
-`/gsd:execute-phase 3` — 5 plans en 3 vagues. Vague 1 : 03-01 (restructure (app)→Stack + (tabs) + routes formSheet, item le plus risqué). Vague 2 : 03-02 (suppression Modal marker) · 03-03 (refonte création carnet + garde dismiss) · 03-04 (refonte détail + segments date). Vague 3 : 03-05 (gate device, build #20/OTA). 03-02/03/04 dépendent de 03-01.
+Vague 1 terminée (**03-01 ✅** restructure (app)→Stack + (tabs) + routes formSheet, tsc clean 0 nouvelle erreur, commits 20751cb + dcb11ad). Prochaine : **Vague 2** — 03-02 (suppression Modal marker) · 03-03 (refonte création carnet + garde dismiss) · 03-04 (refonte détail + segments date), toutes dépendantes de 03-01 désormais en place. Vague 3 : 03-05 (gate device, build #20/OTA).
 
 Note : Phase 3 = JS uniquement (zéro dépendance) → potentiellement OTA-compatible, mais validation des sheets natifs/gestes/clavier = device (build #20 probable, comme #19).
 
 ## Session
 
-- **Stopped at:** Phase 3 planifiée (5 plans, 3 vagues) — vérifiée PASS
-- **Resume file:** .planning/phases/03-cr-ation-d-tail-de-point-sheets-natifs/03-01-PLAN.md
+- **Stopped at:** 03-01 terminé — restructure nav (Stack + (tabs) + routes formSheet), tsc clean
+- **Resume file:** .planning/phases/03-cr-ation-d-tail-de-point-sheets-natifs/03-02-PLAN.md
 
 ---
-*Last updated: 2026-06-01 after Phase 2 completion (build #19, custom Mapbox style, D-12 pivot)*
+*Last updated: 2026-06-02 after 03-01 (restructure navigation → Stack + (tabs) + formSheet, IOS-01/IOS-02)*

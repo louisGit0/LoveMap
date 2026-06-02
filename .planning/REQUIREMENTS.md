@@ -28,8 +28,8 @@ Requirements pour ce cap (stabilisation + refonte UI/UX). Chacun mappé à une p
 
 ### Patterns iOS natifs
 
-- [ ] **IOS-01**: La création et le détail de point s'affichent dans des bottom sheets natifs à détentes (`presentation: 'formSheet'`, poignée, swipe-to-dismiss, detents ≥ 0.7)
-- [ ] **IOS-02**: La navigation utilise le swipe-back natif (migration des `Modal` custom vers des routes Stack avec `gestureEnabled`)
+- [x] **IOS-01**: La création et le détail de point s'affichent dans des bottom sheets natifs à détentes (`presentation: 'formSheet'`, poignée, swipe-to-dismiss, detents ≥ 0.7)
+- [x] **IOS-02**: La navigation utilise le swipe-back natif (migration des `Modal` custom vers des routes Stack avec `gestureEnabled`)
 - [ ] **IOS-03**: Les actions clés (création de point, consentement, navigation, suppression) déclenchent un retour haptique approprié
 - [ ] **IOS-04**: Tous les écrans respectent parfaitement les safe areas, le home indicator et le Dynamic Type sans casse de layout
 
@@ -83,8 +83,8 @@ Quelles phases couvrent quels requirements. Rempli pendant la création de la ro
 | MAP-02 | Phase 2 | Pending |
 | MAP-03 | Phase 2 | Complete |
 | UI-02 | Phase 2 | Pending |
-| IOS-01 | Phase 3 | Pending |
-| IOS-02 | Phase 3 | Pending |
+| IOS-01 | Phase 3 | Complete |
+| IOS-02 | Phase 3 | Complete |
 | UI-03 | Phase 3 | Pending |
 | UI-04 | Phase 3 | Pending |
 | UI-05 | Phase 4 | Pending |
