@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: "Phase 05 terminée (4/4 plans) — 05-04 passe IOS-04 (home indicator insets + caps heroes) exécutée · milestone v1.0 code-complete"
-stopped_at: Phase 5 — 05-04 terminé (sweep IOS-04 sur les 6 écrans hors-refonte) · milestone v1.0 code-complete
-last_updated: "2026-06-02T20:05:00.000Z"
+status: "✅ MILESTONE v1.0 TERMINÉ — Phase 05 validée device #29 (5/5 phases, 22/22 requirements)"
+stopped_at: "Phase 5 validée device (#29). Milestone Refonte UI/UX iOS LIVRÉ : 5 phases, 22 requirements, 9 écrans refondus, builds #17→#29."
+last_updated: "2026-06-02T22:40:00.000Z"
 progress:
   total_phases: 5
   completed_phases: 5
@@ -20,7 +20,7 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-29)
 
 **Core value:** L'expérience visuelle et tactile doit donner l'impression d'un produit iOS premium, beau, fluide et stable sur iPhone.
-**Current focus:** Phase 5 — Auth, Profil & Finitions
+**Current focus:** ✅ Milestone v1.0 terminé (toutes phases validées device). Prochain jalon à définir si besoin (`/gsd:new-milestone`).
 
 ## Milestone
 
@@ -34,7 +34,7 @@ See: .planning/PROJECT.md (updated 2026-05-29)
 | 2 | Carte stylisée | ✅ Terminé — 4/4 req · vérifié 4/4 · validé device #19 · style Mapbox custom + pivot D-12 |
 | 3 | Création & Détail de point (sheets natifs) | ✅ Terminé — 5/5 plans · validé device #26 · **pivot formSheet→modal** (bug iOS 26 RNS 4.16 #3235) · aperçu carte retiré (location stamp) (03-01 nav Stack+(tabs) · 03-02 tap-pin → détail direct · 03-03 création carnet note-first · 03-04 détail carnet lecture + segments date #2125 · 03-05 validation device + correctifs sheet) |
 | 4 | Listes & Cercle | ✅ Terminé — 3/3 plans · validé device #28 · liste table des matières + cercle (retrait d'ami) + demandes (consentement taguage inline `respondToTag`) · `FiltersBottomSheet` supprimé |
-| 5 | Auth, Profil & Finitions | ✅ Terminé — 4/4 plans · 05-01 AppText `display` (levier D-06/IOS-04) · 05-02 refonte auth login + register « page de couverture » + fix MIN_AGE (D-11) + CTA « Vérifier mon âge » (D-12) + insets.bottom (IOS-04) · 05-03 refonte profil « page de couverture » + bento Analyse (grande tuile = points.length T.text) + toggle unique a11y (D-09) + delete Alert seule (D-08) + avatar PRESERVE (UI-08) + insets · 05-04 passe IOS-04 sur les 6 écrans hors-refonte (home indicator insets.bottom + 64 + caps heroes 1.25/1.15, clair+dark) · tsc 20 (0 nouvelle erreur) |
+| 5 | Auth, Profil & Finitions | ✅ Terminé — 4/4 plans · **validé device #29** · 05-01 AppText `display` (levier D-06/IOS-04) · 05-02 refonte auth login + register « page de couverture » + fix MIN_AGE (D-11) + CTA « Vérifier mon âge » (D-12) + insets.bottom (IOS-04) · 05-03 refonte profil « page de couverture » + bento Analyse (grande tuile = points.length T.text) + toggle unique a11y (D-09) + delete Alert seule (D-08) + avatar PRESERVE (UI-08) + insets · 05-04 passe IOS-04 sur les 6 écrans hors-refonte (home indicator insets.bottom + 64 + caps heroes 1.25/1.15, clair+dark) · tsc 20 (0 nouvelle erreur) |
 
 **Requirements:** 22 / 22 complete (Phase 1 : STAB-01/02/03, FOND-01/02/03/04, IOS-03 · Phase 2 : MAP-01, MAP-02, MAP-03, UI-02 · Phase 3 : IOS-01, IOS-02, UI-03, UI-04 · Phase 4 : UI-05, UI-06, UI-07 · Phase 5 : UI-01, UI-08, IOS-04 ✓) — **milestone v1.0 code-complete**
 
@@ -62,18 +62,16 @@ See: .planning/PROJECT.md (updated 2026-05-29)
 
 ## Next Step
 
-**Phase 5 terminée (4/4 plans) — milestone v1.0 code-complete.** 05-04 a exécuté la passe IOS-04 (D-07) sur les 6 écrans hors-refonte : (1) `point/list`, `friends/index`, `friends/requests` — `paddingBottom: 100` magique réconcilié en **`insets.bottom + 64`** (dégage la tab bar opaque 83px, suit le home indicator) + plafond Dynamic Type sur le hero serifLight 36 de chaque écran (« Le carnet » / « Le cercle » / « Demandes » → `maxFontSizeMultiplier={1.25}`) ; (2) `point/new` + `point/[id]` — hero note serifLight Display plafonné à **1.15** ; padding home-indicator (`insets.bottom + 32`) **vérifié** déjà conforme ; (3) `map/index` — FAB (`insets.bottom + 80`) et hint (`insets.bottom + 148`) **vérifiés** insets-based, aucun hero serif in-file (le texte d'en-tête vit dans le composant partagé `MapHeader`, hors périmètre). Sweep surgical : heroes uniquement (Pitfall 3 évité), aucune primitive partagée touchée, tab bar opaque inchangée (règle 13), 0 hex/fontFamily en dur introduit.
+✅ **Milestone v1.0 « Refonte UI/UX iOS » TERMINÉ et validé device.** 5 phases, 22/22 requirements, 9 écrans refondus (carte, création/détail/liste de points, cercle, demandes, login, register, profil), builds #17→#29 sur TestFlight.
 
-**Reste pour clore le milestone :** build de phase (orchestrateur) + validation device TestFlight clair+dark (9 écrans : rien sous le home indicator, Dynamic Type max sans casse des heroes, tab bar opaque).
+Plus de phase planifiée. Options : définir un nouveau jalon (`/gsd:new-milestone`), ou traiter la dette connue ci-dessous lors d'une passe dédiée.
 
-Baseline tsc phase = **20**. Nouveau code 05-04 : 0 nouvelle erreur (tsc reste 20).
-
-Dette connue laissée (hors périmètre, non étendue cette phase) : `handleCancel` (section « Envoyées » de requests.tsx) garde un appel Supabase direct (déviation rule-4 pré-existante) — documenté, non touché ; `friends/index.tsx loadFriends` idem. À router via hook lors d'une passe future si souhaité.
+**Dette connue laissée (hors périmètre, documentée) :** `requests.tsx handleCancel` (section « Envoyées ») + `friends/index.tsx loadFriends` gardent un appel Supabase direct (déviation rule-4 pré-existante) — à router via hook si souhaité. Baseline tsc = **20** (erreurs pré-existantes types Supabase `never`).
 
 ## Session
 
-- **Stopped at:** Phase 5 — 05-04 terminé (passe IOS-04 sur les 6 écrans hors-refonte) · milestone v1.0 code-complete
-- **Resume file:** .planning/phases/05-auth-profil-finitions/05-CONTEXT.md
+- **Stopped at:** ✅ Milestone v1.0 terminé — Phase 5 validée device (#29). Toutes phases validées.
+- **Resume file:** — (milestone clos ; `/gsd:new-milestone` pour la suite)
 
 ---
-*Last updated: 2026-06-02 after 05-04 (passe IOS-04 : home indicator insets.bottom + 64 + caps heroes 1.25/1.15, clair+dark). Phase 5 : 4/4 plans, milestone v1.0 code-complete, tsc 20 (baseline 20, 0 nouvelle erreur).*
+*Last updated: 2026-06-02 — MILESTONE v1.0 TERMINÉ (Phase 5 validée device #29, 5/5 phases, 22/22 requirements, builds #17→#29).*

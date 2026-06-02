@@ -87,7 +87,7 @@ lovemap/
 │       ├── point/list.tsx        # Liste chronologique des moments
 │       ├── friends/index.tsx     # "Cercle" — liste amis + recherche
 │       ├── friends/requests.tsx  # Demandes d'amitié
-│       └── profile/index.tsx     # Profil + stats + toggle thème + email/mdp/delete (settings fusionné)
+│       └── profile/index.tsx     # Profil « page de couverture » : avatar carré + bento Analyse (P5) + toggle thème unique + email/mdp + suppression (Alert seule)
 ├── components/
 │   ├── map/
 │   │   ├── AppMapView.tsx        # Carte mobile (@rnmapbox/maps — MapboxGL.MapView + Camera)
@@ -302,8 +302,10 @@ Le toggle dark/light est dans `app/(app)/profile/index.tsx` via `useThemeStore` 
 | 20-27 | ✅ Terminé | Builds EAS #20→#27 — cycle de correctifs « sheets noirs » révélé par validation device. **Cause racine (#26)** : `formSheet` cassé sur iOS 26 + react-native-screens 4.16 (RNS [#3235](https://github.com/software-mansion/react-native-screens/issues/3235), contenu ancré en bas = sheet noir, non corrigé jusqu'à 4.20+, non corrigeable JS) → bascule **`presentation: 'modal'`** (règle 19). Étapes : aperçu carte retiré (MapView GL & `<Image>` noirs en formSheet) → location stamp/adresse · layout (no KAV + `contentInsetAdjustmentBehavior="never"` + `automaticallyAdjustKeyboardInsets`) · #25 taille explicite (a empiré) · **#26 modal = validé device** · **#27 aperçu carte `<Image>` statique restauré** (fiable en modal, validé device). |
 | GSD-P4 | ✅ Terminé | Phase 4 (Listes & Cercle) **validée device #28** — refonte « table des matières » des 3 écrans : **liste** (`point/list`, note /10 en gros chiffre serif `T.text` sans N°00X, sections par mois sticky, **filtres en pills inline**, `FiltersBottomSheet.tsx` **supprimé**), **cercle** (`friends/index`, annuaire éditorial + **retrait d'ami** via Alert/`haptics.warn`/`useFriends.unfriend`), **demandes** (`friends/requests`, 2 sections eyebrow + Envoyées, **consentement taguage INLINE** via nouvelle méthode `useFriends.respondToTag` mono-table `point_partners` — `is_visible` via trigger). tsc baseline 36→**21** (suppression FiltersBottomSheet) ; 0 nouvelle erreur. Cycle GSD complet (discuss→ui→plan→execute). Détail : .planning/phases/04-listes-cercle/ |
 | 28 | ✅ Terminé | Build EAS natif iOS #28 — code Phase 4, soumis TestFlight, **validé device** (clair + sombre). Milestone 4/5 phases (80 %). |
+| GSD-P5 | ✅ Terminé | Phase 5 (Auth, Profil & Finitions) **validée device #29** — **dernière phase**. **Auth « page de couverture »** : `login` compact (eyebrow « LOVEMAP · ÉDITION INTIME », champs visibles), `register` stepper restylé + **fix bug `MIN_AGE`** (`register.tsx` importait `{ MIN_AGE }` inexistant → `APP_CONFIG.MIN_AGE` ; vérif client < 18 désormais active, trigger serveur autoritaire inchangé) + CTA « Vérifier mon âge ». **Profil « page de couverture »** : avatar carré + bento Analyse (grande tuile = `points.length` « PAGES DU CARNET » en `T.text`), toggle thème unique + a11y, **suppression compte = Alert seule** (champ « EFFACER » retiré), **avatar upload préservé verbatim** (règles 14/15/17). **IOS-04** : `AppText` variant `display` + plafonds Dynamic Type par rôle, sweep home-indicator (`insets.bottom`) + tokens sur les 9 écrans, clair + sombre. tsc 21→**20** (fix MIN_AGE) ; 0 nouvelle erreur. Détail : .planning/phases/05-auth-profil-finitions/ |
+| 29 | ✅ Terminé | Build EAS natif iOS #29 — code Phase 5, soumis TestFlight, **validé device** (clair + sombre + Dynamic Type). **🎉 Milestone v1.0 « Refonte UI/UX iOS » TERMINÉ : 5/5 phases, 22/22 requirements, builds #17→#29.** |
 
-> Mettre à jour ce tableau à chaque phase complétée.
+> Mettre à jour ce tableau à chaque phase complétée. **Milestone v1.0 clos (Phase 5 / build #29).**
 
 ### Détail phase MAJ
 

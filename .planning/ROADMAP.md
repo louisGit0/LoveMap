@@ -86,7 +86,7 @@ Chaque phase livre une tranche visible bout-en-bout. Les fondations techniques s
 3. Tous les écrans refondus respectent safe areas, home indicator et Dynamic Type sans casse, en thèmes clair et sombre.
 4. Une passe finale confirme cohérence visuelle et absence de régression sur l'ensemble des 9 écrans.
 
-**Plans:** 4/4 plans complete
+**Plans:** 4/4 plans complete — ✅ **Phase terminée, validée device (#29) — DERNIÈRE PHASE, milestone v1.0 LIVRÉ (22/22)**
 - [x] 05-01-PLAN.md — AppText variant display (F.serifLight, cap 1.15) + caps Dynamic Type par role (D-06, IOS-04 lever) [vague 1]
 - [x] 05-02-PLAN.md — Refonte auth page de couverture : login + register (stepper conserve) + fix MIN_AGE (D-11) + CTA (D-12) + insets.bottom (UI-01) [vague 2]
 - [x] 05-03-PLAN.md — Refonte profil page de couverture + bento Analyse + toggle unique a11y (D-09) + delete Alert seule (D-08) + avatar PRESERVE (UI-08) [vague 2]
