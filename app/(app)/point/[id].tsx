@@ -254,6 +254,33 @@ export default function PointDetail() {
             ))}
           </View>
 
+          {/* Avec — partenaires mentionnés, mis en avant sous la note (photo + nom + statut) */}
+          {partners.length > 0 && (
+            <View style={styles.withBlock}>
+              <Text style={styles.withEyebrow}>Avec</Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.withRow}>
+                {partners.map((p) => {
+                  const name = p.profile?.display_name ?? p.profile?.username ?? '—';
+                  return (
+                    <View key={p.record.id} style={styles.withCard}>
+                      <View style={styles.withAvatar}>
+                        {p.profile?.avatar_url ? (
+                          <Image source={{ uri: p.profile.avatar_url }} style={StyleSheet.absoluteFillObject} resizeMode="cover" />
+                        ) : (
+                          <Text style={styles.withAvatarInitial}>{name[0]?.toUpperCase() ?? '?'}</Text>
+                        )}
+                      </View>
+                      <Text style={styles.withName} numberOfLines={1}>{name}</Text>
+                      <View style={[styles.consentBadge, p.record.status === 'accepted' && styles.consentBadgeOk, p.record.status === 'rejected' && styles.consentBadgeNo]}>
+                        <Text style={styles.consentBadgeText}>{consentLabel(p.record.status)}</Text>
+                      </View>
+                    </View>
+                  );
+                })}
+              </ScrollView>
+            </View>
+          )}
+
           {/* Commentaire editorial */}
           {point.comment ? (
             <View style={styles.quoteBlock}>
@@ -288,23 +315,6 @@ export default function PointDetail() {
               <Text style={styles.metaKey}>Durée</Text>
               <Text style={styles.metaValue}>{formatDuration(point.duration_minutes)}</Text>
             </View>
-            {partners.length > 0 && (
-              <View style={styles.metaRow}>
-                <Text style={styles.metaKey}>Avec</Text>
-                <View style={styles.metaPartnersCol}>
-                  {partners.map((p) => (
-                    <View key={p.record.id} style={styles.metaPartnerItem}>
-                      <Text style={styles.metaPartnerName}>
-                        {p.profile?.display_name ?? p.profile?.username ?? '—'}
-                      </Text>
-                      <View style={[styles.consentBadge, p.record.status === 'accepted' && styles.consentBadgeOk, p.record.status === 'rejected' && styles.consentBadgeNo]}>
-                        <Text style={styles.consentBadgeText}>{consentLabel(p.record.status)}</Text>
-                      </View>
-                    </View>
-                  ))}
-                </View>
-              </View>
-            )}
           </View>
 
           {/* Consentement partenaire */}
@@ -572,22 +582,52 @@ const makeStyles = (T: Theme) => StyleSheet.create({
     alignItems: 'flex-end',
     gap: 6,
   },
-  // Colonne multi-partenaires (un point peut mentionner plusieurs partenaires)
-  metaPartnersCol: {
-    flex: 1,
-    alignItems: 'flex-end',
-    gap: 14,
+  // Bloc « Avec » proéminent (sous la note) — partenaires mentionnés en cartes photo
+  withBlock: {
+    marginTop: 24,
+    marginBottom: 8,
   },
-  metaPartnerItem: {
-    alignItems: 'flex-end',
-    gap: 6,
+  withEyebrow: {
+    fontFamily: F.mono,
+    fontSize: 9,
+    letterSpacing: 2,
+    textTransform: 'uppercase',
+    color: T.textFaint,
+    marginBottom: 12,
   },
-  metaPartnerName: {
+  withRow: {
+    flexDirection: 'row',
+    gap: 16,
+    paddingRight: 4,
+  },
+  withCard: {
+    alignItems: 'center',
+    gap: 8,
+    width: 76,
+  },
+  withAvatar: {
+    width: 56,
+    height: 56,
+    backgroundColor: T.surface2,
+    borderWidth: 1,
+    borderColor: T.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  withAvatarInitial: {
     fontFamily: F.serif,
     fontStyle: 'italic',
-    fontSize: 16,
+    fontSize: 26,
+    color: T.primary,
+  },
+  withName: {
+    fontFamily: F.serif,
+    fontStyle: 'italic',
+    fontSize: 14,
+    lineHeight: 18,
     color: T.text,
-    textAlign: 'right',
+    textAlign: 'center',
   },
   consentBadge: {
     borderWidth: 1,
