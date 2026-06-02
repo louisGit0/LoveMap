@@ -16,6 +16,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useFriends } from '@/hooks/useFriends';
 import { useTheme } from '@/hooks/useTheme';
 import { FriendRequestItem } from '@/components/friends/FriendRequestItem';
+import { Button } from '@/components/ui/Button';
 import { F } from '@/constants/fonts';
 import type { Theme } from '@/constants/theme';
 import { IcoArrow, IcoClose } from '@/components/icons';
@@ -45,7 +46,7 @@ function formatDate(dateStr: string | null | undefined): string {
 export default function FriendRequests() {
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
-  const { respondToRequest, setPendingReceived, setPendingSent } = useFriends();
+  const { respondToRequest, respondToTag, setPendingReceived, setPendingSent } = useFriends();
   const T = useTheme();
   const styles = useMemo(() => makeStyles(T), [T]);
 
@@ -119,15 +120,37 @@ export default function FriendRequests() {
       if (accept) {
         haptics.success();
       } else {
-        haptics.tap();
+        haptics.warn();
       }
       setSnackbar(accept ? 'Demande acceptée.' : 'Demande refusée.');
       await loadRequests();
     } else {
-      setSnackbar('Erreur lors de la réponse.');
+      haptics.error();
+      setSnackbar('Action impossible. Réessayez.');
     }
   }
 
+  // Consentement de taguage INLINE (D-08) — passe par le hook respondToTag (pas de Supabase ici,
+  // pas de navigation vers le détail du point). is_visible bascule server-side via trigger.
+  async function handleRespondTag(pointPartnerId: string, accept: boolean) {
+    const ok = await respondToTag(pointPartnerId, accept);
+    if (ok) {
+      if (accept) {
+        haptics.success();
+      } else {
+        haptics.warn();
+      }
+      setSnackbar(accept ? 'Page scellée.' : 'Taguage refusé.');
+      await loadRequests();
+    } else {
+      haptics.error();
+      setSnackbar('Action impossible. Réessayez.');
+    }
+  }
+
+  // ⚠ Déviation rule-4 existante NON corrigée cette phase : appel Supabase direct dans le composant
+  // pour la section discrète « Envoyées » (annulation d'une demande envoyée). Laissé inchangé pour
+  // ne pas étendre la dette ni élargir le périmètre 04-03 (cf. SUMMARY). À router via un hook ultérieurement.
   async function handleCancel(friendshipId: string) {
     const { error } = await supabase.from('friendships').delete().eq('id', friendshipId);
     if (!error) {
@@ -137,6 +160,8 @@ export default function FriendRequests() {
       setSnackbar("Erreur lors de l'annulation.");
     }
   }
+
+  const bothMainEmpty = received.length === 0 && pendingTags.length === 0;
 
   return (
     <View style={[styles.container, { paddingTop: insets.top + 16 }]}>
@@ -157,98 +182,122 @@ export default function FriendRequests() {
           showsVerticalScrollIndicator={false}
           ListHeaderComponent={
             <>
-              {/* ── Taguages en attente de consentement ── */}
-              <View style={styles.sectionHeader}>
-                <Text style={styles.sectionEyebrow}>Taguages</Text>
-                <Text style={styles.sectionCount}>{String(pendingTags.length).padStart(2, '0')}</Text>
-              </View>
-              {pendingTags.length === 0 ? (
-                <Text style={styles.emptyText}>Aucun taguage en attente.</Text>
+              {bothMainEmpty ? (
+                <View style={styles.emptyState}>
+                  <Text style={styles.emptyStateText}>Pas de page en attente.</Text>
+                </View>
               ) : (
-                pendingTags.map((tag) => {
-                  const p = tag.points;
-                  const dateStr = formatDate(p?.happened_at ?? p?.created_at);
-                  return (
-                    <TouchableOpacity
-                      key={tag.id}
-                      style={styles.tagItem}
-                      onPress={() => router.push(`/(app)/point/${tag.point_id}`)}
-                      activeOpacity={0.8}
-                    >
-                      <View style={styles.tagNoteBox}>
-                        <Text style={styles.tagNote}>{p?.note ?? '—'}</Text>
-                        <Text style={styles.tagNoteDenom}>/10</Text>
+                <>
+                  {/* ── Section A : Demandes d'amitié reçues ── */}
+                  {received.length > 0 && (
+                    <>
+                      <View style={styles.sectionHeader}>
+                        <Text style={styles.sectionEyebrow}>Demandes reçues</Text>
+                        <Text style={styles.sectionCount}>
+                          {String(received.length).padStart(2, '0')}
+                        </Text>
                       </View>
-                      <View style={styles.tagInfo}>
-                        <Text style={styles.tagLabel}>Vous avez été mentionné·e</Text>
-                        <Text style={styles.tagDate}>{dateStr}</Text>
-                        {p?.comment ? (
-                          <Text style={styles.tagComment} numberOfLines={1}>
-                            {p.comment}
-                          </Text>
-                        ) : null}
+                      {received.map((item) => {
+                        if (!item.profile) return null;
+                        return (
+                          <FriendRequestItem
+                            key={item.id}
+                            request={item}
+                            affirmLabel="Accepter"
+                            negativeLabel="Refuser"
+                            onAffirm={() => handleRespond(item.id, true)}
+                            onNegative={() => handleRespond(item.id, false)}
+                          />
+                        );
+                      })}
+                    </>
+                  )}
+
+                  {/* ── Section B : Taguages en attente (consentement partenaire, inline) ── */}
+                  {pendingTags.length > 0 && (
+                    <>
+                      <View style={[styles.sectionHeader, received.length > 0 && styles.sectionHeaderMargin]}>
+                        <Text style={styles.sectionEyebrow}>Taguages en attente</Text>
+                        <Text style={styles.sectionCount}>
+                          {String(pendingTags.length).padStart(2, '0')}
+                        </Text>
                       </View>
-                      <View style={styles.tagCta}>
-                        <Text style={styles.tagCtaText}>Répondre</Text>
-                        <Text style={styles.tagCtaArrow}>→</Text>
-                      </View>
-                    </TouchableOpacity>
-                  );
-                })
+                      {pendingTags.map((tag) => {
+                        const p = tag.points;
+                        const dateStr = formatDate(p?.happened_at ?? p?.created_at);
+                        return (
+                          <View key={tag.id} style={styles.tagItem}>
+                            <View style={styles.tagNoteBox}>
+                              <Text style={styles.tagNote}>{p?.note ?? '—'}</Text>
+                              <Text style={styles.tagNoteDenom}>/10</Text>
+                            </View>
+                            <View style={styles.tagInfo}>
+                              <Text style={styles.tagLabel} numberOfLines={1}>
+                                {p?.comment ?? 'Vous avez été mentionné·e'}
+                              </Text>
+                              <Text style={styles.tagDate}>{dateStr}</Text>
+                            </View>
+                            <View style={styles.actions}>
+                              <Button
+                                variant="coral"
+                                fullWidth={false}
+                                onPress={() => handleRespondTag(tag.id, true)}
+                                style={styles.affirmBtn}
+                              >
+                                <Text style={styles.affirmLabel}>Sceller</Text>
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                fullWidth={false}
+                                onPress={() => handleRespondTag(tag.id, false)}
+                                style={styles.negativeBtn}
+                              >
+                                <Text style={styles.negativeLabel}>Décliner</Text>
+                              </Button>
+                            </View>
+                          </View>
+                        );
+                      })}
+                    </>
+                  )}
+                </>
               )}
 
-              {/* ── Demandes d'amitié reçues ── */}
-              <View style={[styles.sectionHeader, styles.sectionHeaderMargin]}>
-                <Text style={styles.sectionEyebrow}>↓ Reçues</Text>
-                <Text style={styles.sectionCount}>{String(received.length).padStart(2, '0')}</Text>
-              </View>
-              {received.length === 0 ? (
-                <Text style={styles.emptyText}>Aucune demande reçue.</Text>
-              ) : (
-                received.map((item) => {
-                  if (!item.profile) return null;
-                  return (
-                    <FriendRequestItem
-                      key={item.id}
-                      request={item}
-                      onAccept={() => handleRespond(item.id, true)}
-                      onReject={() => handleRespond(item.id, false)}
-                    />
-                  );
-                })
-              )}
-
-              {/* ── Demandes d'amitié envoyées ── */}
-              <View style={[styles.sectionHeader, styles.sectionHeaderMargin]}>
-                <Text style={styles.sectionEyebrow}>↑ Envoyées</Text>
-                <Text style={styles.sectionCount}>{String(sent.length).padStart(2, '0')}</Text>
-              </View>
-              {sent.length === 0 ? (
-                <Text style={styles.emptyText}>Aucune demande envoyée.</Text>
-              ) : (
-                sent.map((item) => {
-                  if (!item.profile) return null;
-                  const displayName = item.profile.display_name ?? item.profile.username;
-                  const initial = displayName?.[0]?.toUpperCase() ?? '?';
-                  return (
-                    <View key={item.id} style={styles.sentItem}>
-                      <View style={styles.avatar}>
-                        <Text style={styles.avatarInitial}>{initial}</Text>
+              {/* ── Section C : Envoyées (discrète, D-09) ── */}
+              {sent.length > 0 && (
+                <>
+                  <View style={[styles.sectionHeader, styles.sectionHeaderMargin]}>
+                    <Text style={styles.sectionEyebrowDiscreet}>Envoyées</Text>
+                    <Text style={styles.sectionCount}>{String(sent.length).padStart(2, '0')}</Text>
+                  </View>
+                  {sent.map((item) => {
+                    if (!item.profile) return null;
+                    const displayName = item.profile.display_name ?? item.profile.username;
+                    const initial = displayName?.[0]?.toUpperCase() ?? '?';
+                    return (
+                      <View key={item.id} style={styles.sentItem}>
+                        <View style={styles.avatar}>
+                          <Text style={styles.avatarInitial}>{initial}</Text>
+                        </View>
+                        <View style={styles.sentInfo}>
+                          <Text style={styles.sentName} numberOfLines={1}>{displayName}</Text>
+                          <Text style={styles.sentUsername}>@{item.profile.username}</Text>
+                        </View>
+                        <View style={styles.sentMeta}>
+                          <Text style={styles.pendingLabel}>En attente</Text>
+                          <TouchableOpacity
+                            style={styles.cancelBtn}
+                            onPress={() => handleCancel(item.id)}
+                            activeOpacity={0.7}
+                          >
+                            <IcoClose size={12} color={T.textFaint} />
+                            <Text style={styles.cancelBtnText}>Annuler</Text>
+                          </TouchableOpacity>
+                        </View>
                       </View>
-                      <View style={styles.sentInfo}>
-                        <Text style={styles.sentName}>{displayName}</Text>
-                        <Text style={styles.sentUsername}>@{item.profile.username}</Text>
-                      </View>
-                      <View style={styles.sentMeta}>
-                        <Text style={styles.pendingLabel}>En attente</Text>
-                        <TouchableOpacity style={styles.cancelBtn} onPress={() => handleCancel(item.id)} activeOpacity={0.7}>
-                          <IcoClose size={12} color={T.textFaint} />
-                          <Text style={styles.cancelBtnText}>Annuler</Text>
-                        </TouchableOpacity>
-                      </View>
-                    </View>
-                  );
-                })
+                    );
+                  })}
+                </>
               )}
             </>
           }
@@ -280,9 +329,9 @@ const makeStyles = (T: Theme) => StyleSheet.create({
   title: {
     fontFamily: F.serifLight,
     fontStyle: 'italic',
-    fontSize: 44,
-    lineHeight: 42,
-    letterSpacing: -1.5,
+    fontSize: 36,
+    lineHeight: 40,
+    letterSpacing: -1,
     color: T.text,
     marginBottom: 24,
   },
@@ -305,18 +354,65 @@ const makeStyles = (T: Theme) => StyleSheet.create({
     textTransform: 'uppercase',
     color: T.textFaint,
   },
+  sectionEyebrowDiscreet: {
+    fontFamily: F.mono,
+    fontSize: 9,
+    letterSpacing: 1.5,
+    textTransform: 'uppercase',
+    color: T.textFaint,
+    opacity: 0.7,
+  },
   sectionCount: {
     fontFamily: F.mono,
     fontSize: 10,
     letterSpacing: 1.5,
     color: T.textFaint,
   },
-  emptyText: {
+
+  /* ── Empty state (deux sections principales vides) ── */
+  emptyState: {
+    alignItems: 'center',
+    paddingTop: 48,
+    paddingBottom: 32,
+  },
+  emptyStateText: {
     fontFamily: F.serif,
     fontStyle: 'italic',
-    fontSize: 15,
+    fontSize: 18,
     color: T.textFaint,
-    paddingVertical: 12,
+    textAlign: 'center',
+  },
+
+  /* ── Boutons texte d'action (amitié + taguage), D-12 ── */
+  actions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  affirmBtn: {
+    height: 44,
+    paddingHorizontal: 14,
+    borderRadius: T.radiusSm,
+    borderCurve: 'continuous',
+  },
+  affirmLabel: {
+    fontFamily: F.serif,
+    fontStyle: 'italic',
+    fontSize: 18,
+    color: T.text,
+  },
+  negativeBtn: {
+    height: 44,
+    paddingHorizontal: 14,
+    borderRadius: T.radiusSm,
+    borderCurve: 'continuous',
+  },
+  negativeLabel: {
+    fontFamily: F.mono,
+    fontSize: 10,
+    letterSpacing: 1.5,
+    textTransform: 'uppercase',
+    color: T.textDim,
   },
 
   /* ── Taguage en attente ── */
@@ -326,7 +422,7 @@ const makeStyles = (T: Theme) => StyleSheet.create({
     paddingVertical: 16,
     borderBottomWidth: 1,
     borderBottomColor: T.border,
-    gap: 14,
+    gap: 12,
   },
   tagNoteBox: {
     flexDirection: 'row',
@@ -348,7 +444,7 @@ const makeStyles = (T: Theme) => StyleSheet.create({
     marginLeft: 1,
     marginBottom: 4,
   },
-  tagInfo: { flex: 1 },
+  tagInfo: { flex: 1, minWidth: 0 },
   tagLabel: {
     fontFamily: F.serif,
     fontStyle: 'italic',
@@ -362,35 +458,6 @@ const makeStyles = (T: Theme) => StyleSheet.create({
     letterSpacing: 1,
     textTransform: 'uppercase',
     color: T.textFaint,
-  },
-  tagComment: {
-    fontFamily: F.serif,
-    fontStyle: 'italic',
-    fontSize: 12,
-    color: T.textDim,
-    marginTop: 4,
-  },
-  tagCta: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    borderWidth: 1,
-    borderColor: T.primary,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-  },
-  tagCtaText: {
-    fontFamily: F.mono,
-    fontSize: 9,
-    letterSpacing: 1.5,
-    textTransform: 'uppercase',
-    color: T.primary,
-  },
-  tagCtaArrow: {
-    fontFamily: F.serif,
-    fontStyle: 'italic',
-    fontSize: 14,
-    color: T.primary,
   },
 
   /* ── Demandes envoyées ── */
@@ -417,11 +484,12 @@ const makeStyles = (T: Theme) => StyleSheet.create({
     fontSize: 16,
     color: T.primary,
   },
-  sentInfo: { flex: 1 },
+  sentInfo: { flex: 1, minWidth: 0 },
   sentName: {
-    fontFamily: F.sans,
-    fontSize: 14,
-    color: T.text,
+    fontFamily: F.serif,
+    fontStyle: 'italic',
+    fontSize: 17,
+    color: T.textDim,
   },
   sentUsername: {
     fontFamily: F.mono,
