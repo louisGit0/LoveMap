@@ -21,3 +21,22 @@ export const MAP_COLORS = {
   emberGold: '#ffc24d', // heatmap — densité maximale
   mapBaseDark: '#08080a', // base anthracite du style Mapbox Studio (référence, non rendue côté RN)
 } as const;
+
+/**
+ * URL d'aperçu de carte STATIQUE (Mapbox Static Images API) — rendu via <Image>.
+ * Utilisé dans les sheets natifs (création/détail) car une MapView GL native rend NOIR
+ * dans un form sheet iOS (la surface Metal ne s'attache pas au contexte de présentation).
+ * Reprend le style custom de APP_CONFIG.MAPBOX_STYLE + un pin rose à la position.
+ */
+export function mapboxStaticUrl(
+  longitude: number,
+  latitude: number,
+  width = 600,
+  height = 300,
+  zoom = 15,
+): string {
+  const style = APP_CONFIG.MAPBOX_STYLE.replace('mapbox://styles/', '');
+  const token = (process.env.EXPO_PUBLIC_MAPBOX_TOKEN as string | undefined) ?? '';
+  const pin = `pin-s+ff2d87(${longitude},${latitude})`;
+  return `https://api.mapbox.com/styles/v1/${style}/static/${pin}/${longitude},${latitude},${zoom}/${width}x${height}@2x?access_token=${token}`;
+}

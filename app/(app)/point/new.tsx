@@ -9,15 +9,15 @@ import {
   TouchableOpacity,
   TextInput,
   Alert,
+  Image,
 } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { usePreventRemove, useNavigation } from '@react-navigation/native';
 import { Snackbar } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import MapboxGL from '@rnmapbox/maps';
 import * as Location from 'expo-location';
 import { haptics } from '@/lib/haptics';
-import { APP_CONFIG } from '@/constants/config';
+import { mapboxStaticUrl } from '@/constants/config';
 import { useAuth } from '@/hooks/useAuth';
 import { usePoints } from '@/hooks/usePoints';
 import { useFriendStore } from '@/stores/friendStore';
@@ -57,8 +57,6 @@ export default function NewPoint() {
   const [monthStr, setMonthStr] = useState(String(today.getMonth() + 1).padStart(2, '0'));
   const [yearStr, setYearStr] = useState(String(today.getFullYear()));
 
-  const mapRef = useRef<MapboxGL.Camera>(null);
-
   async function reverseGeocode(lat: number, lng: number) {
     try {
       const results = await Location.reverseGeocodeAsync({ latitude: lat, longitude: lng });
@@ -69,15 +67,6 @@ export default function NewPoint() {
     } catch {
       // Silently fail — address is optional
     }
-  }
-
-  function animateTo(lat: number, lng: number) {
-    mapRef.current?.setCamera({
-      centerCoordinate: [lng, lat],
-      zoomLevel: 15,
-      animationDuration: 600,
-      animationMode: 'flyTo',
-    });
   }
 
   useEffect(() => {
@@ -94,7 +83,6 @@ export default function NewPoint() {
         const lng = pos.coords.longitude;
         setLatitude(lat);
         setLongitude(lng);
-        animateTo(lat, lng);
         reverseGeocode(lat, lng);
       } catch {
         reverseGeocode(latitude, longitude);
@@ -111,7 +99,6 @@ export default function NewPoint() {
       const { latitude: lat, longitude: lng } = results[0];
       setLatitude(lat);
       setLongitude(lng);
-      animateTo(lat, lng);
       reverseGeocode(lat, lng);
     } catch {
       setSnackbar('Adresse introuvable — modifiez votre recherche.');
@@ -349,37 +336,14 @@ export default function NewPoint() {
             </TouchableOpacity>
           </View>
 
-          {/* Mini carte — pan pour repositionner le point */}
+          {/* Aperçu STATIQUE du lieu (image — une MapView GL rend noir dans un form sheet iOS).
+              La position vient du tap carte (FAB/appui long) + recherche d'adresse. */}
           <View style={styles.miniMap}>
-            <MapboxGL.MapView
+            <Image
+              source={{ uri: mapboxStaticUrl(longitude, latitude) }}
               style={StyleSheet.absoluteFillObject}
-              styleURL={APP_CONFIG.MAPBOX_STYLE}
-              scrollEnabled
-              logoEnabled={false}
-              attributionEnabled={false}
-              compassEnabled={false}
-              onCameraChanged={(state: { properties: { center: [number, number] } }) => {
-                const [lng, lat] = state.properties.center;
-                setLatitude(lat);
-                setLongitude(lng);
-              }}
-              onMapIdle={(state: { properties: { center: [number, number] } }) => {
-                const [lng, lat] = state.properties.center;
-                reverseGeocode(lat, lng);
-              }}
-            >
-              <MapboxGL.Camera
-                ref={mapRef}
-                zoomLevel={15}
-                centerCoordinate={[longitude, latitude]}
-                animationMode="none"
-                animationDuration={0}
-              />
-            </MapboxGL.MapView>
-            {/* Pin fixe centré — le fond de carte se déplace sous lui */}
-            <View style={styles.centerPin} pointerEvents="none">
-              <View style={styles.centerPinDot} />
-            </View>
+              resizeMode="cover"
+            />
           </View>
 
           {/* Adresse résolue */}

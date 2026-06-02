@@ -16,10 +16,9 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { usePreventRemove, useNavigation } from '@react-navigation/native';
 import { Snackbar } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import MapboxGL from '@rnmapbox/maps';
 import { supabase } from '@/lib/supabase';
 import { haptics } from '@/lib/haptics';
-import { APP_CONFIG } from '@/constants/config';
+import { mapboxStaticUrl } from '@/constants/config';
 import { useAuth } from '@/hooks/useAuth';
 import { usePoints } from '@/hooks/usePoints';
 import { useTheme } from '@/hooks/useTheme';
@@ -223,31 +222,13 @@ export default function PointDetail() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: insets.bottom + 32 }}
       >
-        {/* Mini carte statique */}
+        {/* Mini carte STATIQUE (image — une MapView GL rend noir dans un form sheet iOS) */}
         <View style={styles.miniMap}>
-          <MapboxGL.MapView
+          <Image
+            source={{ uri: mapboxStaticUrl(point.longitude, point.latitude) }}
             style={StyleSheet.absoluteFillObject}
-            styleURL={APP_CONFIG.MAPBOX_STYLE}
-            scrollEnabled={false}
-            zoomEnabled={false}
-            logoEnabled={false}
-            attributionEnabled={false}
-            compassEnabled={false}
-          >
-            <MapboxGL.Camera
-              zoomLevel={15}
-              centerCoordinate={[point.longitude, point.latitude]}
-              animationMode="none"
-              animationDuration={0}
-            />
-            <MapboxGL.MarkerView
-              id={point.id}
-              coordinate={[point.longitude, point.latitude]}
-              anchor={{ x: 0.5, y: 0.5 }}
-            >
-              <View style={styles.markerDot} />
-            </MapboxGL.MarkerView>
-          </MapboxGL.MapView>
+            resizeMode="cover"
+          />
         </View>
 
         <View style={styles.content}>
