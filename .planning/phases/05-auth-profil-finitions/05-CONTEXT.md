@@ -35,6 +35,13 @@ Dernière phase du milestone. Refonte **visuelle** des écrans d'auth et de prof
 - **D-06 :** **Dynamic Type : support avec plafonds.** Le texte grossit avec les réglages d'accessibilité iOS via `allowFontScaling` mais borné par `maxFontSizeMultiplier` (plafonds par rôle typo : plus serrés pour Display/titres serif, plus larges pour corps), de sorte que la mise en page éditoriale ne casse pas. Levier central = composant `AppText` (router le texte par là où c'est possible) + plafonds cohérents.
 - **D-07 :** **Audit + sweep de cohérence sur les 9 écrans** : (a) safe areas via `useSafeAreaInsets()` (jamais `SafeAreaView`), home indicator (padding bas = `insets.bottom`) ; (b) Dynamic Type plafonné ; (c) **sweep tokens** — corriger les derniers espacements/tailles typo hors-échelle pour les aligner sur les tokens (`T.*`/`F.*`, échelle canonique), en clair ET sombre. Corriger les casses réelles ; ne pas réécrire ce qui est déjà cohérent.
 
+### Résolutions post-recherche (2026-06-02, après 05-RESEARCH.md)
+- **D-08 :** **Suppression de compte = Alert seule** (suivre le UI-SPEC) — Alert native « Supprimer le compte ? » + bouton destructif `T.danger`. **Retirer le champ à taper « EFFACER »** actuel. La section reste « Zone irréversible ».
+- **D-09 :** **Toggle thème unique** — garder le toggle éditorial IcoSun/IcoMoon (UI-SPEC), **retirer le `Switch` doublon** s'il existe dans profile/index.tsx. Ajouter un `accessibilityLabel` (« Basculer vers le thème clair »/« …sombre ») — flag checker Visuals.
+- **D-10 :** **Button : pas de modif du primitive partagé** `components/ui/Button.tsx`. Les arrondis/styles spécifiques aux écrans de couverture passent par des overrides **par instance** (blast-radius limité), pas par un changement global du composant.
+- **D-11 :** **Fix bug latent `MIN_AGE`** — `register.tsx` importe `{ MIN_AGE }` alors que `constants/config.ts` n'exporte que `APP_CONFIG.MIN_AGE` (nested) → la vérif d'âge **client** est inerte (`undefined`). Corriger l'import (`APP_CONFIG.MIN_AGE`) pendant le restyle du step 1. Le trigger serveur `handle_new_user` reste le garde-fou autoritaire (inchangé).
+- **D-12 :** **CTA register step 1** — remplacer « Continuer » par un libellé plus spécifique (ex. « Vérifier mon âge ») — flag checker Copywriting (non bloquant).
+
 ### Claude's Discretion
 - Plafonds exacts `maxFontSizeMultiplier` par rôle → UI-SPEC / planner.
 - Disposition précise des tuiles bento (grille, tailles) → UI-SPEC.
