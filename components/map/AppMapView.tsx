@@ -16,6 +16,11 @@ const PARIS: [number, number] = [2.3522, 48.8566]; // [longitude, latitude] — 
 const DEFAULT_ZOOM = 12;
 const DISTANCE_THRESHOLD = 0.1; // degrés ≈ 10 km
 
+// Eau en bleu — recolore les calques d'eau du style Mapbox hosté par-dessus (source
+// `composite`/mapbox-streets-v8, source-layers `water`/`waterway`, déjà présents dans le style).
+const WATER_FILL = '#143a5e';   // mers / lacs (bleu nuit éditorial)
+const WATERWAY_LINE = '#1f4e7a'; // rivières / canaux
+
 interface Props {
   children?: React.ReactNode;
   onLongPress?: (coords: { latitude: number; longitude: number }) => void;
@@ -130,6 +135,21 @@ export function AppMapView({
           centerCoordinate={initialCenter}
           animationMode="none"
           animationDuration={0}
+        />
+        {/* Eau en bleu — par-dessus les calques d'eau du style (juste au-dessus, sous routes/labels) */}
+        <MapboxGL.FillLayer
+          id="lm-water-blue"
+          sourceID="composite"
+          sourceLayerID="water"
+          aboveLayerID="water"
+          style={{ fillColor: WATER_FILL }}
+        />
+        <MapboxGL.LineLayer
+          id="lm-waterway-blue"
+          sourceID="composite"
+          sourceLayerID="waterway"
+          aboveLayerID="waterway"
+          style={{ lineColor: WATERWAY_LINE }}
         />
         {showUserLocation && <MapboxGL.UserLocation visible renderMode="native" />}
         {children}
