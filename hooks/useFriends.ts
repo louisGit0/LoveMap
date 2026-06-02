@@ -116,6 +116,20 @@ export function useFriends() {
     };
   }, []);
 
+  // Nombre de taguages (mentions) en attente de mon consentement — pour le badge du Cercle.
+  const fetchPendingTagsCount = useCallback(async (userId: string): Promise<number> => {
+    const { count, error } = await supabase
+      .from('point_partners')
+      .select('id', { count: 'exact', head: true })
+      .eq('partner_id', userId)
+      .eq('status', 'pending');
+    if (error) {
+      console.error('[useFriends] fetchPendingTagsCount error:', error.message);
+      return 0;
+    }
+    return count ?? 0;
+  }, []);
+
   // Annuler une demande d'amitié envoyée (section « Envoyées »).
   const cancelRequest = useCallback(async (friendshipId: string): Promise<boolean> => {
     const { error } = await supabase
@@ -185,6 +199,7 @@ export function useFriends() {
     fetchFriends,
     fetchPendingReceived,
     fetchRequests,
+    fetchPendingTagsCount,
     sendFriendRequest,
     respondToRequest,
     respondToTag,

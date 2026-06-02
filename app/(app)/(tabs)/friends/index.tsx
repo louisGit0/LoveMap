@@ -28,7 +28,7 @@ import type { Profile } from '@/types/app.types';
 export default function FriendsScreen() {
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
-  const { friends, fetchFriends, fetchPendingReceived, searchUsers, sendFriendRequest, unfriend, setPendingReceived } = useFriends();
+  const { friends, fetchFriends, fetchPendingReceived, fetchPendingTagsCount, searchUsers, sendFriendRequest, unfriend, setPendingReceived } = useFriends();
   const pendingReceived = useFriendStore((s) => s.pendingReceived);
   const { setViewingFriend } = useMapStore();
   const T = useTheme();
@@ -40,6 +40,7 @@ export default function FriendsScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [snackbar, setSnackbar] = useState<string | null>(null);
+  const [pendingTagsCount, setPendingTagsCount] = useState(0);
 
   const loadFriends = useCallback(async () => {
     if (!user) return;
@@ -47,8 +48,9 @@ export default function FriendsScreen() {
     const ok = await fetchFriends(user.id);
     if (!ok) { setLoading(false); setSnackbar('Erreur de chargement.'); return; }
     setPendingReceived(await fetchPendingReceived(user.id));
+    setPendingTagsCount(await fetchPendingTagsCount(user.id));
     setLoading(false);
-  }, [user, fetchFriends, fetchPendingReceived, setPendingReceived]);
+  }, [user, fetchFriends, fetchPendingReceived, fetchPendingTagsCount, setPendingReceived]);
 
   useEffect(() => { loadFriends(); }, [loadFriends]);
 
@@ -122,15 +124,15 @@ export default function FriendsScreen() {
           activeOpacity={0.75}
         >
           <View style={styles.requestsLeft}>
-            <Text style={styles.requestsLabel}>Demandes</Text>
-            {pendingReceived.length > 0 && (
+            <Text style={styles.requestsLabel}>Demandes & mentions</Text>
+            {pendingReceived.length + pendingTagsCount > 0 && (
               <View style={styles.badge}>
-                <Text style={styles.badgeText}>{pendingReceived.length}</Text>
+                <Text style={styles.badgeText}>{pendingReceived.length + pendingTagsCount}</Text>
               </View>
             )}
           </View>
           <Text style={styles.requestsValue}>
-            {pendingReceived.length === 0 ? 'aucune pour l\'instant' : `${pendingReceived.length} en attente`}
+            {pendingReceived.length + pendingTagsCount === 0 ? 'aucune pour l\'instant' : `${pendingReceived.length + pendingTagsCount} en attente`}
           </Text>
           <Text style={styles.requestsArrow}>›</Text>
         </TouchableOpacity>

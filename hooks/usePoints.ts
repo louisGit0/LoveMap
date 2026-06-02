@@ -13,33 +13,60 @@ function toMapPoint(raw: any): MapPoint {
   };
 }
 
+// toMapPoint + enrichissement partenaire (statut + nom) depuis le join point_partners.
+function enrichPoint(raw: any): MapPoint {
+  const mapped = toMapPoint(raw);
+  const pp = raw.point_partners?.[0];
+  if (pp) {
+    mapped.partnerStatus = pp.status;
+    if (pp.profiles) {
+      mapped.partnerUsername = pp.profiles.username;
+      mapped.partnerDisplayName = pp.profiles.display_name;
+    }
+  }
+  return mapped;
+}
+
 export function usePoints() {
   const { points, setPoints, addPoint, updatePoint, removePoint } = useMapStore();
 
+  // Ma carte = mes points créés + les moments partagés (points où je suis partenaire ACCEPTÉ).
+  // Quand un partenaire tagué accepte, le point devient is_visible=TRUE (trigger on_partner_consent)
+  // et apparaît ainsi sur la carte du créateur ET sur celle de la personne mentionnée.
   const fetchMyPoints = useCallback(async (userId: string): Promise<boolean> => {
-    const { data, error } = await supabase
-      .from('points')
-      .select('*, point_partners(partner_id, status, profiles:partner_id(username, display_name))')
-      .eq('creator_id', userId)
-      .order('created_at', { ascending: false });
+    const [ownRes, sharedRes] = await Promise.all([
+      supabase
+        .from('points')
+        .select('*, point_partners(partner_id, status, profiles:partner_id(username, display_name))')
+        .eq('creator_id', userId)
+        .order('created_at', { ascending: false }),
+      // Points où JE suis le partenaire accepté (RLS : is_visible=TRUE + amitié, mig 010/011).
+      supabase
+        .from('point_partners')
+        .select('points(*)')
+        .eq('partner_id', userId)
+        .eq('status', 'accepted'),
+    ]);
 
-    if (error) {
-      console.error('[usePoints] fetchMyPoints error:', error.message);
+    if (ownRes.error) {
+      console.error('[usePoints] fetchMyPoints (own) error:', ownRes.error.message);
       return false;
     }
+    // Échec de la requête « partagés » non bloquant : on affiche au moins les points perso.
+    if (sharedRes.error) {
+      console.error('[usePoints] fetchMyPoints (shared) error:', sharedRes.error.message);
+    }
 
-    setPoints((data ?? []).map((raw: any) => {
-      const mapped = toMapPoint(raw);
-      const pp = raw.point_partners?.[0];
-      if (pp) {
-        mapped.partnerStatus = pp.status;
-        if (pp.profiles) {
-          mapped.partnerUsername = pp.profiles.username;
-          mapped.partnerDisplayName = pp.profiles.display_name;
-        }
-      }
-      return mapped;
-    }));
+    const own = (ownRes.data ?? []).map(enrichPoint);
+    const shared = (sharedRes.data ?? [])
+      .map((row: any) => row.points)
+      .filter(Boolean)
+      .map(toMapPoint);
+
+    // Fusion + dédup par id (un point créé par moi ne peut pas aussi m'être partagé, mais on sécurise).
+    const byId = new Map<string, MapPoint>();
+    for (const p of [...own, ...shared]) byId.set(p.id, p);
+    setPoints([...byId.values()]);
     return true;
   }, [setPoints]);
 
@@ -216,18 +243,7 @@ export function usePoints() {
       return false;
     }
 
-    setPoints((data ?? []).map((raw: any) => {
-      const mapped = toMapPoint(raw);
-      const pp = raw.point_partners?.[0];
-      if (pp) {
-        mapped.partnerStatus = pp.status;
-        if (pp.profiles) {
-          mapped.partnerUsername = pp.profiles.username;
-          mapped.partnerDisplayName = pp.profiles.display_name;
-        }
-      }
-      return mapped;
-    }));
+    setPoints((data ?? []).map(enrichPoint));
     return true;
   }, [setPoints]);
 

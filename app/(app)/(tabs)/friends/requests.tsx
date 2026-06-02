@@ -83,7 +83,7 @@ export default function FriendRequests() {
       } else {
         haptics.warn();
       }
-      setSnackbar(accept ? 'Page scellée.' : 'Taguage refusé.');
+      setSnackbar(accept ? 'Page scellée.' : 'Mention refusée.');
       await loadRequests();
     } else {
       haptics.error();
@@ -159,7 +159,7 @@ export default function FriendRequests() {
                   {pendingTags.length > 0 && (
                     <>
                       <View style={[styles.sectionHeader, received.length > 0 && styles.sectionHeaderMargin]}>
-                        <Text style={styles.sectionEyebrow}>Taguages en attente</Text>
+                        <Text style={styles.sectionEyebrow}>Mentions en attente</Text>
                         <Text style={styles.sectionCount}>
                           {String(pendingTags.length).padStart(2, '0')}
                         </Text>
