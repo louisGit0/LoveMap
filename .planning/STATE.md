@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: "Phase 05 en cours (1/4 plans) — 05-01 AppText display variant exécuté"
-stopped_at: Phase 5 — 05-01 terminé (AppText display)
-last_updated: "2026-06-02T18:40:00.000Z"
+status: "Phase 05 en cours (2/4 plans) — 05-02 refonte auth « page de couverture » exécuté"
+stopped_at: Phase 5 — 05-02 terminé (login + register cover + fix MIN_AGE)
+last_updated: "2026-06-02T19:10:00.000Z"
 progress:
   total_phases: 5
   completed_phases: 4
   total_plans: 21
-  completed_plans: 18
-  percent: 86
+  completed_plans: 19
+  percent: 90
 ---
 
 # STATE — LoveMap (Refonte UI/UX iOS)
@@ -34,7 +34,7 @@ See: .planning/PROJECT.md (updated 2026-05-29)
 | 2 | Carte stylisée | ✅ Terminé — 4/4 req · vérifié 4/4 · validé device #19 · style Mapbox custom + pivot D-12 |
 | 3 | Création & Détail de point (sheets natifs) | ✅ Terminé — 5/5 plans · validé device #26 · **pivot formSheet→modal** (bug iOS 26 RNS 4.16 #3235) · aperçu carte retiré (location stamp) (03-01 nav Stack+(tabs) · 03-02 tap-pin → détail direct · 03-03 création carnet note-first · 03-04 détail carnet lecture + segments date #2125 · 03-05 validation device + correctifs sheet) |
 | 4 | Listes & Cercle | ✅ Terminé — 3/3 plans · validé device #28 · liste table des matières + cercle (retrait d'ami) + demandes (consentement taguage inline `respondToTag`) · `FiltersBottomSheet` supprimé |
-| 5 | Auth, Profil & Finitions | 🔄 En cours — 1/4 plans · 05-01 AppText `display` (F.serifLight, cap 1.15 — levier D-06/IOS-04) · tsc baseline 21, 0 nouvelle erreur |
+| 5 | Auth, Profil & Finitions | 🔄 En cours — 2/4 plans · 05-01 AppText `display` (levier D-06/IOS-04) · 05-02 refonte auth login + register « page de couverture » + fix MIN_AGE (D-11) + CTA « Vérifier mon âge » (D-12) + insets.bottom (IOS-04) · tsc 20 (0 nouvelle erreur) |
 
 **Requirements:** 19 / 22 complete (Phase 1 : STAB-01/02/03, FOND-01/02/03/04, IOS-03 · Phase 2 : MAP-01, MAP-02, MAP-03, UI-02 · Phase 3 : IOS-01, IOS-02, UI-03, UI-04 · Phase 4 : UI-05, UI-06, UI-07)
 
@@ -62,7 +62,7 @@ See: .planning/PROJECT.md (updated 2026-05-29)
 
 ## Next Step
 
-**Phase 5 en cours — 05-01 exécuté (1/4 plans).** Reste 05-02 (refonte auth login+register, vague 2), 05-03 (refonte profil + bento Analyse, vague 2), 05-04 (passe IOS-04 sur 6 écrans hors-refonte, vague 3). 05-01 a posé le levier central D-06 : `AppText` variant `display` (F.serifLight, cap 1.15) que 05-02/03/04 consomment.
+**Phase 5 en cours — 05-02 exécuté (2/4 plans).** Reste 05-03 (refonte profil + bento Analyse, vague 2), 05-04 (passe IOS-04 sur 6 écrans hors-refonte, vague 3). 05-02 a refondu login + register en « page de couverture » (eyebrow mono + Cover 56 serif via AppText display + champs underline visibles + CTA coral unique + Snackbar), corrigé le bug latent MIN_AGE (D-11 : import `{ MIN_AGE }` undefined → `APP_CONFIG.MIN_AGE`, gate client < 18 désormais actif), renommé le CTA step 1 « Vérifier mon âge » (D-12) et câblé `insets.bottom + 32` (IOS-04). Stepper, picker, signUp+date_of_birth, trigger serveur préservés verbatim. tsc 20 (le fix MIN_AGE retire 1 erreur préexistante de la baseline 21 ; 0 nouvelle erreur).
 
 Baseline tsc phase = **21** (confirmé à frais en 05-01 Task 0 — inchangé depuis la phase 4). Nouveau code 05-01 : 0 nouvelle erreur. **Gate « 0 nouvelle erreur » = 21 pour tous les plans de la Phase 5.**
 
@@ -70,8 +70,8 @@ Dette connue laissée (hors périmètre) : `handleCancel` (section « Envoyées 
 
 ## Session
 
-- **Stopped at:** Phase 5 contexte capturé
+- **Stopped at:** Phase 5 — 05-02 terminé (refonte auth « page de couverture »)
 - **Resume file:** .planning/phases/05-auth-profil-finitions/05-CONTEXT.md
 
 ---
-*Last updated: 2026-06-02 after 05-01 (AppText `display` variant — F.serifLight cap 1.15, levier central D-06/IOS-04). Phase 5 : 1/4 plans, tsc baseline 21 confirmée à frais (0 nouvelle erreur).*
+*Last updated: 2026-06-02 after 05-02 (refonte auth login + register « page de couverture » + fix MIN_AGE D-11 + CTA D-12 + IOS-04 insets). Phase 5 : 2/4 plans, tsc 20 (baseline 21, 0 nouvelle erreur).*
