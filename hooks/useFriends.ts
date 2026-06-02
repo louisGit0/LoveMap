@@ -75,6 +75,30 @@ export function useFriends() {
     return true;
   }, [removeFriend]);
 
+  // Consentement de taguage (D-08) — update mono-table sur point_partners.
+  // is_visible bascule server-side via le trigger on_partner_consent — JAMAIS côté client.
+  // Mono-table (règle 18) → RLS-safe (mig 010/011 : le partenaire tagué peut maj sa ligne).
+  const respondToTag = useCallback(async (
+    pointPartnerId: string,
+    accept: boolean
+  ): Promise<boolean> => {
+    const { error } = await supabase
+      .from('point_partners')
+      // `as never` : contournement local des types Supabase générés (point_partners → never),
+      // identique à la dette baseline (respondToRequest l.53, point/[id] handleConsent). Pas de `any`.
+      .update({
+        status: accept ? 'accepted' : 'rejected',
+        responded_at: new Date().toISOString(),
+      } as never)
+      .eq('id', pointPartnerId);
+
+    if (error) {
+      console.error('[useFriends] respondToTag error:', error.message);
+      return false;
+    }
+    return true;
+  }, []);
+
   return {
     friends,
     pendingReceived,
@@ -82,6 +106,7 @@ export function useFriends() {
     fetchFriends,
     sendFriendRequest,
     respondToRequest,
+    respondToTag,
     unfriend,
     setPendingReceived,
     setPendingSent,
