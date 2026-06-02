@@ -9,7 +9,6 @@ import {
   TouchableOpacity,
   TextInput,
   Alert,
-  Image,
 } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { usePreventRemove, useNavigation } from '@react-navigation/native';
@@ -17,7 +16,6 @@ import { Snackbar } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Location from 'expo-location';
 import { haptics } from '@/lib/haptics';
-import { mapboxStaticUrl } from '@/constants/config';
 import { useAuth } from '@/hooks/useAuth';
 import { usePoints } from '@/hooks/usePoints';
 import { useFriendStore } from '@/stores/friendStore';
@@ -336,24 +334,14 @@ export default function NewPoint() {
             </TouchableOpacity>
           </View>
 
-          {/* Aperçu STATIQUE du lieu (image — une MapView GL rend noir dans un form sheet iOS).
-              La position vient du tap carte (FAB/appui long) + recherche d'adresse. */}
-          <View style={styles.miniMap}>
-            <Image
-              source={{ uri: mapboxStaticUrl(longitude, latitude) }}
-              style={StyleSheet.absoluteFillObject}
-              resizeMode="cover"
-            />
-            {/* Pin rose dessiné en RN (l'overlay Mapbox casserait l'URL iOS) */}
-            <View style={styles.centerPin} pointerEvents="none">
-              <View style={styles.centerPinDot} />
-            </View>
+          {/* Pas d'aperçu carte : MapView GL ET <Image> Mapbox rendent noir dans un
+              form sheet iOS. La position vient du tap carte (FAB/appui long) + recherche. */}
+          <View style={styles.locationStamp}>
+            <View style={styles.locationPinDot} />
+            <Text style={styles.locationStampText} numberOfLines={2}>
+              {address || `Position : ${latitude.toFixed(5)}, ${longitude.toFixed(5)}`}
+            </Text>
           </View>
-
-          {/* Adresse résolue */}
-          {address ? (
-            <Text style={styles.addressResolved} numberOfLines={1}>{address}</Text>
-          ) : null}
 
           <View style={styles.divider} />
 
@@ -634,6 +622,26 @@ const makeStyles = (T: Theme) => StyleSheet.create({
     color: T.textFaint,
     textTransform: 'uppercase',
     marginTop: 16,
+  },
+  // Cartouche de position (remplace l'aperçu carte, noir dans un form sheet iOS)
+  locationStamp: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingVertical: 14,
+  },
+  locationPinDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: T.primary,
+  },
+  locationStampText: {
+    flex: 1,
+    fontFamily: F.mono,
+    fontSize: 12,
+    letterSpacing: 0.3,
+    color: T.textDim,
   },
   // CTA bloc (24 / Heading) — radiusMd + borderCurve continuous (D-12)
   cta: {
