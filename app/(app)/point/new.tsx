@@ -48,7 +48,7 @@ export default function NewPoint() {
   const [note, setNote] = useState(7);
   const [comment, setComment] = useState('');
   const [durationMinutes, setDurationMinutes] = useState('');
-  const [selectedPartnerId, setSelectedPartnerId] = useState<string | null>(null);
+  const [selectedPartnerIds, setSelectedPartnerIds] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [snackbar, setSnackbar] = useState<string | null>(null);
 
@@ -107,9 +107,9 @@ export default function NewPoint() {
 
   async function handleSubmit() {
     if (!user) return;
-    if (!selectedPartnerId) {
+    if (selectedPartnerIds.length === 0) {
       haptics.warn();
-      setSnackbar('Vous devez taguer un partenaire pour sceller ce moment.');
+      setSnackbar('Vous devez mentionner au moins un partenaire pour sceller ce moment.');
       return;
     }
 
@@ -139,7 +139,7 @@ export default function NewPoint() {
         durationMinutes: durationMinutes ? parseInt(durationMinutes, 10) : undefined,
         happenedAt,
         address: address || undefined,
-        partnerId: selectedPartnerId ?? undefined,
+        partnerIds: selectedPartnerIds,
       });
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
@@ -167,7 +167,7 @@ export default function NewPoint() {
     comment.trim() !== '' ||
     durationMinutes !== '' ||
     note !== 7 ||
-    selectedPartnerId !== null;
+    selectedPartnerIds.length > 0;
 
   usePreventRemove(isDirty, ({ data }) => {
     haptics.warn();
@@ -229,21 +229,28 @@ export default function NewPoint() {
 
           <View style={styles.divider} />
 
-          {/* Partenaire */}
+          {/* Partenaires — au moins un, plusieurs possibles */}
           <View style={styles.partnerLabelRow}>
-            <Text style={styles.fieldEyebrow}>Partenaire</Text>
-            <Text style={styles.fieldRequired}>Requis</Text>
+            <Text style={styles.fieldEyebrow}>Partenaires</Text>
+            <Text style={styles.fieldRequired}>Au moins un</Text>
           </View>
           {friends.length === 0 ? (
             <Text style={styles.noFriends}>Ajoutez un ami à votre cercle pour inscrire un moment.</Text>
           ) : (
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.partnerScroll}>
               {friends.map((f) => {
-                const selected = f.profile.id === selectedPartnerId;
+                const selected = selectedPartnerIds.includes(f.profile.id);
                 return (
                   <TouchableOpacity
                     key={f.profile.id}
-                    onPress={() => { haptics.select(); setSelectedPartnerId(selected ? null : f.profile.id); }}
+                    onPress={() => {
+                      haptics.select();
+                      setSelectedPartnerIds((prev) =>
+                        prev.includes(f.profile.id)
+                          ? prev.filter((id) => id !== f.profile.id)
+                          : [...prev, f.profile.id]
+                      );
+                    }}
                     style={[styles.partnerChip, selected && styles.partnerChipActive]}
                     activeOpacity={0.8}
                   >

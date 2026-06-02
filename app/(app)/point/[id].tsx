@@ -60,8 +60,7 @@ export default function PointDetail() {
   const styles = useMemo(() => makeStyles(T), [T]);
 
   const [point, setPoint] = useState<MapPoint | null>(null);
-  const [partnerRecord, setPartnerRecord] = useState<PointPartner | null>(null);
-  const [partnerProfile, setPartnerProfile] = useState<Profile | null>(null);
+  const [partners, setPartners] = useState<{ record: PointPartner; profile: Profile | null }[]>([]);
   const [photos, setPhotos] = useState<{ id: string; photo_url: string; position: number }[]>([]);
   const [loading, setLoading] = useState(true);
   const [snackbar, setSnackbar] = useState<string | null>(null);
@@ -75,6 +74,9 @@ export default function PointDetail() {
   const [yearStr, setYearStr] = useState('');
   const [saving, setSaving] = useState(false);
 
+  // Ma ligne de partenaire (si je fais partie des partenaires mentionnés) — pour le consentement.
+  const myPartner = partners.find((p) => p.record.partner_id === user?.id)?.record ?? null;
+
   useEffect(() => {
     if (!id) return;
     loadPoint();
@@ -87,13 +89,14 @@ export default function PointDetail() {
       const coords = (raw.location as any)?.coordinates ?? [0, 0];
       setPoint({ ...raw, longitude: coords[0], latitude: coords[1] });
     }
-    const { data: pp } = await supabase.from('point_partners').select('*').eq('point_id', id).maybeSingle();
-    if (pp) {
-      setPartnerRecord(pp);
-      const { data: profile } = await supabase
-        .from('profiles').select('id, username, display_name, avatar_url').eq('id', pp.partner_id).single();
-      setPartnerProfile(profile as Profile);
-    }
+    const { data: pps } = await supabase
+      .from('point_partners')
+      .select('*, profiles:partner_id(id, username, display_name, avatar_url)')
+      .eq('point_id', id);
+    setPartners((pps ?? []).map((pp: any) => ({
+      record: pp as PointPartner,
+      profile: (pp.profiles ?? null) as Profile | null,
+    })));
     const { data: photoData } = await supabase
       .from('point_photos').select('id, photo_url, position').eq('point_id', id).order('position');
     setPhotos(photoData ?? []);
@@ -129,7 +132,7 @@ export default function PointDetail() {
   }
 
   async function handleSaveAndAccept() {
-    if (!point || !partnerRecord) return;
+    if (!point || !myPartner) return;
     setSaving(true);
     const d = parseInt(dayStr, 10);
     const m = parseInt(monthStr, 10);
@@ -151,11 +154,11 @@ export default function PointDetail() {
   }
 
   async function handleConsent(accept: boolean) {
-    if (!partnerRecord) return;
+    if (!myPartner) return;
     const { error } = await supabase.from('point_partners').update({
       status: accept ? 'accepted' : 'rejected',
       responded_at: new Date().toISOString(),
-    }).eq('id', partnerRecord.id);
+    }).eq('id', myPartner.id);
     if (error) { haptics.error(); setSnackbar('Erreur lors de la réponse.'); return; }
     if (accept) haptics.success(); else haptics.warn();
     setSnackbar(accept ? 'Page scellée.' : 'Taguage refusé.');
@@ -208,8 +211,8 @@ export default function PointDetail() {
   }
 
   const isOwner = point.creator_id === user?.id;
-  const isPartner = partnerRecord?.partner_id === user?.id;
-  const isPending = partnerRecord?.status === 'pending';
+  const isPartner = !!myPartner;
+  const isPending = myPartner?.status === 'pending';
 
   return (
     <View style={styles.container}>
@@ -285,14 +288,20 @@ export default function PointDetail() {
               <Text style={styles.metaKey}>Durée</Text>
               <Text style={styles.metaValue}>{formatDuration(point.duration_minutes)}</Text>
             </View>
-            {partnerProfile && partnerRecord && (
+            {partners.length > 0 && (
               <View style={styles.metaRow}>
                 <Text style={styles.metaKey}>Avec</Text>
-                <View style={styles.metaPartner}>
-                  <Text style={styles.metaValue}>{partnerProfile.display_name ?? partnerProfile.username}</Text>
-                  <View style={[styles.consentBadge, partnerRecord.status === 'accepted' && styles.consentBadgeOk, partnerRecord.status === 'rejected' && styles.consentBadgeNo]}>
-                    <Text style={styles.consentBadgeText}>{consentLabel(partnerRecord.status)}</Text>
-                  </View>
+                <View style={styles.metaPartnersCol}>
+                  {partners.map((p) => (
+                    <View key={p.record.id} style={styles.metaPartnerItem}>
+                      <Text style={styles.metaPartnerName}>
+                        {p.profile?.display_name ?? p.profile?.username ?? '—'}
+                      </Text>
+                      <View style={[styles.consentBadge, p.record.status === 'accepted' && styles.consentBadgeOk, p.record.status === 'rejected' && styles.consentBadgeNo]}>
+                        <Text style={styles.consentBadgeText}>{consentLabel(p.record.status)}</Text>
+                      </View>
+                    </View>
+                  ))}
                 </View>
               </View>
             )}
@@ -562,6 +571,23 @@ const makeStyles = (T: Theme) => StyleSheet.create({
     flex: 1,
     alignItems: 'flex-end',
     gap: 6,
+  },
+  // Colonne multi-partenaires (un point peut mentionner plusieurs partenaires)
+  metaPartnersCol: {
+    flex: 1,
+    alignItems: 'flex-end',
+    gap: 14,
+  },
+  metaPartnerItem: {
+    alignItems: 'flex-end',
+    gap: 6,
+  },
+  metaPartnerName: {
+    fontFamily: F.serif,
+    fontStyle: 'italic',
+    fontSize: 16,
+    color: T.text,
+    textAlign: 'right',
   },
   consentBadge: {
     borderWidth: 1,

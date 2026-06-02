@@ -79,7 +79,7 @@ export function usePoints() {
     durationMinutes?: number;
     happenedAt?: string;
     address?: string;
-    partnerId?: string;
+    partnerIds?: string[];
   }): Promise<MapPoint | null> => {
 
     // Vérifications préalables
@@ -158,48 +158,51 @@ export function usePoints() {
 
     const pointData = rawPoint;
 
-    // Taguage partenaire
-    if (params.partnerId) {
-      const { error: partnerError } = await supabase
-        .from('point_partners')
-        .insert({
-          point_id: pointId,
-          partner_id: params.partnerId,
-          status: 'pending',
-          notified_at: new Date().toISOString(),
-        });
+    // Taguage partenaires (un ou plusieurs) — une ligne point_partners par partenaire.
+    const partnerIds = params.partnerIds ?? [];
+    if (partnerIds.length > 0) {
+      const now = new Date().toISOString();
+      const rows = partnerIds.map((pid) => ({
+        point_id: pointId,
+        partner_id: pid,
+        status: 'pending',
+        notified_at: now,
+      }));
+
+      const { error: partnerError } = await supabase.from('point_partners').insert(rows);
 
       if (partnerError) {
-        console.error('[createPoint] Erreur taguage partenaire:', partnerError.message);
+        console.error('[createPoint] Erreur taguage partenaires:', partnerError.message);
         // Ne bloque pas — le point est créé, le taguage a échoué
       } else {
-        // Notification push au partenaire
-        const { data: partnerProfile } = await supabase
+        // Notification push à chaque partenaire mentionné disposant d'un push_token
+        const { data: creatorProfile } = await supabase
           .from('profiles')
-          .select('push_token')
-          .eq('id', params.partnerId)
+          .select('username, display_name')
+          .eq('id', params.userId)
           .single();
 
-        if (partnerProfile?.push_token) {
-          const { data: creatorProfile } = await supabase
-            .from('profiles')
-            .select('username, display_name')
-            .eq('id', params.userId)
-            .single();
+        const senderName =
+          (creatorProfile as any)?.display_name ??
+          (creatorProfile as any)?.username ??
+          'Quelqu\'un';
 
-          const senderName =
-            (creatorProfile as any)?.display_name ??
-            (creatorProfile as any)?.username ??
-            'Quelqu\'un';
+        const { data: partnerProfiles } = await supabase
+          .from('profiles')
+          .select('id, push_token')
+          .in('id', partnerIds);
 
+        for (const pp of (partnerProfiles ?? [])) {
+          const token = (pp as any).push_token;
+          if (!token) continue;
           try {
             await fetch('https://exp.host/--/api/v2/push/send', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
-                to: (partnerProfile as any).push_token,
-                title: 'LoveMap — Vous avez été tagué',
-                body: `${senderName} vous a tagué sur un moment. Acceptez-vous ?`,
+                to: token,
+                title: 'LoveMap — Vous avez été mentionné',
+                body: `${senderName} vous a mentionné sur un moment. Acceptez-vous ?`,
                 data: { pointId, type: 'partner_tag' },
               }),
             });
