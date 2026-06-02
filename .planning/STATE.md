@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: "Phase 04 en cours (2/3 plans) — 04-01 (UI-05) + 04-02 (UI-06) exécutés (code)"
-stopped_at: "Phase 4 plan 04-02 exécuté (UI-06 — « Le cercle » annuaire éditorial : FriendItem avatar carré rose / nom serif 20 / @username mono droite / Carte underline / Retirer T.danger + Alert éditoriale ; friends/index titre serifLight 36, recherche underline ui/Input, snackbars de retrait + haptics.error, empty/no-result states). 0 nouvelle erreur tsc (21). Vérif device en attente. Reste 04-03 (demandes). Warning à traiter : 04-03 handleRespond refus amitié `haptics.tap()` → `haptics.warn()` (UI-SPEC §Motion)."
-last_updated: "2026-06-02T17:40:00.000Z"
+status: "Phase 04 code complet (3/3 plans) — 04-01 (UI-05) + 04-02 (UI-06) + 04-03 (UI-07) exécutés ; gate device de fin de phase en attente"
+stopped_at: "Phase 4 plan 04-03 exécuté (UI-07 — Demandes refondues : 2 sections eyebrow mono « DEMANDES REÇUES » + « TAGUAGES EN ATTENTE » + Envoyées discrète ; FriendRequestItem boutons texte paramétrés (Accepter/Refuser · Sceller/Décliner, coral/ghost, D-12) + nom serif 20 ; consentement de taguage INLINE via nouvelle méthode hook useFriends.respondToTag (mono-table point_partners, is_visible via trigger, RLS mig 010/011) — plus de navigation « Répondre → » ; empty states D-07 ; W2 corrigé (refus amitié haptics.tap→warn). 0 nouvelle erreur tsc (21). Vérif device en attente."
+last_updated: "2026-06-02T18:20:00.000Z"
 progress:
   total_phases: 5
   completed_phases: 3
   total_plans: 17
-  completed_plans: 16
-  percent: 68
+  completed_plans: 17
+  percent: 71
 ---
 
 # STATE — LoveMap (Refonte UI/UX iOS)
@@ -33,7 +33,7 @@ See: .planning/PROJECT.md (updated 2026-05-29)
 | 1 | Stabilisation & Fondations | ✅ Terminé — 8/8 req · builds #17/#18 · migrations 011+012 |
 | 2 | Carte stylisée | ✅ Terminé — 4/4 req · vérifié 4/4 · validé device #19 · style Mapbox custom + pivot D-12 |
 | 3 | Création & Détail de point (sheets natifs) | ✅ Terminé — 5/5 plans · validé device #26 · **pivot formSheet→modal** (bug iOS 26 RNS 4.16 #3235) · aperçu carte retiré (location stamp) (03-01 nav Stack+(tabs) · 03-02 tap-pin → détail direct · 03-03 création carnet note-first · 03-04 détail carnet lecture + segments date #2125 · 03-05 validation device + correctifs sheet) |
-| 4 | Listes & Cercle | 🔄 En cours — 2/3 plans · 04-01 (UI-05) + 04-02 (UI-06) exécutés, vérif device en attente |
+| 4 | Listes & Cercle | 🔄 Code complet — 3/3 plans · 04-01 (UI-05) + 04-02 (UI-06) + 04-03 (UI-07) exécutés, gate device en attente |
 | 5 | Auth, Profil & Finitions | ⬜ Not started |
 
 **Requirements:** 16 / 22 complete (Phase 1 : STAB-01/02/03, FOND-01/02/03/04, IOS-03 · Phase 2 : MAP-01, MAP-02, MAP-03, UI-02 · Phase 3 : IOS-01, IOS-02, UI-03, UI-04)
@@ -62,7 +62,7 @@ See: .planning/PROJECT.md (updated 2026-05-29)
 
 ## Next Step
 
-**Phase 4 en cours — 04-01 (UI-05) + 04-02 (UI-06) exécutés.** Exécuter **04-03 (Demandes, UI-07)**, puis gate device de fin de phase (build natif). Baseline tsc de référence phase 4 = **21** (depuis 04-01, après suppression de FiltersBottomSheet) ; 04-02 a fini à 21 (0 nouvelle erreur).
+**Phase 4 code complet — 04-01 (UI-05) + 04-02 (UI-06) + 04-03 (UI-07) exécutés.** Prochaine étape : **gate device de fin de phase** (build natif EAS — l'orchestrateur le lance) puis vérification 3/3. Baseline tsc de référence phase 4 = **21** ; 04-03 a fini à 21 (0 nouvelle erreur). respondToTag ajouté à useFriends (mono-table point_partners, is_visible via trigger). Déviation rule-4 existante `handleCancel` (Envoyées) laissée inchangée et documentée (non étendue).
 
 Aperçu carte **restauré build #27** (validé device) : `<Image>` statique Mapbox (`mapboxStaticUrl()`) + pin rose RN, dans détail + création — fiable dans le `modal` (le noir d'avant venait du `formSheet`, pas de l'image).
 
@@ -76,8 +76,8 @@ Aperçu carte **restauré build #27** (validé device) : `<Image>` statique Mapb
 
 ## Session
 
-- **Stopped at:** Phase 4 plan 04-02 exécuté (UI-06). FriendItem refondu en entrée d'annuaire (avatar carré rose, nom serif 20, @username mono droite, « Carte » underline T.primary, « Retirer » T.danger + Alert éditoriale « Retirer du cercle ? » + haptics.warn) ; friends/index « Le cercle » (titre serifLight 36, recherche underline ui/Input, snackbars « Retiré du cercle. »/« Échec — réessayez. » + haptics.error, empty/no-result states) ; purge F.sans* résiduels (Inviter/chevron Demandes). 0 nouvelle erreur tsc (21). Vérif device en attente. Reste 04-03.
-- **Resume file:** .planning/phases/04-listes-cercle/ (execute-phase)
+- **Stopped at:** Phase 4 plan 04-03 exécuté (UI-07). useFriends.respondToTag ajouté (mono-table point_partners, is_visible via trigger, RLS mig 010/011) ; FriendRequestItem boutons texte paramétrés (Accepter/Refuser · Sceller/Décliner, coral/ghost, D-12) + nom serif 20, IcoCheck/IcoClose retirés ; friends/requests refondu (2 sections eyebrow + Envoyées discrète, taguage consenti inline via respondToTag sans navigation, empty « Pas de page en attente. », titre serifLight 36, F.sans* purgé). W2 corrigé (refus amitié haptics.tap→warn). handleCancel (Envoyées) rule-4 laissé inchangé + documenté. 0 nouvelle erreur tsc (21). Vérif device en attente.
+- **Resume file:** .planning/phases/04-listes-cercle/ (execute-phase — gate device de fin de phase)
 
 ---
-*Last updated: 2026-06-02 after 04-02 (UI-06 « Le cercle » annuaire éditorial + retrait d'ami D-06, 0 nouvelle erreur tsc)*
+*Last updated: 2026-06-02 after 04-03 (UI-07 Demandes — 2 sections eyebrow + consentement taguage inline respondToTag, 0 nouvelle erreur tsc)*

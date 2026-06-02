@@ -66,10 +66,10 @@ Chaque phase livre une tranche visible bout-en-bout. Les fondations techniques s
 **Goal:** Refondre les écrans de listing et social selon l'archétype « table des matières ».
 **Mode:** mvp
 **Requirements:** UI-05, UI-06, UI-07
-**Plans:** 2/3 plans complete
+**Plans:** 3/3 plans complete
 - [x] 04-01-PLAN.md — Liste « Le carnet » : note Display 44 T.text, pills inline, sticky par mois, suppression FiltersBottomSheet (UI-05)
 - [x] 04-02-PLAN.md — Le cercle (`friends/index`) : annuaire éditorial (avatar carré rose, nom serif 20, @username mono, « Carte » underline, recherche underline) + retrait d'ami D-06 (Alert éditoriale + haptics + snackbars) (UI-06)
-- [ ] 04-03-PLAN.md — Demandes (`friends/requests`) (UI-07)
+- [x] 04-03-PLAN.md — Demandes (`friends/requests`) : 2 sections eyebrow (DEMANDES REÇUES + TAGUAGES EN ATTENTE) + Envoyées discrète, boutons texte Accepter/Refuser · Sceller/Décliner, consentement taguage inline via useFriends.respondToTag (mono-table, is_visible via trigger) (UI-07)
 **Success Criteria**:
 1. La liste des moments (`point/list`) adopte l'archétype « table des matières » (gros numéros, métadonnées mono alignées droite) avec swipe-back.
 2. L'écran amis (`friends/index`) est refondu dans le même archétype, filtres/recherche inclus.
@@ -102,4 +102,4 @@ Tous les requirements v1 sont mappés à exactement une phase.
 **Total :** 22 / 22 requirements mappés ✓
 
 ---
-*Last updated: 2026-06-02 after 04-02 (Le cercle UI-06 — annuaire éditorial + retrait d'ami D-06)*
+*Last updated: 2026-06-02 after 04-03 (Demandes UI-07 — 2 sections eyebrow + consentement taguage inline respondToTag). Phase 4 : 3/3 plans, gate device en attente.*
