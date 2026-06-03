@@ -25,7 +25,7 @@
 
 **Nom** : LoveMap  
 **Type** : Application mobile React Native (Expo) destinée aux adultes  
-**Dépôt GitHub** : https://github.com/louisGit0/LoveMap (branche : `main`)  
+**Dépôt GitHub** : https://github.com/louisGit0/LoveMap (branche locale : `master` → `origin/master`. ⚠️ La branche `main` du remote est une vieille ligne morte divergente — NE JAMAIS y pousser ; toujours `git push origin master`)  
 **Propriétaire** : Louis (louisGit0)
 
 **Concept** : LoveMap permet à des utilisateurs adultes de poser des points géolocalisés sur les lieux où ils ont eu un rapport sexuel, de les annoter (note /10, commentaire, durée), de les visualiser sous forme de heatmap, et de les partager uniquement avec des amis approuvés via un système de consentement double.
@@ -37,10 +37,10 @@
 **Sans exception, dans cet ordre :**
 
 ```bash
-# 1. Commit et push sur GitHub
+# 1. Commit et push sur GitHub (branche locale master → origin/master)
 git add .
 git commit -m "feat/fix/chore: description courte de la modification"
-git push origin main
+git push origin master
 
 # 2. Mise à jour EAS (Over-The-Air update)
 eas update --branch main --message "description courte de la modification"
@@ -92,8 +92,9 @@ lovemap/
 │   ├── map/
 │   │   ├── AppMapView.tsx        # Carte mobile (@rnmapbox/maps — MapboxGL.MapView + Camera)
 │   │   ├── AppMapView.web.tsx    # Placeholder web
-│   │   ├── PointMarker.tsx       # Marker mobile (MapboxGL.MarkerView)
+│   │   ├── PointMarker.tsx       # Pin « sceau » — MapboxGL.MarkerView + <Seal> (note gravée serif, pastille N) + Pressable (règle 20)
 │   │   ├── PointMarker.web.tsx   # Stub web (null)
+│   │   ├── UserLocationMarker.tsx # Relevé « point blanc » pulsant (MarkerView + Animated, reduce-motion) — remplace le point bleu système
 │   │   ├── HeatmapLayer.tsx      # Heatmap mobile (MapboxGL.ShapeSource + HeatmapLayer)
 │   │   ├── HeatmapLayer.web.tsx  # Stub web (null)
 │   │   ├── MapHeader.tsx         # Toggle pins/heatmap
@@ -108,7 +109,9 @@ lovemap/
 │       └── PageHeader.tsx        # Header réutilisable (eyebrow + titre + back + slot droit)
 ├── constants/
 │   ├── config.ts                 # MIN_AGE, APP_NAME, MAPBOX_STYLE, COLORS (palette fixe)
-│   └── theme.ts                  # Design tokens Bold (T.bg, T.primary, T.pill…)
+│   ├── markers.ts                # noteHue(n) — teinte du sceau selon la note (10–7 vif / 6–4 doux / 3–1 profond)
+│   ├── fonts.ts                  # Familles typographiques (objet F)
+│   └── theme.ts                  # Design tokens (T.bg, T.primary, T.pill…)
 ├── lib/
 │   ├── supabase.ts               # Client Supabase initialisé + typé
 │   ├── notifications.ts          # Helpers Expo Push
@@ -134,7 +137,9 @@ lovemap/
 │   ├── 003_point_photos.sql
 │   ├── 004_point_address.sql
 │   ├── 005_age_check_trigger.sql # Trigger âge ≥ 18 côté serveur
-│   └── 006_profiles_pending_rls.sql # profiles_select élargi à status IN ('pending','accepted')
+│   ├── 006_profiles_pending_rls.sql # profiles_select élargi à status IN ('pending','accepted')
+│   ├── 007→012                   # RPC create_point, colonnes, RLS visibilité/récursion, storage avatars
+│   └── 013_push_notifications.sql # pg_net + triggers notifs serveur (réponse mention, ami a posté)
 └── CLAUDE.md                     # Ce fichier — à consulter et maintenir
 ```
 
@@ -159,6 +164,21 @@ lovemap/
 |----------|-----------|--------|-------|
 | `create_point` | `(p_creator_id, p_longitude, p_latitude, p_note, p_comment?, p_duration_minutes?, p_happened_at?, p_address?)` | `UUID` | Crée un point avec PostGIS `ST_MakePoint` côté serveur — appelée via `supabase.rpc('create_point', {...})` |
 | `search_users` | `(query TEXT)` | `SETOF profiles` | Recherche d'utilisateurs — exclut `date_of_birth` et `push_token` |
+| `send_expo_push` | `(tokens text[], title, body, data jsonb)` | `void` | Helper notif — POST multicast vers `exp.host` via `pg_net` (`net.http_post`). `SECURITY DEFINER`, `exception when others` |
+
+### Notifications push (migration 013)
+
+Trois événements notifient via l'API Expo Push (`exp.host`). L'app enregistre le `push_token` (`lib/notifications.ts`) et affiche les notifs entrantes (`app/_layout.tsx`).
+
+| Événement | Déclencheur | Destinataire | Implémentation |
+|-----------|-------------|--------------|----------------|
+| Mention reçue | création de point avec partenaires | personne mentionnée | **CLIENT** — `createPoint` (`usePoints.ts`) lit le `push_token` des partenaires (amis → RLS OK) et POST exp.host |
+| Réponse à une mention | `point_partners` UPDATE → status accepted/rejected | **créateur** du point | **SERVEUR** — trigger `trg_notify_mention_response` |
+| Ami a posté un moment | `points` UPDATE → `is_visible` FALSE→TRUE (moment validé) | **amis acceptés** du créateur (hors partenaires) | **SERVEUR** — trigger `trg_notify_friends_new_point` |
+
+- Triggers serveur en `SECURITY DEFINER` (lisent les `push_token` hors RLS, sans jamais les exposer aux clients) et **encapsulés dans `exception when others`** → une notif ratée ne casse JAMAIS la mutation déclenchante (consentement / visibilité).
+- Événement 1 **reste client-side** (déjà dans le binaire) pour éviter le doublon. ⚠️ Ne PAS ajouter de trigger `point_partners` INSERT sans d'abord retirer le push client de `createPoint`.
+- Événement 3 se déclenche à la **bascule de visibilité** (pas à la création brute) : les amis sont prévenus pile quand le moment apparaît sur leur carte. Cohérent avec « un moment n'apparaît qu'une fois validé ».
 
 ### Règles métier critiques
 
@@ -205,6 +225,8 @@ Ne jamais écrire `import * as ImagePicker from 'expo-image-picker'` ni `import 
 18. **RLS Supabase : pas de récursion croisée entre policies** — Une policy SELECT sur `points` qui sous-requête `point_partners` ⟷ une policy SELECT sur `point_partners` qui sous-requête `points` = récursion infinie PostgreSQL `42P17`. Pour une vérification cross-table dans une policy, utiliser une fonction `SECURITY DEFINER` (avec `SET search_path`, EXECUTE limité à `authenticated`) qui contourne la RLS de la table interrogée. Cf. migration 011 (`is_pending_partner`). Cause racine STAB-02/03.
 
 19. **iOS 26 : `presentation: 'formSheet'` est cassé — utiliser `presentation: 'modal'`** — Avec **react-native-screens 4.16** (SDK 54) sur **iOS 26**, un `formSheet` (détents custom) **ancre son contenu en bas / rend trop petit** (RNS [#3235](https://github.com/software-mansion/react-native-screens/issues/3235) + [#2522](https://github.com/software-mansion/react-native-screens/issues/2522)) → l'écran apparaît **noir en haut** (et entièrement noir clavier ouvert). **Non corrigé** jusqu'à 4.20+ (fixes form sheet récents = Android only) et **non corrigeable en layout JS** (une taille explicite `useWindowDimensions` empire le bug → contenu hors écran, confirmé build #25). **Toujours** présenter les écrans glissants du bas (création/détail point) en **`presentation: 'modal'`** (carte pageSheet native : glisse du bas, `gestureEnabled` swipe-to-dismiss, `usePreventRemove` OK) — **jamais** `formSheet`/`sheetAllowedDetents`. Confirmé build #26 (validé device). Corollaire carte : dans le `formSheet` cassé, tout était noir (bug du sheet). Dans un **`modal`**, une **`<Image>` statique Mapbox** (Static Images API, `mapboxStaticUrl()` dans `constants/config.ts`, pin rose dessiné en RN) **s'affiche correctement** — c'est l'aperçu carte du détail/création (validé build #27). Un **MapView GL** reste risqué (surface Metal) → préférer l'image statique pour un simple aperçu.
+
+20. **PointAnnotation ne rend PAS de `<Text>` à police custom — utiliser `MarkerView` pour tout marqueur riche** — `MapboxGL.PointAnnotation` prend un *snapshot natif* de son contenu RN, qui **ne rasterise pas correctement un `<Text>` avec une police custom** (Cormorant) : le marqueur apparaît en **fantôme / cercle gris transparent** (et un overlay translucide en `position:absolute` se compose par-dessus le fond plein). **Même cause que la pastille de compte vide au build #30.** L'ancien pin marchait justement parce qu'il n'avait **aucun texte**. → **Tout marqueur contenant du texte (la note gravée du sceau, la pastille N) DOIT être rendu via `MapboxGL.MarkerView`** (vues RN *live*, pas de snapshot) — comme le relevé blanc. Mettre **`allowOverlap`** sur la MarkerView (sinon Mapbox masque les marqueurs qui se chevauchent → cause du switch MarkerView→PointAnnotation au #16) et gérer le tap via un **`<Pressable>`** standard (fini les quirks `onSelected` de PointAnnotation : triple-ouverture, halo collé). Réserver PointAnnotation aux marqueurs **sans texte**. Confirmé : #33 (KO en PointAnnotation, sceaux invisibles) → **#34 (OK en MarkerView, validé device)**.
 
 ---
 
@@ -304,8 +326,13 @@ Le toggle dark/light est dans `app/(app)/profile/index.tsx` via `useThemeStore` 
 | 28 | ✅ Terminé | Build EAS natif iOS #28 — code Phase 4, soumis TestFlight, **validé device** (clair + sombre). Milestone 4/5 phases (80 %). |
 | GSD-P5 | ✅ Terminé | Phase 5 (Auth, Profil & Finitions) **validée device #29** — **dernière phase**. **Auth « page de couverture »** : `login` compact (eyebrow « LOVEMAP · ÉDITION INTIME », champs visibles), `register` stepper restylé + **fix bug `MIN_AGE`** (`register.tsx` importait `{ MIN_AGE }` inexistant → `APP_CONFIG.MIN_AGE` ; vérif client < 18 désormais active, trigger serveur autoritaire inchangé) + CTA « Vérifier mon âge ». **Profil « page de couverture »** : avatar carré + bento Analyse (grande tuile = `points.length` « PAGES DU CARNET » en `T.text`), toggle thème unique + a11y, **suppression compte = Alert seule** (champ « EFFACER » retiré), **avatar upload préservé verbatim** (règles 14/15/17). **IOS-04** : `AppText` variant `display` + plafonds Dynamic Type par rôle, sweep home-indicator (`insets.bottom`) + tokens sur les 9 écrans, clair + sombre. tsc 21→**20** (fix MIN_AGE) ; 0 nouvelle erreur. Détail : .planning/phases/05-auth-profil-finitions/ |
 | 29 | ✅ Terminé | Build EAS natif iOS #29 — code Phase 5, soumis TestFlight, **validé device** (clair + sombre + Dynamic Type). **🎉 Milestone v1.0 « Refonte UI/UX iOS » TERMINÉ : 5/5 phases, 22/22 requirements, builds #17→#29.** |
+| 30-32 | ✅ Terminé | Revue écran-par-écran (modifs device-driven) — vue ami (masque ma position, points de l'ami), tri carnet croissant/décroissant, multi-partenaires (min 1), filtre statut carnet (en attente/validé), photos de profil partout, bloc « Avec » sous la note, **carte = points validés uniquement**, pins groupés par lieu + pastille N, eau bleue, swipe-delete carnet, stats profil = validés only, fix « Sceller la page » (faux abandon + doublons). Builds #30→#32. |
+| R6 | ✅ Terminé (device #34) | Finition UI/UX avant publication — **« Moi »** (en-tête couverture horizontal avatar+prénom, marges 24, tuile hero resserrée) · **« Amis »** (FriendItem regroupé avatar+nom+@pseudo, avatar 46, actions Carte·Retirer à droite, header aligné 24). 0 nouvelle erreur tsc. |
+| Pins | ✅ Terminé (device #34) | Refonte marqueurs (brief `refonte pins`) — pin **« sceau »** (disque rose, **note gravée** serif italic, tige sur la coordonnée, teinte via `constants/markers.ts`, pastille N) + relevé **point blanc pulsant** (`UserLocationMarker.tsx`, MarkerView, remplace le point bleu, reduce-motion). **Cause racine #33** : PointAnnotation ne rend pas le `<Text>` custom (sceau gris transparent) → **bascule MarkerView** (règle 20), validé #34. |
+| Notif | ✅ Terminé (prod) | Notifications push 3 événements (mention reçue · réponse mention · ami a posté) — migration 013, triggers serveur `pg_net` (cf. section Notifications). Actif en prod, indépendant du build. |
+| 33-34 | ✅ Terminé | Builds EAS #33→#34. #33 : refonte marqueurs (sceaux KO en PointAnnotation). **#34 : pins en MarkerView (validé device), notifs serveur actives — build candidat App Store.** |
 
-> Mettre à jour ce tableau à chaque phase complétée. **Milestone v1.0 clos (Phase 5 / build #29).**
+> Mettre à jour ce tableau à chaque phase complétée. **v1.0 + refonte marqueurs + notifs : build #34 validé device, candidat publication App Store.**
 
 ### Détail phase MAJ
 
@@ -369,8 +396,8 @@ Le `RNMAPBOX_MAPS_DOWNLOAD_TOKEN` (`sk.xxx`) est le token secret Mapbox pour té
 Avant de considérer une tâche comme terminée, vérifier dans l'ordre :
 
 - [ ] Le code fonctionne et a été testé
-- [ ] `git add . && git commit -m "..." && git push origin main` → succès
-- [ ] `eas update --branch main --message "..."` → succès
+- [ ] `git add . && git commit -m "..." && git push origin master` → succès (branche `master`, PAS `main`)
+- [ ] `eas update --branch main --message "..."` → succès (ici « main » = canal EAS Update, sans rapport avec la branche git ; ⚠️ les OTA ne descendent pas toujours sur device — un build natif reste la voie fiable pour valider)
 - [ ] `CLAUDE.md` mis à jour si nécessaire (phases, archi, règles) → commité avec le push
 
 **Une tâche n'est terminée que quand ces 4 points sont cochés.**
