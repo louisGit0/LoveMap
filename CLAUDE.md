@@ -139,7 +139,10 @@ lovemap/
 │   ├── 005_age_check_trigger.sql # Trigger âge ≥ 18 côté serveur
 │   ├── 006_profiles_pending_rls.sql # profiles_select élargi à status IN ('pending','accepted')
 │   ├── 007→012                   # RPC create_point, colonnes, RLS visibilité/récursion, storage avatars
-│   └── 013_push_notifications.sql # pg_net + triggers notifs serveur (réponse mention, ami a posté)
+│   ├── 013_push_notifications.sql # pg_net + triggers notifs serveur (réponse mention, ami a posté)
+│   └── 014_moderation_blocks_reports.sql # user_blocks + content_reports + trigger anti-amitié bloquée (Guideline 1.2)
+├── docs/                         # Pages légales hébergées via GitHub Pages (master /docs) : privacy.html, terms.html, index.html
+├── store/                        # Kit de soumission App Store (app-store-listing.md)
 └── CLAUDE.md                     # Ce fichier — à consulter et maintenir
 ```
 
@@ -179,6 +182,21 @@ Trois événements notifient via l'API Expo Push (`exp.host`). L'app enregistre 
 - Triggers serveur en `SECURITY DEFINER` (lisent les `push_token` hors RLS, sans jamais les exposer aux clients) et **encapsulés dans `exception when others`** → une notif ratée ne casse JAMAIS la mutation déclenchante (consentement / visibilité).
 - Événement 1 **reste client-side** (déjà dans le binaire) pour éviter le doublon. ⚠️ Ne PAS ajouter de trigger `point_partners` INSERT sans d'abord retirer le push client de `createPoint`.
 - Événement 3 se déclenche à la **bascule de visibilité** (pas à la création brute) : les amis sont prévenus pile quand le moment apparaît sur leur carte. Cohérent avec « un moment n'apparaît qu'une fois validé ».
+
+### Modération (migration 014 — App Store Guideline 1.2)
+
+Exigences Apple pour le contenu généré par les utilisateurs (mention/taguage d'autrui) : signaler, bloquer, EULA.
+
+| Action | Surface UI | Donnée | Hook |
+|--------|-----------|--------|------|
+| Signaler un moment | détail d'un moment d'un autre → « Signaler ce moment » | `content_reports` (reported_point_id + reported_user_id) | `useFriends.reportContent` |
+| Signaler un utilisateur | onglet Amis → appui long sur un contact → « Signaler » | `content_reports` (reported_user_id) | `useFriends.reportContent` |
+| Bloquer un utilisateur | détail moment → « Bloquer l'auteur » · Amis → appui long → « Bloquer » | `user_blocks` + suppression amitié | `useFriends.blockUser` |
+| EULA / confidentialité | écran « Moi » → liens (`LINKS` dans `config.ts`) → `docs/*.html` | — | — |
+
+- `content_reports` : INSERT client seul (RLS), lecture **admin via service role** uniquement.
+- `blockUser` : insère le blocage + supprime l'amitié (invisibilité mutuelle via RLS) + retire du store. Trigger serveur `prevent_blocked_friendship` empêche de (re)créer une amitié entre bloqués.
+- `user_blocks` / `content_reports` ne sont **pas dans `database.types.ts`** → accès via `(supabase as any).from(...)` (exception « Supabase brut »).
 
 ### Règles métier critiques
 
@@ -330,6 +348,7 @@ Le toggle dark/light est dans `app/(app)/profile/index.tsx` via `useThemeStore` 
 | R6 | ✅ Terminé (device #34) | Finition UI/UX avant publication — **« Moi »** (en-tête couverture horizontal avatar+prénom, marges 24, tuile hero resserrée) · **« Amis »** (FriendItem regroupé avatar+nom+@pseudo, avatar 46, actions Carte·Retirer à droite, header aligné 24). 0 nouvelle erreur tsc. |
 | Pins | ✅ Terminé (device #34) | Refonte marqueurs (brief `refonte pins`) — pin **« sceau »** (disque rose, **note gravée** serif italic, tige sur la coordonnée, teinte via `constants/markers.ts`, pastille N) + relevé **point blanc pulsant** (`UserLocationMarker.tsx`, MarkerView, remplace le point bleu, reduce-motion). **Cause racine #33** : PointAnnotation ne rend pas le `<Text>` custom (sceau gris transparent) → **bascule MarkerView** (règle 20), validé #34. |
 | Notif | ✅ Terminé (prod) | Notifications push 3 événements (mention reçue · réponse mention · ami a posté) — migration 013, triggers serveur `pg_net` (cf. section Notifications). Actif en prod, indépendant du build. |
+| Modération | ✅ Terminé | Signalement + blocage + EULA (App Store Guideline 1.2) — migration 014 (`user_blocks`, `content_reports`, trigger anti-amitié bloquée), `useFriends.blockUser/reportContent`, UI cercle (appui long) + détail moment (« Signaler »/« Bloquer l'auteur »), liens légaux profil. Pages `docs/*.html` (GitHub Pages) + kit `store/app-store-listing.md`. Préparation publication App Store. |
 | 33-34 | ✅ Terminé | Builds EAS #33→#34. #33 : refonte marqueurs (sceaux KO en PointAnnotation). **#34 : pins en MarkerView (validé device), notifs serveur actives — build candidat App Store.** |
 
 > Mettre à jour ce tableau à chaque phase complétée. **v1.0 + refonte marqueurs + notifs : build #34 validé device, candidat publication App Store.**

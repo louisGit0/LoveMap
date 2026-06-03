@@ -4,6 +4,17 @@ export const APP_CONFIG = {
   MAPBOX_STYLE: (process.env.EXPO_PUBLIC_MAPBOX_STYLE as string | undefined) ?? 'mapbox://styles/mapbox/dark-v11',
 } as const;
 
+/**
+ * Liens légaux (politique de confidentialité, conditions d'utilisation, support).
+ * Hébergés via GitHub Pages (dossier docs/ de la branche master).
+ * ⚠️ Après publication des pages : activer GitHub Pages (Settings → Pages → master /docs).
+ */
+export const LINKS = {
+  privacy: 'https://louisgit0.github.io/LoveMap/privacy.html',
+  terms: 'https://louisgit0.github.io/LoveMap/terms.html',
+  support: 'mailto:louissoudy2@gmail.com',
+} as const;
+
 /** Couleurs fixes — ne varient pas avec le thème */
 export const COLORS = {
   primary: '#ff2d87',

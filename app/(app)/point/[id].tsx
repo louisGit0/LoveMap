@@ -21,6 +21,7 @@ import { haptics } from '@/lib/haptics';
 import { mapboxStaticUrl } from '@/constants/config';
 import { useAuth } from '@/hooks/useAuth';
 import { usePoints } from '@/hooks/usePoints';
+import { useFriends } from '@/hooks/useFriends';
 import { useTheme } from '@/hooks/useTheme';
 import { F } from '@/constants/fonts';
 import type { Theme } from '@/constants/theme';
@@ -56,6 +57,7 @@ export default function PointDetail() {
   const navigation = useNavigation();
   const { user } = useAuth();
   const { deletePoint, updatePointFields } = usePoints();
+  const { blockUser, reportContent } = useFriends();
   const T = useTheme();
   const styles = useMemo(() => makeStyles(T), [T]);
 
@@ -163,6 +165,52 @@ export default function PointDetail() {
     if (accept) haptics.success(); else haptics.warn();
     setSnackbar(accept ? 'Page scellée.' : 'Taguage refusé.');
     await loadPoint();
+  }
+
+  // Modération (Guideline 1.2) — signaler un moment / bloquer son auteur.
+  function handleReportPoint() {
+    if (!user || !point) return;
+    Alert.alert(
+      'Signaler ce moment ?',
+      'Notre équipe examinera ce signalement. Les contenus inappropriés ne sont pas tolérés.',
+      [
+        { text: 'Annuler', style: 'cancel' },
+        {
+          text: 'Signaler',
+          style: 'destructive',
+          onPress: async () => {
+            const ok = await reportContent({
+              reporterId: user.id,
+              reportedPointId: point.id,
+              reportedUserId: point.creator_id,
+              reason: 'point_report',
+            });
+            haptics.warn();
+            setSnackbar(ok ? 'Signalement envoyé. Merci.' : 'Échec du signalement.');
+          },
+        },
+      ]
+    );
+  }
+
+  function handleBlockAuthor() {
+    if (!user || !point) return;
+    Alert.alert(
+      "Bloquer l'auteur ?",
+      'Vous ne verrez plus ses moments et il ne verra plus les vôtres.',
+      [
+        { text: 'Annuler', style: 'cancel' },
+        {
+          text: 'Bloquer',
+          style: 'destructive',
+          onPress: async () => {
+            const ok = await blockUser(user.id, point.creator_id);
+            if (ok) { haptics.warn(); router.replace('/(app)/map'); }
+            else setSnackbar('Échec — réessayez.');
+          },
+        },
+      ]
+    );
   }
 
   // D-04 — garde de fermeture en mode édition : confirmation si la saisie est modifiée.
@@ -433,6 +481,19 @@ export default function PointDetail() {
               <IcoTrash size={16} color={T.danger} />
               <Text style={styles.deleteBtnText}>Effacer cette page</Text>
             </TouchableOpacity>
+          )}
+
+          {/* Modération — moment d'un autre (Guideline 1.2) */}
+          {!isOwner && (
+            <View style={styles.moderationBlock}>
+              <TouchableOpacity onPress={handleReportPoint} activeOpacity={0.7} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                <Text style={styles.moderationText}>Signaler ce moment</Text>
+              </TouchableOpacity>
+              <Text style={styles.moderationSep}>·</Text>
+              <TouchableOpacity onPress={handleBlockAuthor} activeOpacity={0.7} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                <Text style={styles.moderationTextDanger}>Bloquer l'auteur</Text>
+              </TouchableOpacity>
+            </View>
           )}
         </View>
       </ScrollView>
@@ -869,6 +930,37 @@ const makeStyles = (T: Theme) => StyleSheet.create({
     fontFamily: F.serif,
     fontStyle: 'italic',
     fontSize: 15,
+    color: T.danger,
+    textDecorationLine: 'underline',
+  },
+  moderationBlock: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    borderTopWidth: 1,
+    borderTopColor: T.border,
+    paddingTop: 20,
+    marginTop: 8,
+  },
+  moderationText: {
+    fontFamily: F.mono,
+    fontSize: 10,
+    letterSpacing: 1.5,
+    textTransform: 'uppercase',
+    color: T.textFaint,
+    textDecorationLine: 'underline',
+  },
+  moderationSep: {
+    fontFamily: F.mono,
+    fontSize: 10,
+    color: T.textFaint,
+    opacity: 0.6,
+  },
+  moderationTextDanger: {
+    fontFamily: F.mono,
+    fontSize: 10,
+    letterSpacing: 1.5,
+    textTransform: 'uppercase',
     color: T.danger,
     textDecorationLine: 'underline',
   },

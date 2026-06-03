@@ -11,6 +11,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   Alert,
+  Linking,
 } from 'react-native';
 import { router } from 'expo-router';
 import { Snackbar } from 'react-native-paper';
@@ -27,6 +28,7 @@ import { Button } from '@/components/ui/Button';
 import { AppText } from '@/components/ui/AppText';
 import { PressableScale } from '@/components/ui/PressableScale';
 import { F } from '@/constants/fonts';
+import { LINKS } from '@/constants/config';
 import type { Theme } from '@/constants/theme';
 import { IcoPlus, IcoCheck, IcoClose, IcoSun, IcoMoon } from '@/components/icons';
 
@@ -454,6 +456,16 @@ export default function ProfileScreen() {
               <Button variant="coral" onPress={handleChangePassword} loading={savingPwd}>Confirmer</Button>
             </View>
           )}
+
+          {/* Liens légaux (App Store : confidentialité + conditions requises) */}
+          <PressableScale style={styles.actionRow} onPress={() => { haptics.tap(); Linking.openURL(LINKS.privacy); }}>
+            <Text style={styles.actionLabel}>Politique de confidentialité</Text>
+            <Text style={styles.actionChevron}>›</Text>
+          </PressableScale>
+          <PressableScale style={styles.actionRow} onPress={() => { haptics.tap(); Linking.openURL(LINKS.terms); }}>
+            <Text style={styles.actionLabel}>Conditions d'utilisation</Text>
+            <Text style={styles.actionChevron}>›</Text>
+          </PressableScale>
 
           {/* Déconnexion */}
           <PressableScale style={[styles.actionRow, { borderBottomWidth: 0 }]} onPress={() => { haptics.tap(); handleSignOut(); }}>

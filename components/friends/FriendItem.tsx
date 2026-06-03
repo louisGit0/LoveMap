@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { View, Text, Image, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, Image, StyleSheet, TouchableOpacity, Alert, Pressable } from 'react-native';
 import { useTheme } from '@/hooks/useTheme';
 import { haptics } from '@/lib/haptics';
 import { F } from '@/constants/fonts';
@@ -10,9 +10,13 @@ interface Props {
   friend: FriendWithProfile;
   onUnfriend: () => void;
   onViewMap?: () => void;
+  /** Signaler cet utilisateur (modération — Guideline 1.2). */
+  onReport?: () => void;
+  /** Bloquer cet utilisateur (modération — Guideline 1.2). */
+  onBlock?: () => void;
 }
 
-export function FriendItem({ friend, onUnfriend, onViewMap }: Props) {
+export function FriendItem({ friend, onUnfriend, onViewMap, onReport, onBlock }: Props) {
   const T = useTheme();
   const styles = useMemo(() => makeStyles(T), [T]);
 
@@ -34,8 +38,46 @@ export function FriendItem({ friend, onUnfriend, onViewMap }: Props) {
     );
   }
 
+  // Menu de modération (appui long) — signaler / bloquer (Guideline 1.2).
+  function handleModerationMenu() {
+    if (!onReport && !onBlock) return;
+    haptics.tap();
+    const buttons: { text: string; style?: 'cancel' | 'destructive'; onPress?: () => void }[] = [];
+    if (onReport) buttons.push({ text: 'Signaler', onPress: confirmReport });
+    if (onBlock) buttons.push({ text: 'Bloquer', style: 'destructive', onPress: confirmBlock });
+    buttons.push({ text: 'Annuler', style: 'cancel' });
+    Alert.alert(`@${profile?.username}`, 'Que souhaitez-vous faire ?', buttons);
+  }
+
+  function confirmReport() {
+    Alert.alert(
+      'Signaler cet utilisateur ?',
+      'Notre équipe examinera ce signalement. Les contenus inappropriés et les utilisateurs abusifs ne sont pas tolérés.',
+      [
+        { text: 'Annuler', style: 'cancel' },
+        { text: 'Signaler', style: 'destructive', onPress: () => { haptics.warn(); onReport?.(); } },
+      ]
+    );
+  }
+
+  function confirmBlock() {
+    Alert.alert(
+      `Bloquer ${displayName} ?`,
+      'Vous ne verrez plus ses moments et il ne verra plus les vôtres. Il sera retiré de votre cercle.',
+      [
+        { text: 'Annuler', style: 'cancel' },
+        { text: 'Bloquer', style: 'destructive', onPress: () => { haptics.warn(); onBlock?.(); } },
+      ]
+    );
+  }
+
   return (
-    <View style={styles.container}>
+    <Pressable
+      style={styles.container}
+      onLongPress={handleModerationMenu}
+      delayLongPress={350}
+      accessibilityHint="Appui long pour signaler ou bloquer"
+    >
       <View style={styles.avatar}>
         {profile.avatar_url ? (
           <Image source={{ uri: profile.avatar_url }} style={StyleSheet.absoluteFillObject} resizeMode="cover" />
@@ -70,7 +112,7 @@ export function FriendItem({ friend, onUnfriend, onViewMap }: Props) {
           <Text style={styles.removeBtnText}>Retirer</Text>
         </TouchableOpacity>
       </View>
-    </View>
+    </Pressable>
   );
 }
 

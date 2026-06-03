@@ -29,7 +29,7 @@ import type { Profile } from '@/types/app.types';
 export default function FriendsScreen() {
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
-  const { friends, fetchFriends, fetchPendingReceived, fetchPendingTagsCount, searchUsers, sendFriendRequest, unfriend, setPendingReceived } = useFriends();
+  const { friends, fetchFriends, fetchPendingReceived, fetchPendingTagsCount, searchUsers, sendFriendRequest, unfriend, blockUser, reportContent, setPendingReceived } = useFriends();
   const pendingReceived = useFriendStore((s) => s.pendingReceived);
   const { setViewingFriend } = useMapStore();
   const T = useTheme();
@@ -91,6 +91,18 @@ export default function FriendsScreen() {
       haptics.error();
       setSnackbar('Échec — réessayez.');
     }
+  }
+
+  async function handleReportUser(profileId: string) {
+    if (!user) return;
+    const ok = await reportContent({ reporterId: user.id, reportedUserId: profileId, reason: 'user_report' });
+    setSnackbar(ok ? 'Signalement envoyé. Merci.' : 'Échec du signalement.');
+  }
+
+  async function handleBlockUser(profileId: string) {
+    if (!user) return;
+    const ok = await blockUser(user.id, profileId);
+    setSnackbar(ok ? 'Utilisateur bloqué.' : 'Échec — réessayez.');
   }
 
   const alreadyFriendIds = new Set(friends.map((f) => f.profile.id));
@@ -197,6 +209,8 @@ export default function FriendsScreen() {
                 <FriendItem
                   friend={item}
                   onUnfriend={() => handleUnfriend(item.id)}
+                  onReport={() => handleReportUser(item.profile.id)}
+                  onBlock={() => handleBlockUser(item.profile.id)}
                   onViewMap={() => {
                     setViewingFriend(item.profile.id, item.profile.display_name ?? item.profile.username);
                     router.push('/(app)/map');

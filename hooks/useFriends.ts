@@ -168,6 +168,50 @@ export function useFriends() {
     return true;
   }, [removeFriend]);
 
+  // Modération (App Store Guideline 1.2) — bloquer un utilisateur.
+  // Enregistre le blocage, supprime toute amitié entre les deux (invisibilité mutuelle via RLS),
+  // et retire l'utilisateur du cercle local. `supabase as any` : tables hors types générés.
+  const blockUser = useCallback(async (myId: string, blockedUserId: string): Promise<boolean> => {
+    const { error } = await (supabase as any)
+      .from('user_blocks')
+      .insert({ blocker_id: myId, blocked_id: blockedUserId });
+    // 23505 = doublon (déjà bloqué) → considéré comme succès
+    if (error && error.code !== '23505') {
+      console.error('[useFriends] blockUser error:', error.message);
+      return false;
+    }
+    await supabase
+      .from('friendships')
+      .delete()
+      .or(`and(requester_id.eq.${myId},addressee_id.eq.${blockedUserId}),and(requester_id.eq.${blockedUserId},addressee_id.eq.${myId})`);
+    setFriends(friends.filter((f) => f.profile?.id !== blockedUserId));
+    return true;
+  }, [friends, setFriends]);
+
+  // Modération — signaler un utilisateur et/ou un moment (insert seul, lecture admin via service role).
+  const reportContent = useCallback(async (params: {
+    reporterId: string;
+    reportedUserId?: string;
+    reportedPointId?: string;
+    reason: string;
+    details?: string;
+  }): Promise<boolean> => {
+    const { error } = await (supabase as any)
+      .from('content_reports')
+      .insert({
+        reporter_id: params.reporterId,
+        reported_user_id: params.reportedUserId ?? null,
+        reported_point_id: params.reportedPointId ?? null,
+        reason: params.reason,
+        details: params.details ?? null,
+      });
+    if (error) {
+      console.error('[useFriends] reportContent error:', error.message);
+      return false;
+    }
+    return true;
+  }, []);
+
   // Consentement de taguage (D-08) — update mono-table sur point_partners.
   // is_visible bascule server-side via le trigger on_partner_consent — JAMAIS côté client.
   // Mono-table (règle 18) → RLS-safe (mig 010/011 : le partenaire tagué peut maj sa ligne).
@@ -206,6 +250,8 @@ export function useFriends() {
     cancelRequest,
     searchUsers,
     unfriend,
+    blockUser,
+    reportContent,
     setPendingReceived,
     setPendingSent,
   };
