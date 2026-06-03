@@ -6,6 +6,7 @@ import * as Location from 'expo-location';
 import { useTheme } from '@/hooks/useTheme';
 import { APP_CONFIG } from '@/constants/config';
 import { IcoTarget } from '@/components/icons';
+import { UserLocationMarker } from '@/components/map/UserLocationMarker';
 import { haptics } from '@/lib/haptics';
 import type { Theme } from '@/constants/theme';
 
@@ -151,7 +152,8 @@ export function AppMapView({
           aboveLayerID="waterway"
           style={{ lineColor: WATERWAY_LINE }}
         />
-        {showUserLocation && <MapboxGL.UserLocation visible renderMode="native" />}
+        {/* Relevé blanc custom (sceau « le point ») — remplace le point bleu système */}
+        {showUserLocation && userCoords && <UserLocationMarker coordinate={userCoords} />}
         {children}
       </MapboxGL.MapView>
 
