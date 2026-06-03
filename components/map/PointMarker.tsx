@@ -50,30 +50,25 @@ export function Seal({ note, state = 'sealed', count }: { note: number; state?: 
   const c = noteHue(note);
   const pending = state === 'pending';
   const fill = pending ? '#0a0a0a' : c;
-  const ring = pending ? c : 'rgba(255,255,255,0.45)';
   const txt = pending ? c : '#ffffff';
 
   return (
     <View style={{ width: 44, height: 54, alignItems: 'center' }}>
       {count && count > 1 ? <CountBadge count={count} /> : null}
 
-      {/* Disque + halo de contraste (décolle le sceau des rues claires) */}
+      {/* Disque scellé — fond plein + liseré OPAQUE (rendu fiable dans le snapshot natif :
+          pas de halo translucide en absolute ni d'ombre, qui se composaient en voile gris). */}
       <View style={{ width: 44, height: 36, alignItems: 'center', justifyContent: 'center' }}>
-        <View style={{ position: 'absolute', width: 37, height: 37, borderRadius: 18.5, backgroundColor: 'rgba(0,0,0,0.34)' }} />
         <View style={{
           width: 34,
           height: 34,
           borderRadius: 17,
           backgroundColor: fill,
-          borderWidth: 1.5,
-          borderColor: ring,
+          borderWidth: 2,
+          borderColor: pending ? c : '#ffffff',
           borderStyle: pending ? 'dashed' : 'solid',
           alignItems: 'center',
           justifyContent: 'center',
-          shadowColor: '#000000',
-          shadowOpacity: 0.45,
-          shadowRadius: 6,
-          shadowOffset: { width: 0, height: 5 },
         }}>
           <Text
             allowFontScaling={false}
