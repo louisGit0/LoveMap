@@ -140,7 +140,8 @@ lovemap/
 │   ├── 006_profiles_pending_rls.sql # profiles_select élargi à status IN ('pending','accepted')
 │   ├── 007→012                   # RPC create_point, colonnes, RLS visibilité/récursion, storage avatars
 │   ├── 013_push_notifications.sql # pg_net + triggers notifs serveur (réponse mention, ami a posté)
-│   └── 014_moderation_blocks_reports.sql # user_blocks + content_reports + trigger anti-amitié bloquée (Guideline 1.2)
+│   ├── 014_moderation_blocks_reports.sql # user_blocks + content_reports + trigger anti-amitié bloquée (Guideline 1.2)
+│   └── 015_get_blocked_users.sql # RPC SECURITY DEFINER : liste les comptes bloqués (profil hors RLS) pour la section « Bloqués »
 ├── docs/                         # Pages légales hébergées via GitHub Pages (master /docs) : privacy.html, terms.html, index.html
 ├── store/                        # Kit de soumission App Store (app-store-listing.md)
 └── CLAUDE.md                     # Ce fichier — à consulter et maintenir
@@ -193,6 +194,7 @@ Exigences Apple pour le contenu généré par les utilisateurs (mention/taguage 
 | Signaler un utilisateur | onglet Amis → appui long sur un contact → « Signaler » | `content_reports` (reported_user_id) | `useFriends.reportContent` |
 | Bloquer un utilisateur | détail moment → « Bloquer l'auteur » · Amis → appui long → « Bloquer » | `user_blocks` + suppression amitié | `useFriends.blockUser` |
 | EULA / confidentialité | écran « Moi » → liens (`LINKS` dans `config.ts`) → `docs/*.html` | — | — |
+| Voir / débloquer | onglet Amis → section « Comptes bloqués » (footer, visible si ≥1) → « Débloquer » | RPC `get_blocked_users` + delete `user_blocks` | `useFriends.fetchBlockedUsers/unblockUser` |
 
 - `content_reports` : INSERT client seul (RLS), lecture **admin via service role** uniquement.
 - `blockUser` : insère le blocage + supprime l'amitié (invisibilité mutuelle via RLS) + retire du store. Trigger serveur `prevent_blocked_friendship` empêche de (re)créer une amitié entre bloqués.
@@ -245,6 +247,8 @@ Ne jamais écrire `import * as ImagePicker from 'expo-image-picker'` ni `import 
 19. **iOS 26 : `presentation: 'formSheet'` est cassé — utiliser `presentation: 'modal'`** — Avec **react-native-screens 4.16** (SDK 54) sur **iOS 26**, un `formSheet` (détents custom) **ancre son contenu en bas / rend trop petit** (RNS [#3235](https://github.com/software-mansion/react-native-screens/issues/3235) + [#2522](https://github.com/software-mansion/react-native-screens/issues/2522)) → l'écran apparaît **noir en haut** (et entièrement noir clavier ouvert). **Non corrigé** jusqu'à 4.20+ (fixes form sheet récents = Android only) et **non corrigeable en layout JS** (une taille explicite `useWindowDimensions` empire le bug → contenu hors écran, confirmé build #25). **Toujours** présenter les écrans glissants du bas (création/détail point) en **`presentation: 'modal'`** (carte pageSheet native : glisse du bas, `gestureEnabled` swipe-to-dismiss, `usePreventRemove` OK) — **jamais** `formSheet`/`sheetAllowedDetents`. Confirmé build #26 (validé device). Corollaire carte : dans le `formSheet` cassé, tout était noir (bug du sheet). Dans un **`modal`**, une **`<Image>` statique Mapbox** (Static Images API, `mapboxStaticUrl()` dans `constants/config.ts`, pin rose dessiné en RN) **s'affiche correctement** — c'est l'aperçu carte du détail/création (validé build #27). Un **MapView GL** reste risqué (surface Metal) → préférer l'image statique pour un simple aperçu.
 
 20. **PointAnnotation ne rend PAS de `<Text>` à police custom — utiliser `MarkerView` pour tout marqueur riche** — `MapboxGL.PointAnnotation` prend un *snapshot natif* de son contenu RN, qui **ne rasterise pas correctement un `<Text>` avec une police custom** (Cormorant) : le marqueur apparaît en **fantôme / cercle gris transparent** (et un overlay translucide en `position:absolute` se compose par-dessus le fond plein). **Même cause que la pastille de compte vide au build #30.** L'ancien pin marchait justement parce qu'il n'avait **aucun texte**. → **Tout marqueur contenant du texte (la note gravée du sceau, la pastille N) DOIT être rendu via `MapboxGL.MarkerView`** (vues RN *live*, pas de snapshot) — comme le relevé blanc. Mettre **`allowOverlap`** sur la MarkerView (sinon Mapbox masque les marqueurs qui se chevauchent → cause du switch MarkerView→PointAnnotation au #16) et gérer le tap via un **`<Pressable>`** standard (fini les quirks `onSelected` de PointAnnotation : triple-ouverture, halo collé). Réserver PointAnnotation aux marqueurs **sans texte**. Confirmé : #33 (KO en PointAnnotation, sceaux invisibles) → **#34 (OK en MarkerView, validé device)**.
+
+21. **Avatar : cache-busting OBLIGATOIRE sur l'URL** — l'avatar est uploadé sur un chemin **fixe** (`{userId}.ext`, `upsert:true`) → l'URL publique Supabase est **identique** à chaque upload. Sans paramètre unique, `<Image>` RN ré-affiche l'**ancienne** image depuis son cache (symptôme : « Portrait mis à jour » mais la photo ne change pas, signalé #35). Toujours stocker `avatar_url = publicUrl + '?v=' + Date.now()` dans `profiles`. Fix dans `profile/index.tsx` → `handlePickAvatar`.
 
 ---
 

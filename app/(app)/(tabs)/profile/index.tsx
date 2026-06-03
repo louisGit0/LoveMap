@@ -165,7 +165,11 @@ export default function ProfileScreen() {
         return;
       }
       const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(fileName);
-      await supabase.from('profiles').update({ avatar_url: urlData.publicUrl }).eq('id', user!.id);
+      // Cache-busting : le fichier est uploadé sur un chemin FIXE ({userId}.ext, upsert) → l'URL
+      // publique est identique à chaque fois. Sans paramètre unique, <Image> RN ré-affiche l'ancienne
+      // image depuis son cache (le « le portrait reste le même » signalé). Le ?v= force un re-fetch.
+      const bustedUrl = `${urlData.publicUrl}?v=${Date.now()}`;
+      await supabase.from('profiles').update({ avatar_url: bustedUrl }).eq('id', user!.id);
       await fetchProfile(user!.id);
       setSnackbar('Portrait mis à jour.');
     } catch (e: unknown) {

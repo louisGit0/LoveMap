@@ -3,6 +3,15 @@ import { supabase } from '@/lib/supabase';
 import { useFriendStore } from '@/stores/friendStore';
 import type { FriendWithProfile, Profile, PendingTag } from '@/types/app.types';
 
+export interface BlockedUser {
+  block_id: string;
+  blocked_id: string;
+  username: string;
+  display_name: string | null;
+  avatar_url: string | null;
+  created_at: string;
+}
+
 export function useFriends() {
   const { friends, pendingReceived, pendingSent, setFriends, setPendingReceived, setPendingSent, removeFriend } =
     useFriendStore();
@@ -188,6 +197,26 @@ export function useFriends() {
     return true;
   }, [friends, setFriends]);
 
+  // Modération — liste des comptes bloqués (RPC SECURITY DEFINER : lit le profil hors RLS).
+  const fetchBlockedUsers = useCallback(async (): Promise<BlockedUser[]> => {
+    const { data, error } = await (supabase as any).rpc('get_blocked_users');
+    if (error) {
+      console.error('[useFriends] fetchBlockedUsers error:', error.message);
+      return [];
+    }
+    return (data ?? []) as BlockedUser[];
+  }, []);
+
+  // Modération — débloquer (supprime la ligne user_blocks ; RLS : delete own).
+  const unblockUser = useCallback(async (blockId: string): Promise<boolean> => {
+    const { error } = await (supabase as any).from('user_blocks').delete().eq('id', blockId);
+    if (error) {
+      console.error('[useFriends] unblockUser error:', error.message);
+      return false;
+    }
+    return true;
+  }, []);
+
   // Modération — signaler un utilisateur et/ou un moment (insert seul, lecture admin via service role).
   const reportContent = useCallback(async (params: {
     reporterId: string;
@@ -252,6 +281,8 @@ export function useFriends() {
     unfriend,
     blockUser,
     reportContent,
+    fetchBlockedUsers,
+    unblockUser,
     setPendingReceived,
     setPendingSent,
   };

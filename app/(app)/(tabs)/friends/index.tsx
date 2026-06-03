@@ -13,7 +13,7 @@ import { router } from 'expo-router';
 import { Snackbar } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '@/hooks/useAuth';
-import { useFriends } from '@/hooks/useFriends';
+import { useFriends, type BlockedUser } from '@/hooks/useFriends';
 import { useFriendStore } from '@/stores/friendStore';
 import { useMapStore } from '@/stores/mapStore';
 import { useTheme } from '@/hooks/useTheme';
@@ -29,7 +29,7 @@ import type { Profile } from '@/types/app.types';
 export default function FriendsScreen() {
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
-  const { friends, fetchFriends, fetchPendingReceived, fetchPendingTagsCount, searchUsers, sendFriendRequest, unfriend, blockUser, reportContent, setPendingReceived } = useFriends();
+  const { friends, fetchFriends, fetchPendingReceived, fetchPendingTagsCount, searchUsers, sendFriendRequest, unfriend, blockUser, reportContent, fetchBlockedUsers, unblockUser, setPendingReceived } = useFriends();
   const pendingReceived = useFriendStore((s) => s.pendingReceived);
   const { setViewingFriend } = useMapStore();
   const T = useTheme();
@@ -42,6 +42,7 @@ export default function FriendsScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [snackbar, setSnackbar] = useState<string | null>(null);
   const [pendingTagsCount, setPendingTagsCount] = useState(0);
+  const [blocked, setBlocked] = useState<BlockedUser[]>([]);
 
   const loadFriends = useCallback(async () => {
     if (!user) return;
@@ -50,8 +51,9 @@ export default function FriendsScreen() {
     if (!ok) { setLoading(false); setSnackbar('Erreur de chargement.'); return; }
     setPendingReceived(await fetchPendingReceived(user.id));
     setPendingTagsCount(await fetchPendingTagsCount(user.id));
+    setBlocked(await fetchBlockedUsers());
     setLoading(false);
-  }, [user, fetchFriends, fetchPendingReceived, fetchPendingTagsCount, setPendingReceived]);
+  }, [user, fetchFriends, fetchPendingReceived, fetchPendingTagsCount, fetchBlockedUsers, setPendingReceived]);
 
   useEffect(() => { loadFriends(); }, [loadFriends]);
 
@@ -102,7 +104,43 @@ export default function FriendsScreen() {
   async function handleBlockUser(profileId: string) {
     if (!user) return;
     const ok = await blockUser(user.id, profileId);
+    if (ok) setBlocked(await fetchBlockedUsers());
     setSnackbar(ok ? 'Utilisateur bloqué.' : 'Échec — réessayez.');
+  }
+
+  async function handleUnblock(blockId: string, name: string) {
+    const ok = await unblockUser(blockId);
+    if (ok) {
+      setBlocked((prev) => prev.filter((b) => b.block_id !== blockId));
+      setSnackbar(`${name} débloqué.`);
+    } else {
+      haptics.error();
+      setSnackbar('Échec — réessayez.');
+    }
+  }
+
+  // Section « Comptes bloqués » — visible seulement s'il y a des bloqués (Guideline 1.2 : débloquer).
+  function renderBlocked() {
+    if (blocked.length === 0) return null;
+    return (
+      <View style={styles.blockedSection}>
+        <Text style={styles.blockedHeader}>Comptes bloqués · {blocked.length}</Text>
+        {blocked.map((b) => (
+          <View key={b.block_id} style={styles.blockedRow}>
+            <View style={styles.blockedInfo}>
+              <Text style={styles.blockedName} numberOfLines={1}>{b.display_name ?? b.username}</Text>
+              <Text style={styles.blockedUser} numberOfLines={1}>@{b.username}</Text>
+            </View>
+            <TouchableOpacity
+              onPress={() => handleUnblock(b.block_id, b.display_name ?? b.username)}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <Text style={styles.unblockText}>Débloquer</Text>
+            </TouchableOpacity>
+          </View>
+        ))}
+      </View>
+    );
   }
 
   const alreadyFriendIds = new Set(friends.map((f) => f.profile.id));
@@ -192,10 +230,13 @@ export default function FriendsScreen() {
             {[1, 2, 3].map((k) => <SkeletonRow key={k} />)}
           </View>
         ) : friends.length === 0 ? (
-          <View style={styles.empty}>
-            <Text style={styles.emptyTitle}>Votre cercle est vide.</Text>
-            <Text style={styles.emptySubtitle}>Cherchez un nom pour inviter quelqu'un.</Text>
-          </View>
+          <>
+            <View style={styles.empty}>
+              <Text style={styles.emptyTitle}>Votre cercle est vide.</Text>
+              <Text style={styles.emptySubtitle}>Cherchez un nom pour inviter quelqu'un.</Text>
+            </View>
+            {renderBlocked()}
+          </>
         ) : (
           <>
             <View style={styles.cercleSectionRow}>
@@ -219,6 +260,7 @@ export default function FriendsScreen() {
               )}
               contentContainerStyle={{ paddingBottom: insets.bottom + 64 }}
               showsVerticalScrollIndicator={false}
+              ListFooterComponent={renderBlocked()}
               refreshControl={
                 <RefreshControl
                   refreshing={refreshing}
@@ -440,5 +482,48 @@ const makeStyles = (T: Theme) => StyleSheet.create({
     fontSize: 10,
     letterSpacing: 1.5,
     color: T.textFaint,
+  },
+  blockedSection: {
+    marginTop: 32,
+    borderTopWidth: 1,
+    borderTopColor: T.border,
+    paddingTop: 20,
+  },
+  blockedHeader: {
+    fontFamily: F.mono,
+    fontSize: 9,
+    letterSpacing: 2,
+    textTransform: 'uppercase',
+    color: T.textFaint,
+    marginBottom: 10,
+  },
+  blockedRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 12,
+    gap: 12,
+  },
+  blockedInfo: { flex: 1 },
+  blockedName: {
+    fontFamily: F.serif,
+    fontStyle: 'italic',
+    fontSize: 18,
+    color: T.textDim,
+  },
+  blockedUser: {
+    fontFamily: F.mono,
+    fontSize: 10,
+    letterSpacing: 1,
+    color: T.textFaint,
+    marginTop: 2,
+  },
+  unblockText: {
+    fontFamily: F.mono,
+    fontSize: 10,
+    letterSpacing: 1.5,
+    textTransform: 'uppercase',
+    color: T.primary,
+    textDecorationLine: 'underline',
   },
 });
