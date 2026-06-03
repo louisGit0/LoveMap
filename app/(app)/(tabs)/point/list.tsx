@@ -6,7 +6,9 @@ import {
   SectionList,
   TouchableOpacity,
   RefreshControl,
+  Alert,
 } from 'react-native';
+import ReanimatedSwipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
 import { Snackbar } from 'react-native-paper';
 import { SkeletonRow } from '@/components/ui/SkeletonItem';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -112,7 +114,7 @@ function FilterPill({ label, active, onPress, styles }: {
 export default function PointList() {
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
-  const { points, fetchMyPoints } = usePoints();
+  const { points, fetchMyPoints, deletePoint } = usePoints();
   const T = useTheme();
   const styles = useMemo(() => makeStyles(T), [T]);
 
@@ -144,6 +146,27 @@ export default function PointList() {
     if (!ok) setSnackbar('Impossible de charger les moments. Réessayez.');
   }, [load]);
 
+  // Suppression d'un moment (en attente ou validé) — swipe → « Effacer » + confirmation.
+  const handleDelete = useCallback((item: MapPoint) => {
+    haptics.warn();
+    Alert.alert(
+      'Effacer ce moment ?',
+      'Cette page sera définitivement supprimée. Cette action est irréversible.',
+      [
+        { text: 'Garder', style: 'cancel' },
+        {
+          text: 'Effacer',
+          style: 'destructive',
+          onPress: async () => {
+            const ok = await deletePoint(item.id);
+            if (ok) { haptics.success(); }
+            else { haptics.error(); setSnackbar('Suppression impossible. Réessayez.'); }
+          },
+        },
+      ]
+    );
+  }, [deletePoint]);
+
   const sections = useMemo(() => {
     let filtered = points.filter((p) => p.note >= minNote);
     if (status === 'pending') filtered = filtered.filter((p) => !p.is_visible);
@@ -164,7 +187,30 @@ export default function PointList() {
       <SectionList
         sections={sections}
         keyExtractor={(item) => item.id}
-        renderItem={({ item }) => <PointListItem point={item} />}
+        renderItem={({ item }) => {
+          // Seuls mes propres moments sont supprimables (RLS : creator_id === auth.uid()).
+          const isOwn = item.creator_id === user?.id;
+          if (!isOwn) return <PointListItem point={item} />;
+          return (
+            <ReanimatedSwipeable
+              renderRightActions={() => (
+                <TouchableOpacity
+                  style={styles.deleteAction}
+                  onPress={() => handleDelete(item)}
+                  activeOpacity={0.85}
+                  accessibilityLabel="Effacer ce moment"
+                >
+                  <Text style={styles.deleteActionText}>Effacer</Text>
+                </TouchableOpacity>
+              )}
+              overshootRight={false}
+              friction={2}
+              rightThreshold={40}
+            >
+              <PointListItem point={item} />
+            </ReanimatedSwipeable>
+          );
+        }}
         renderSectionHeader={({ section: { title, data } }) => (
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>{title.toUpperCase()}</Text>
@@ -349,5 +395,19 @@ const makeStyles = (T: Theme) => StyleSheet.create({
     textTransform: 'uppercase',
     color: T.textFaint,
     textAlign: 'center',
+  },
+  // Action de suppression révélée par le swipe (carnet)
+  deleteAction: {
+    backgroundColor: T.danger,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+  },
+  deleteActionText: {
+    fontFamily: F.mono,
+    fontSize: 10,
+    letterSpacing: 1.5,
+    textTransform: 'uppercase',
+    color: T.text,
   },
 });
