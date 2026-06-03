@@ -271,57 +271,62 @@ export default function ProfileScreen() {
         <View style={styles.cover}>
           <AppText variant="eyebrow" style={styles.coverEyebrow}>MOI</AppText>
 
-          {/* Avatar carré 80px — borderRadius:0 (exception D-12) */}
-          <PressableScale style={styles.avatarWrapper} onPress={() => { haptics.tap(); handlePickAvatar(); }} disabled={uploadingAvatar}>
-            {profile?.avatar_url ? (
-              <Image source={{ uri: profile.avatar_url }} style={styles.avatarImage} />
-            ) : (
-              <View style={styles.avatarBox}>
-                <Text style={styles.avatarInitial}>{initials}</Text>
+          {/* Cover horizontale (D-03 révisé) — avatar + identité côte à côte */}
+          <View style={styles.coverRow}>
+            {/* Avatar carré 80px — borderRadius:0 (exception D-12) */}
+            <PressableScale style={styles.avatarWrapper} onPress={() => { haptics.tap(); handlePickAvatar(); }} disabled={uploadingAvatar}>
+              {profile?.avatar_url ? (
+                <Image source={{ uri: profile.avatar_url }} style={styles.avatarImage} />
+              ) : (
+                <View style={styles.avatarBox}>
+                  <Text style={styles.avatarInitial}>{initials}</Text>
+                </View>
+              )}
+              <View style={styles.plusBadge}>
+                {uploadingAvatar ? <ActivityIndicator size="small" color={T.text} /> : <IcoPlus size={10} color={T.text} />}
               </View>
-            )}
-            <View style={styles.plusBadge}>
-              {uploadingAvatar ? <ActivityIndicator size="small" color={T.text} /> : <IcoPlus size={10} color={T.text} />}
-            </View>
-          </PressableScale>
+            </PressableScale>
 
-          {/* Nom (Cover 56) + édition inline + @username */}
-          {isEditingName ? (
-            <View style={styles.editNameBlock}>
-              <TextInput
-                value={editName}
-                onChangeText={setEditName}
-                style={[styles.editNameInput, { color: T.text }]}
-                autoFocus
-                returnKeyType="done"
-                onSubmitEditing={saveDisplayName}
-                selectionColor={T.primary}
-                placeholderTextColor={T.textFaint}
-                maxFontSizeMultiplier={1.15}
-              />
-              <View style={styles.editNameActions}>
-                {savingName ? (
-                  <ActivityIndicator size="small" color={T.primary} />
-                ) : (
-                  <>
-                    <TouchableOpacity onPress={saveDisplayName} style={styles.editIconBtn} activeOpacity={0.75} accessibilityLabel="Enregistrer le prénom">
-                      <IcoCheck size={14} color={T.primary} />
-                    </TouchableOpacity>
-                    <TouchableOpacity onPress={() => setIsEditingName(false)} style={styles.editIconBtn} activeOpacity={0.75} accessibilityLabel="Annuler">
-                      <IcoClose size={14} color={T.textFaint} />
-                    </TouchableOpacity>
-                  </>
-                )}
-              </View>
+            {/* Nom + édition inline + @username */}
+            <View style={styles.coverIdentity}>
+              {isEditingName ? (
+                <View style={styles.editNameBlock}>
+                  <TextInput
+                    value={editName}
+                    onChangeText={setEditName}
+                    style={[styles.editNameInput, { color: T.text }]}
+                    autoFocus
+                    returnKeyType="done"
+                    onSubmitEditing={saveDisplayName}
+                    selectionColor={T.primary}
+                    placeholderTextColor={T.textFaint}
+                    maxFontSizeMultiplier={1.15}
+                  />
+                  <View style={styles.editNameActions}>
+                    {savingName ? (
+                      <ActivityIndicator size="small" color={T.primary} />
+                    ) : (
+                      <>
+                        <TouchableOpacity onPress={saveDisplayName} style={styles.editIconBtn} activeOpacity={0.75} accessibilityLabel="Enregistrer le prénom">
+                          <IcoCheck size={14} color={T.primary} />
+                        </TouchableOpacity>
+                        <TouchableOpacity onPress={() => setIsEditingName(false)} style={styles.editIconBtn} activeOpacity={0.75} accessibilityLabel="Annuler">
+                          <IcoClose size={14} color={T.textFaint} />
+                        </TouchableOpacity>
+                      </>
+                    )}
+                  </View>
+                </View>
+              ) : (
+                <TouchableOpacity onPress={startEditingName} activeOpacity={0.75} accessibilityLabel="Modifier le prénom">
+                  <AppText variant="display" style={styles.coverName} numberOfLines={2}>
+                    {profile?.display_name ?? profile?.username ?? '—'}
+                  </AppText>
+                </TouchableOpacity>
+              )}
+              <AppText variant="eyebrow" style={styles.username}>@{profile?.username ?? '...'}</AppText>
             </View>
-          ) : (
-            <TouchableOpacity onPress={startEditingName} activeOpacity={0.75} accessibilityLabel="Modifier le prénom">
-              <AppText variant="display" style={styles.coverName}>
-                {profile?.display_name ?? profile?.username ?? '—'}
-              </AppText>
-            </TouchableOpacity>
-          )}
-          <AppText variant="eyebrow" style={styles.username}>@{profile?.username ?? '...'}</AppText>
+          </View>
         </View>
 
         {/* ── Analyse — mini-bento (D-04) ── */}
@@ -479,8 +484,10 @@ const makeStyles = (T: Theme) => StyleSheet.create({
   centered: { flex: 1, backgroundColor: T.bg, justifyContent: 'center', alignItems: 'center' },
 
   /* ── Cover ── */
-  cover: { paddingTop: 24, paddingBottom: 32, paddingHorizontal: 16 },
+  cover: { paddingTop: 24, paddingBottom: 28, paddingHorizontal: 24 },
   coverEyebrow: { fontSize: 10, letterSpacing: 2.5, textTransform: 'uppercase', color: T.textFaint, marginBottom: 24 },
+  coverRow: { flexDirection: 'row', alignItems: 'center', gap: 18 },
+  coverIdentity: { flex: 1 },
 
   avatarWrapper: { position: 'relative', width: 80, height: 80 },
   avatarBox: { width: 80, height: 80, backgroundColor: T.surface2, borderWidth: 1, borderColor: T.border, alignItems: 'center', justifyContent: 'center' },
@@ -488,19 +495,19 @@ const makeStyles = (T: Theme) => StyleSheet.create({
   avatarInitial: { fontFamily: F.serif, fontStyle: 'italic', fontSize: 36, color: T.primary },
   plusBadge: { position: 'absolute', bottom: 0, right: 0, width: 20, height: 20, backgroundColor: T.primary, alignItems: 'center', justifyContent: 'center' },
 
-  coverName: { fontSize: 56, lineHeight: 60, fontStyle: 'italic', letterSpacing: -1, color: T.text, marginTop: 24 },
+  coverName: { fontSize: 38, lineHeight: 42, fontStyle: 'italic', letterSpacing: -1, color: T.text, marginTop: 0 },
   username: { fontSize: 10, letterSpacing: 1.5, color: T.textFaint, marginTop: 8 },
 
-  editNameBlock: { flexDirection: 'row', alignItems: 'center', borderBottomWidth: 1, borderBottomColor: T.primary, paddingBottom: 4, gap: 8, marginTop: 24 },
-  editNameInput: { flex: 1, fontFamily: F.serifLight, fontStyle: 'italic', fontSize: 40, lineHeight: 46, letterSpacing: -1, padding: 0, margin: 0 },
+  editNameBlock: { flexDirection: 'row', alignItems: 'center', borderBottomWidth: 1, borderBottomColor: T.primary, paddingBottom: 4, gap: 8, marginTop: 0 },
+  editNameInput: { flex: 1, fontFamily: F.serifLight, fontStyle: 'italic', fontSize: 30, lineHeight: 36, letterSpacing: -1, padding: 0, margin: 0 },
   editNameActions: { flexDirection: 'row', gap: 4 },
   editIconBtn: { width: 44, height: 44, borderWidth: 1, borderColor: T.border, alignItems: 'center', justifyContent: 'center', borderRadius: T.radiusSm, borderCurve: 'continuous' },
 
   /* ── Bento Analyse ── */
-  bentoSection: { paddingHorizontal: 16, paddingBottom: 24 },
+  bentoSection: { paddingHorizontal: 24, paddingBottom: 24 },
   bentoEyebrow: { fontSize: 10, letterSpacing: 2.5, textTransform: 'uppercase', color: T.textFaint, marginBottom: 16 },
 
-  tileFull: { backgroundColor: T.surface, borderRadius: T.cardRadius, borderCurve: 'continuous', padding: 16, minHeight: 140, justifyContent: 'center', marginBottom: 24 },
+  tileFull: { backgroundColor: T.surface, borderRadius: T.cardRadius, borderCurve: 'continuous', padding: 20, minHeight: 112, justifyContent: 'center', marginBottom: 16 },
   tileFullSlim: { backgroundColor: T.surface, borderRadius: T.cardRadius, borderCurve: 'continuous', padding: 16 },
   tileHalf: { backgroundColor: T.surface, borderRadius: T.cardRadius, borderCurve: 'continuous', padding: 16, minHeight: 110, flex: 1 },
   bentoRow: { flexDirection: 'row', gap: 16, marginBottom: 24 },

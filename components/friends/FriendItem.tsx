@@ -47,29 +47,28 @@ export function FriendItem({ friend, onUnfriend, onViewMap }: Props) {
         <Text style={styles.displayName} numberOfLines={1}>
           {displayName}
         </Text>
-      </View>
-      <View style={styles.right}>
         <Text style={styles.username} numberOfLines={1}>
           @{profile.username}
         </Text>
-        <View style={styles.actions}>
-          {onViewMap && (
-            <TouchableOpacity
-              onPress={onViewMap}
-              activeOpacity={0.7}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            >
-              <Text style={styles.mapBtnText}>Carte</Text>
-            </TouchableOpacity>
-          )}
+      </View>
+      <View style={styles.actions}>
+        {onViewMap && (
           <TouchableOpacity
-            onPress={handleUnfriend}
+            onPress={onViewMap}
             activeOpacity={0.7}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            hitSlop={{ top: 10, bottom: 10, left: 8, right: 8 }}
           >
-            <Text style={styles.removeBtnText}>Retirer</Text>
+            <Text style={styles.mapBtnText}>Carte</Text>
           </TouchableOpacity>
-        </View>
+        )}
+        <Text style={styles.actionDivider}>·</Text>
+        <TouchableOpacity
+          onPress={handleUnfriend}
+          activeOpacity={0.7}
+          hitSlop={{ top: 10, bottom: 10, left: 8, right: 8 }}
+        >
+          <Text style={styles.removeBtnText}>Retirer</Text>
+        </TouchableOpacity>
       </View>
     </View>
   );
@@ -85,8 +84,8 @@ const makeStyles = (T: Theme) => StyleSheet.create({
     gap: 12,
   },
   avatar: {
-    width: 36,
-    height: 36,
+    width: 46,
+    height: 46,
     backgroundColor: T.surface2,
     borderWidth: 1,
     borderColor: T.border,
@@ -97,32 +96,33 @@ const makeStyles = (T: Theme) => StyleSheet.create({
   avatarInitial: {
     fontFamily: F.serif,
     fontStyle: 'italic',
-    fontSize: 20,
+    fontSize: 24,
     color: T.primary,
   },
-  info: { flex: 1 },
+  info: { flex: 1, gap: 3 },
   displayName: {
     fontFamily: F.serif,
     fontStyle: 'italic',
-    fontSize: 20,
-    lineHeight: 26,
+    fontSize: 21,
+    lineHeight: 25,
     color: T.text,
-  },
-  right: {
-    alignItems: 'flex-end',
-    gap: 6,
   },
   username: {
     fontFamily: F.mono,
     fontSize: 10,
     letterSpacing: 1,
     color: T.textFaint,
-    textAlign: 'right',
   },
   actions: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 16,
+    gap: 12,
+  },
+  actionDivider: {
+    fontFamily: F.mono,
+    fontSize: 10,
+    color: T.textFaint,
+    opacity: 0.6,
   },
   mapBtnText: {
     fontFamily: F.mono,

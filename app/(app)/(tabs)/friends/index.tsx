@@ -229,7 +229,7 @@ const makeStyles = (T: Theme) => StyleSheet.create({
   container: { flex: 1, backgroundColor: T.bg },
   header: {
     paddingBottom: 24,
-    paddingHorizontal: 36,
+    paddingHorizontal: 24,
     paddingTop: 24,
     position: 'relative',
   },
