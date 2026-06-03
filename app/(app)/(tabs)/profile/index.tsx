@@ -77,32 +77,34 @@ export default function ProfileScreen() {
     })();
   }, [user]);
 
-  /* ── Analyse (sources bento — useMemos préservés) ── */
+  /* ── Analyse (sources bento) — seuls les moments VALIDÉS (mention acceptée, is_visible) comptent ── */
+  const validatedPoints = useMemo(() => points.filter((p) => p.is_visible), [points]);
+
   const noteDistribution = useMemo(() => {
     const counts = Array.from({ length: 10 }, (_, i) =>
-      points.filter((p) => Math.round(p.note) === i + 1).length
+      validatedPoints.filter((p) => Math.round(p.note) === i + 1).length
     );
     const max = Math.max(...counts, 1);
     return counts.map((count, i) => ({ note: i + 1, count, ratio: count / max }));
-  }, [points]);
+  }, [validatedPoints]);
 
   const topMonths = useMemo(() => {
     const map: Record<string, { label: string; count: number }> = {};
-    for (const p of points) {
+    for (const p of validatedPoints) {
       const d = new Date(p.happened_at ?? p.created_at);
       const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
       if (!map[key]) map[key] = { label: `${MONTHS_FR[d.getMonth()]} ${d.getFullYear()}`, count: 0 };
       map[key].count++;
     }
     return Object.values(map).sort((a, b) => b.count - a.count).slice(0, 3);
-  }, [points]);
+  }, [validatedPoints]);
 
   const totalMinutes = useMemo(
-    () => points.reduce((sum, p) => sum + (p.duration_minutes ?? 0), 0),
-    [points]
+    () => validatedPoints.reduce((sum, p) => sum + (p.duration_minutes ?? 0), 0),
+    [validatedPoints]
   );
 
-  const hasMoments = points.length > 0;
+  const hasMoments = validatedPoints.length > 0;
   const durationLabel = `${Math.floor(totalMinutes / 60)}h${String(totalMinutes % 60).padStart(2, '0')}`;
   const initials = (profile?.display_name ?? profile?.username ?? '?')[0]?.toUpperCase();
 
@@ -328,7 +330,7 @@ export default function ProfileScreen() {
 
           {/* Tuile A — Pages du carnet (la plus grande, pleine largeur) */}
           <View style={styles.tileFull}>
-            <AppText variant="display" style={styles.tileNumber}>{String(points.length)}</AppText>
+            <AppText variant="display" style={styles.tileNumber}>{String(validatedPoints.length)}</AppText>
             <AppText variant="eyebrow" style={styles.tileLabel}>PAGES DU CARNET</AppText>
             {!hasMoments && (
               <AppText variant="eyebrow" style={styles.tileHelp}>Le carnet est encore vierge.</AppText>
