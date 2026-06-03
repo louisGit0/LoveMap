@@ -50,6 +50,9 @@ export default function NewPoint() {
   const [durationMinutes, setDurationMinutes] = useState('');
   const [selectedPartnerIds, setSelectedPartnerIds] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
+  // Soumission réussie : désactive le garde de fermeture (sinon la navigation de succès
+  // vers la carte déclenche « Abandonner ce moment ? » car un partenaire est sélectionné).
+  const [submitted, setSubmitted] = useState(false);
   const [snackbar, setSnackbar] = useState<string | null>(null);
 
   const today = new Date();
@@ -157,7 +160,9 @@ export default function NewPoint() {
 
     setSubmitting(false);
     haptics.success();
-    router.replace('/(app)/map');
+    // Désactive le garde puis navigue (la navigation se fait dans l'effet ci-dessous,
+    // une fois le listener beforeRemove retiré — sinon l'alerte d'abandon s'affiche).
+    setSubmitted(true);
   }
 
   // D-04 — garde de fermeture : confirmation si une saisie est en cours.
@@ -169,7 +174,7 @@ export default function NewPoint() {
     note !== 7 ||
     selectedPartnerIds.length > 0;
 
-  usePreventRemove(isDirty, ({ data }) => {
+  usePreventRemove(isDirty && !submitted, ({ data }) => {
     haptics.warn();
     Alert.alert(
       'Abandonner ce moment ?',
@@ -180,6 +185,12 @@ export default function NewPoint() {
       ]
     );
   });
+
+  // Navigation de succès : une fois `submitted` vrai, le garde ci-dessus est désactivé
+  // (son listener retiré), on peut donc quitter l'écran vers la carte sans alerte.
+  useEffect(() => {
+    if (submitted) router.replace('/(app)/map');
+  }, [submitted]);
 
   return (
     <View style={styles.container}>
