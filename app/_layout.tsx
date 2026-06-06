@@ -27,6 +27,7 @@ import { useAuthStore } from '@/stores/authStore';
 import { useThemeStore } from '@/stores/themeStore';
 import { darkTheme, lightTheme } from '@/constants/theme';
 import { registerForPushNotificationsAsync, savePushToken } from '@/lib/notifications';
+import AppErrorBoundary from '@/components/ui/AppErrorBoundary';
 
 registerTranslation('fr', fr);
 
@@ -49,7 +50,7 @@ export default function RootLayout() {
     },
   };
 
-  const [fontsLoaded] = useFonts({
+  const [fontsLoaded, fontError] = useFonts({
     CormorantGaramond_300Light_Italic,
     CormorantGaramond_400Regular_Italic,
     CormorantGaramond_500Medium_Italic,
@@ -95,7 +96,11 @@ export default function RootLayout() {
     };
   }, [user]);
 
-  if (!fontsLoaded) {
+  // On n'attend les polices que tant qu'aucune erreur n'est survenue.
+  // Si le chargement échoue (réseau device, asset manquant), on rend quand
+  // même l'app avec les polices système — surtout ne pas figer le splash,
+  // cause probable du refus Apple « App unresponsive on launch ».
+  if (!fontsLoaded && !fontError) {
     return (
       <View style={{ flex: 1, backgroundColor: '#000000', alignItems: 'center', justifyContent: 'center' }}>
         <ActivityIndicator color="#ff2d87" />
@@ -104,11 +109,13 @@ export default function RootLayout() {
   }
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <PaperProvider theme={paperTheme}>
-        <StatusBar style={isDark ? 'light' : 'dark'} />
-        <Stack screenOptions={{ headerShown: false }} />
-      </PaperProvider>
-    </GestureHandlerRootView>
+    <AppErrorBoundary>
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <PaperProvider theme={paperTheme}>
+          <StatusBar style={isDark ? 'light' : 'dark'} />
+          <Stack screenOptions={{ headerShown: false }} />
+        </PaperProvider>
+      </GestureHandlerRootView>
+    </AppErrorBoundary>
   );
 }
