@@ -2,30 +2,30 @@ import * as Haptics from 'expo-haptics';
 
 // Helper haptique centralisé (FOND-03 / IOS-03).
 // API par intention, fire-and-forget : on n'attend jamais la promesse (D-03).
-// L'OS coupe déjà les haptiques si l'utilisateur les a désactivés — pas de try/catch.
+// Chaque appel est DÉFENSIF (try/catch synchrone + .catch sur la promesse) :
+// un retour haptique indisponible — typiquement un iPad, qui n'a pas de Taptic
+// Engine — ne doit JAMAIS faire échouer le onPress qui l'appelle. Cf. refus
+// Apple 2.1a « button unresponsive » sur iPad (build 37) : haptics.tap()
+// précédait handleLogin() et empêchait la connexion.
+function safe(run: () => Promise<unknown>): void {
+  try {
+    run().catch(() => {});
+  } catch {
+    // module natif indisponible ou appel synchrone qui lève — on ignore
+  }
+}
+
 export const haptics = {
   // Changement de sélection (D-01)
-  select: () => {
-    Haptics.selectionAsync();
-  },
+  select: () => safe(() => Haptics.selectionAsync()),
   // Tap courant / navigation — impact light (D-01)
-  tap: () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-  },
+  tap: () => safe(() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)),
   // Action importante (ouverture sheet, toggle) — impact medium (D-02)
-  press: () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-  },
+  press: () => safe(() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)),
   // Résultat positif (sceller, accepter) — notification success (D-02)
-  success: () => {
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-  },
+  success: () => safe(() => Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)),
   // Alerte / acte irréversible (refus, suppression) — notification Warning (D-02)
-  warn: () => {
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-  },
+  warn: () => safe(() => Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning)),
   // Erreur réseau — notification error (D-02, priorité moindre)
-  error: () => {
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-  },
+  error: () => safe(() => Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error)),
 };

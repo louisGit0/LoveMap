@@ -102,7 +102,7 @@ export default function Login() {
           {/* CTA unique */}
           <View style={styles.actions}>
             <Button
-              onPress={() => { haptics.tap(); handleLogin(); }}
+              onPress={() => { handleLogin(); haptics.tap(); }}
               disabled={loading}
               variant="coral"
               style={styles.cta}
